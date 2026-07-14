@@ -1,31 +1,32 @@
-# 《革命街没有尽头》· AI 原生重构 — 决策 6 落成
+# 《革命街没有尽头》· AI 原生重构 — 决策 6 + 决策 4 落成
 #
 # GitLab CI equivalent of .github/workflows/four-questions.yml.
-# Triggers on any change to content/**/scenes/*, runs the four-questions
-# guard, and blocks the pipeline if any scene fails.  Also runs the
-# project-wide v6 residual scan and the full engine unit test suite.
-#
 # The brief is GitHub-first, but this file is here for projects that
-# live on GitLab (e.g. for the parallel integration lane).  Both
-# pipelines are equivalent.
+# live on GitLab (e.g. for the parallel integration lane).
+#
+# 三个 stage:
+#   guard      - four-questions-guard (决策 6, content-only)
+#   v6-scan    - v6_residual_scan (P0-1, P0-8, decision 4 red line)
+#   test       - full adversarial suite + content-studio smoke
+#
+# 工具位置说明（与决策红线）：
+#   * 此文件在项目根（`.gitlab-ci.yml`）— GitLab CI 标准位置
+#   * 旧位置 `tools/ci/.gitlab-ci.yml` 已废弃（见 tools/ci/README.md）
 
 stages:
   - guard
+  - v6-scan
   - test
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PYTHONUNBUFFERED: "1"
-  # Make ``engine`` importable as a top-level package for the
-  # engine unit tests.  (See conftest.py / pytest.ini for the
-  # GitHub-side equivalent.)
-  PYTHONPATH: "$CI_PROJECT_DIR/server"
+  PYTHONPATH: "$CI_PROJECT_DIR"
 
 cache:
   key:
     files:
       - tools/four_questions_guard_lib.py
-      - tools/v6_residual_scan.py
   paths:
     - .cache/pip
 
@@ -34,12 +35,10 @@ default:
   before_script:
     - python -m pip install --upgrade pip
     - pip install pyyaml pytest coverage fastapi uvicorn httpx
-    - echo "PYTHONPATH=$CI_PROJECT_DIR/server" >> .env.ci
 
 # ---------------------------------------------------------------------------
-# The four-questions guard.  Triggered by changes to scene files.
+# 决策 6 工具：4 项自检
 # ---------------------------------------------------------------------------
-
 four-questions-guard:
   stage: guard
   rules:
@@ -47,14 +46,11 @@ four-questions-guard:
         - content/**/scenes/*
         - tools/four-questions-guard.py
         - tools/four_questions_guard_lib.py
-        - tools/v6_residual_scan.py
         - tests/adversarial/test_four_questions_guard.py
-        - tests/adversarial/test_v6_residual_scan.py
   script:
-    # 1) Run the unit tests for the guard (catches tool regressions
-    #    before they ever hit a PR).
+    # 1) Unit tests for the guard itself.
     - python -m pytest tests/adversarial/test_four_questions_guard.py --tb=short
-    # 2) Find every scene YAML under content/ and run the guard.
+    # 2) Find every scene YAML and run the guard.
     - |
       set -e
       SCENES=$(find content -path '*/scenes/*' \( -name '*.yaml' -o -name '*.yml' \) -print)
@@ -64,50 +60,24 @@ four-questions-guard:
       fi
       set -x
       python tools/four-questions-guard.py --human $SCENES
-
-# ---------------------------------------------------------------------------
-# The v6 residual scan.  Project-wide sweep — no diff, just hits.
-# ---------------------------------------------------------------------------
-
-v6-residual-scan:
-  stage: guard
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "main"'
-  script:
-    # 1) Unit tests for the scanner.
-    - python -m pytest tests/adversarial/test_v6_residual_scan.py --tb=short
-    # 2) Run the actual scan against the full tree.
-    - |
-      set -e
-      set -x
-      python tools/v6_residual_scan.py --human
   allow_failure: false
 
 # ---------------------------------------------------------------------------
-# The engine unit test suite.  Mirrors the W2-A 81-test baseline +
-# 9 P0-3/P0-7 tests = 90 total.
+# 决策 4 红线：v6 残留扫描（P0-1, P0-8）
 # ---------------------------------------------------------------------------
-
-engine-unit-tests:
-  stage: test
+v6-residual-scan:
+  stage: v6-scan
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
   script:
-    - python -m pytest tests/engine/ --tb=short -v
-  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+)%/'
-  artifacts:
-    when: always
-    paths:
-      - .coverage
-      - htmlcov/
-    expire_in: 7 days
+    - python tools/v6_residual_scan.py --root "$CI_PROJECT_DIR" --human
+    # Exit code 0 = clean; non-zero = blocker.
+  allow_failure: false
 
 # ---------------------------------------------------------------------------
-# The full adversarial test suite.  Always runs.
+# 决策 6 + 5：全量对抗测试
 # ---------------------------------------------------------------------------
-
 adversarial-tests:
   stage: test
   rules:

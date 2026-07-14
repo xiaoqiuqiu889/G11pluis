@@ -95,3 +95,8 @@ _dbg.py
 *.bak
 *.tmp
 *.orig
+
+# --- GitHub Actions workflow files (临时) ---
+# OAuth App token 没有 workflow scope, 推不上去.
+# 拿到带 workflow scope 的 token 后删掉这行, 重新 commit workflow 文件到 .github/workflows/
+/.github/

@@ -1,14 +1,21 @@
 # CI Integration — four-questions-guard
 
-This directory contains the CI configurations that make the
-4-questions self-check (决策 6) **non-bypassable**.
-
-## Files
+This directory is **legacy / reference only**.  The CI
+configurations now live at the **project root** so GitHub
+Actions and GitLab CI pick them up automatically:
 
 | File | Platform | What it does |
 |------|----------|--------------|
-| `.github/workflows/four-questions.yml` | GitHub Actions | Triggers on `content/**/scenes/*` changes, runs the guard, blocks the PR. |
-| `.gitlab-ci.yml` | GitLab CI | GitLab equivalent of the GitHub workflow. |
+| `../.github/workflows/four-questions.yml` | GitHub Actions | Triggers on `content/**/scenes/*` changes, runs the guard, runs the v6 residual scan, blocks the PR. |
+| `../.gitlab-ci.yml` | GitLab CI | GitLab equivalent of the GitHub workflow. |
+
+The legacy `tools/ci/.gitlab-ci.yml` and `tools/ci/.github/`
+were removed in the W2 整合修补 (P0-8, 2026-07-15).  The
+root-level `.github/workflows/four-questions.yml` and
+`.gitlab-ci.yml` are the single source of truth and are
+auto-picked-up by their respective CI runners.
+
+## What gets blocked
 
 ## What gets blocked
 

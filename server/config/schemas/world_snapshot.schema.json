@@ -45,8 +45,10 @@
             "1937_1945_war", "1945_1949_civil_war", "1949_1965_socialist_build",
             "1966_1976_cultural_revolution", "1977_1989_reform_early",
             "1989_2000_boom", "2000_2012_globalization", "2012_present_ai_age",
-            "present", "epilogue"
-          ]
+            "present", "epilogue",
+            "2008", "2011", "2024", "EPILOGUE"
+          ],
+          "description": "Historical era tag. Accepts the 13 canonical Era values plus the case-scoped shorthands from server.engine.types.CASE_ERAS (ADR 0007, P0-7). The case-scoped values for case_01_revolution_street are: '2008' (photo_lab_2008), '2011' (farewell_2011), '2024' (reunion_2024), 'EPILOGUE' (epilogue)."
         },
         "turnIndex": {
           "type": "integer",

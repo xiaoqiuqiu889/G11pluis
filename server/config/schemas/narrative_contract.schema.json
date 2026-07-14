@@ -47,9 +47,13 @@
         "2000_2012_globalization",
         "2012_present_ai_age",
         "present",
-        "epilogue"
+        "epilogue",
+        "2008",
+        "2011",
+        "2024",
+        "EPILOGUE"
       ],
-      "description": "Historical era tag. Determines which cultural/linguistic register the LLM is allowed to use."
+      "description": "Historical era tag. Determines which cultural/linguistic register the LLM is allowed to use. Accepts the 13 canonical Era values plus the case-scoped shorthands from server.engine.types.CASE_ERAS (ADR 0007, P0-7)."
     },
     "location": {
       "type": "string",
