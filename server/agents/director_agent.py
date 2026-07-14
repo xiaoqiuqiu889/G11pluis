@@ -145,6 +145,14 @@ class DirectorAgent:
                 raw.setdefault("sceneId", scene_contract.get("sceneId", "?"))
                 raw.setdefault("schemaVersion", "1.0.0")
                 raw.setdefault("timestamp", datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"))
+                # Schema enforces multipleOf=0.05 on
+                # pacingPressure / expectedTensionDelta (when
+                # present).  Snap defensively to dodge the LLM's
+                # float precision issues (e.g. 0.6 / 0.05 isn't a
+                # clean integer under IEEE-754).
+                from .npc_agent import _snap_to_quantum  # shared helper
+                _snap_to_quantum(raw, "pacingPressure", 0.05)
+                _snap_to_quantum(raw, "expectedTensionDelta", 0.05)
                 # Sanity: the beat must be in the whitelist.
                 whitelist = {
                     b.get("beatId") for b in scene_contract.get("allowed_beats", []) or []

@@ -343,7 +343,10 @@ def run_with_chain(
 
     The behaviour:
 
-    1. Call ``primary_call``.
+    0. If the chain is **already at L3** (terminal), short-circuit:
+       do **not** call the LLM, return a writer payload at L3.
+       This is the "monotonic + L3 is sticky" rule from decision 5.
+    1. Otherwise call ``primary_call``.
     2. If it raises :class:`ProviderTimeoutError` or
        :class:`SchemaValidationError` (or
        :class:`DegradationEscalatedError`), increment the
@@ -366,6 +369,19 @@ def run_with_chain(
         ``None`` for clean LLM calls, ``"L1" / "L2" / "L3"`` for
         the corresponding fallback path.
     """
+
+    # L3 short-circuit: once we're at L3, no more LLM calls in
+    # this run.  We escalate (monotonically — same level) and
+    # return the writer payload.  ``primary_call`` is never
+    # invoked.
+    if chain.is_at_least(ModelDegradationLevel.L3):
+        payload = (on_l3(None) if on_l3 else trigger_l3(
+            chain,
+            fallback=fallback,
+            beat_id=task_name,
+            error="L3 sticky: skipping LLM call",
+        ))
+        return payload, "fallback", ModelDegradationLevel.L3.value
 
     try:
         result = primary_call()

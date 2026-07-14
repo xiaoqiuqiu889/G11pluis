@@ -337,7 +337,11 @@ class EngineModelCooperationTests(unittest.TestCase):
 
         from engine import DegradationChain as EngineChain, DegradationLevel
 
-        engine_chain = EngineChain(scene_id="photo_lab_2008")
+        # The engine layer uses camelCase field names (sceneId)
+        # for its dataclass fields; the model layer uses
+        # snake_case (scene_id).  Both chains coexist regardless
+        # of which identifier is used.
+        engine_chain = EngineChain(sceneId="photo_lab_2008")
         model_chain = _chain()
 
         # Engine escalates to L2

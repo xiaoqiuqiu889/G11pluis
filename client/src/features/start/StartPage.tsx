@@ -22,11 +22,12 @@ export default function StartPage() {
   };
 
   return (
-    <div className="cinematic-frame grain-overlay" data-testid="start-page">
+    <div className="cinematic-frame" data-testid="start-page">
+      <div className="grain-overlay" />
       <div className="vignette" />
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url(art-v5/canonical-graduation-photo.png)" }}
+        style={{ backgroundImage: "url(/art-v5/canonical-graduation-photo.png)" }}
         aria-hidden
       />
       <div className="absolute inset-0 bg-gradient-to-b from-ink-900/70 via-ink-900/40 to-ink-900/95" />

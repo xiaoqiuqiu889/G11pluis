@@ -1,0 +1,89 @@
+{
+  "window": "7d",
+  "generatedAt": "2026-07-14T19:18:10Z",
+  "payload": {
+    "kpis": {
+      "window": "10080m",
+      "dau": 0,
+      "newSignups": 0,
+      "runsStarted": 0,
+      "runsCompleted": 0,
+      "costCny": 0.0,
+      "avgCostPerRunCny": 0.0,
+      "p95LatencyMs": 0.0,
+      "redLineBreaches": {
+        "R1": 0,
+        "R2": 0,
+        "R3": 0,
+        "R4": 0
+      }
+    },
+    "recallFunnel": {
+      "window": "10080m",
+      "byType": {},
+      "overall": {
+        "scheduled": 0,
+        "generated": 0,
+        "sent": 0,
+        "opened": 0,
+        "recap_started": 0,
+        "recap_completed": 0
+      },
+      "conversionRates": {}
+    },
+    "sceneCompletion": {
+      "window": "10080m",
+      "rows": [],
+      "overallCompletionRate": 0.0
+    },
+    "mandatoryEcho": {
+      "window": "10080m",
+      "byScene": {},
+      "overallTriggerRate": 0.0
+    },
+    "paymentFunnel": {
+      "window": "10080m",
+      "stages": {
+        "free_sample": 0,
+        "passport": 0,
+        "collectors": 0
+      },
+      "conversionRates": {},
+      "arpuCny": 0.0,
+      "payingUsers": 0
+    },
+    "retentionCurve": {
+      "window": "10080m",
+      "cohortSize": 0,
+      "dayRetention": {},
+      "cohortBySignupDay": {}
+    },
+    "redLineLimits": {
+      "R1": {
+        "label": "纵切片主调用次数",
+        "threshold": 20.0,
+        "unit": "calls"
+      },
+      "R2": {
+        "label": "单次输出 token",
+        "threshold": 800.0,
+        "unit": "tokens"
+      },
+      "R3": {
+        "label": "单回合模型调用次数",
+        "threshold": 2.0,
+        "unit": "calls_per_turn"
+      },
+      "R4": {
+        "label": "关键交互响应 P95",
+        "threshold": 4000.0,
+        "unit": "ms"
+      }
+    },
+    "includeUser": false,
+    "privacy": {
+      "userLevel": false
+    }
+  },
+  "markdown": "# 革命街 AI 原生 · 周运营报告 · 10080m\n\n_生成时间：2026-07-14T19:18:10Z_\n\n## 1. 关键 KPI\n\n- DAU: **0**\n- 新增用户: 0\n- 启动局数: 0 / 完成局数: 0\n- AI 成本: ¥0.00（单局 ¥0.00）\n- P95 延迟: 0 ms\n\n## 2. D1 / D3 / D7 召回转化漏斗\n\n| 阶段 | 数量 |\n|---|---:|\n| scheduled | 0 |\n| generated | 0 |\n| sent | 0 |\n| opened | 0 |\n| recap_started | 0 |\n| recap_completed | 0 |\n\n## 3. 单局完成率（按章节）\n\n| 场景 | 进入 | 完成 | 完成率 | 平均回合 |\n|---|---:|---:|---:|---:|\n\n## 4. Mandatory Echo 触发率\n\n| 场景 | 进入 | 触发 | 触发率 |\n|---|---:|---:|---:|\n\n## 5. 付费转化漏斗\n\n| 商品 | 购买用户 |\n|---|---:|\n| free_sample | 0 |\n| passport | 0 |\n| collectors | 0 |\n\n- ARPU: ¥0.00\n- 付费用户: 0\n\n## 6. 留存曲线\n\n_无数据_\n\n## 7. 决策 5 硬红线状态\n\n| 红线 | 阈值 | 当前周期突破 |\n|---|---|---:|\n| R1 纵切片主调用次数 | 20.0 calls | 0 |\n| R2 单次输出 token | 800.0 tokens | 0 |\n| R3 单回合模型调用次数 | 2.0 calls_per_turn | 0 |\n| R4 关键交互响应 P95 | 4000.0 ms | 0 |\n"
+}

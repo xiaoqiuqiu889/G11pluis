@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SCENE_MOCKS } from "@/mocks/scenes";
-import { mockSubmitTurn } from "@/lib/api";
+import { submitAction, USE_MOCK, uuid as makeUuid } from "@/lib/api";
 import type { ActionType, SceneId, SceneMeta, Tone } from "@/types/schemas";
 import { audioEngine } from "@/audio/AudioEngine";
 
@@ -103,7 +103,7 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
     spendAction(params.actionType);
     spendCredits(1);
 
-    // 提交（mock 模式）
+    // 提交（VITE_USE_MOCK=true → 内置 mock；false → 真服务端）
     const action = {
       runId: useStore.getState().runId!,
       sceneId,
@@ -118,10 +118,10 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
     };
 
     // 决策 5：先用 mock 联调；真服务端模式可切换
-    const result = await mockSubmitTurn({
+    const result = await submitAction({
       runId: action.runId,
       sceneId: action.sceneId,
-      clientActionId: crypto.randomUUID(),
+      clientActionId: makeUuid(),
       expectedEventSequence: lastEventSequence + 1,
       actionType: action.actionType,
       actorId: action.actorId,
@@ -133,7 +133,7 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
       isDeceptive: action.isDeceptive,
       clientTimestamp: new Date().toISOString(),
       schemaVersion: "1.0.0",
-    });
+    }, { clientVersion: "1.0.0" });
 
     // 把 NPC 反应送入 store
     pushNpcReaction({

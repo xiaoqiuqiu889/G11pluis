@@ -1,0 +1,291 @@
+{
+  "create": {
+    "ok": true,
+    "run": {
+      "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+      "userId": "demo-user",
+      "caseSlug": "case_01_revolution_street",
+      "currentSceneId": "photo_lab_2008",
+      "era": "2008",
+      "eventSequence": 0,
+      "phase": "setup",
+      "endingId": null,
+      "startedAt": "2026-07-14T18:23:45.587525",
+      "lastActiveAt": "2026-07-14T18:23:45.587525",
+      "endedAt": null,
+      "isArchived": false,
+      "isMock": true,
+      "schemaVersion": "1.0.0"
+    }
+  },
+  "submit": {
+    "outcome": {
+      "outcomeId": "ada2fa63-cf8d-4d41-a7a1-fff1726e8806",
+      "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+      "eventSequence": 1,
+      "idempotencyKey": "ffbe608a211af406416a11f7b07731f086430152e0572c5bd0a159d247bd134f",
+      "acceptedNpcAction": {
+        "proposalId": "bcea7e17-da9a-443a-9bd5-d86ab239044e",
+        "characterId": "arash",
+        "proposedAction": "comfort",
+        "speechIntent": "comfort",
+        "resolvedText": ""
+      },
+      "nextBeat": {
+        "sceneId": "photo_lab_2008",
+        "beatId": "试探",
+        "transition": "continue",
+        "legalEndingId": null
+      },
+      "timestamp": "2026-07-14T18:23:45Z",
+      "triggerPlayerActionId": "10142d02-6acd-4ac1-b9d0-124f1945a9a2",
+      "triggerDirectorProposalId": "38192e28-3bc2-48ae-876b-6fddb26a9fe3",
+      "rejectedNpcActions": [],
+      "relationshipDelta": [
+        {
+          "from": "leila",
+          "to": "leila",
+          "trust": 0.1,
+          "intimacy": 0.08,
+          "unresolvedConflict": 0,
+          "respect": 0,
+          "fear": 0
+        },
+        {
+          "from": "leila",
+          "to": "leila",
+          "trust": 0.06,
+          "intimacy": 0.05,
+          "unresolvedConflict": 0,
+          "respect": 0,
+          "fear": 0
+        }
+      ],
+      "beliefUpdates": [],
+      "artifactUpdates": [
+        {
+          "artifactId": "photo_A",
+          "operation": "transfer",
+          "newOwnerId": "leila",
+          "newState": null,
+          "reasonCode": "give"
+        }
+      ],
+      "newCausalSeeds": [],
+      "firedCausalSeeds": [],
+      "clampedValues": [],
+      "auditTrail": {
+        "llmCalls": [
+          {
+            "agent": "npc_agent",
+            "model": "writer",
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "latencyMs": 0
+          },
+          {
+            "agent": "director_agent",
+            "model": "writer",
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "latencyMs": 0
+          }
+        ],
+        "deterministicDecisions": [
+          "idempotency_key=ffbe608a211af406…",
+          "director beat accepted: '试探'",
+          "npc proposal accepted: bcea7e17…",
+          "give: transferring artifact ownership",
+          "transferred 1 artifact(s) from 'leila' to 'leila'",
+          "resolver_agent[v1.0.0]: case_slug=case_01_revolution_street era=2008 legal=True",
+          "resolver_agent: UP-20260715-002 mandatory_echo attempted=True passes=True",
+          "resolver_agent: write-authority enforced; snapshot.eventSequence 0 -> 1",
+          "resolver_agent: four_questions passes=True satisfied=['Q1', 'Q2', 'Q3']"
+        ]
+      },
+      "schemaVersion": "1.0.0"
+    },
+    "npcProposals": [],
+    "clientActionId": "10142d02-6acd-4ac1-b9d0-124f1945a9a2",
+    "degraded": "L1",
+    "fallbackUsed": true,
+    "latencyMs": 16,
+    "resolvedText": "（他/她没有立刻回答。放映机的低频转动在背景里持续。）"
+  },
+  "timeline": {
+    "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+    "count": 1,
+    "events": [
+      {
+        "id": 5,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "eventSequence": 1,
+        "sceneId": "photo_lab_2008",
+        "actorId": "leila",
+        "actionType": "give",
+        "actionPayload": {
+          "clientActionId": "10142d02-6acd-4ac1-b9d0-124f1945a9a2",
+          "outcomeId": "ada2fa63-cf8d-4d41-a7a1-fff1726e8806"
+        },
+        "validatedDelta": {
+          "checksum": "4a2355e4335695796f1c4311f86f51014b2165208bed9129fab3ec5232b28491",
+          "firedCausalSeeds": []
+        },
+        "causalSeed": null,
+        "randomSeed": 0,
+        "idempotencyKey": "ffbe608a211af406416a11f7b07731f086430152e0572c5bd0a159d247bd134f",
+        "outcomeId": "ada2fa63-cf8d-4d41-a7a1-fff1726e8806",
+        "createdAt": "2026-07-14T18:23:45.616178"
+      }
+    ]
+  },
+  "archive": {
+    "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+    "artifacts": [
+      {
+        "id": 12,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "artifactId": "book_jalal",
+        "sceneId": "photo_lab_2008",
+        "ownerId": "arash",
+        "state": "in_jacket",
+        "isRevealed": true,
+        "location": null,
+        "tags": [],
+        "lastEventSequence": 1,
+        "updatedAt": "2026-07-14T18:23:45.618187"
+      },
+      {
+        "id": 11,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "artifactId": "envelope",
+        "sceneId": "photo_lab_2008",
+        "ownerId": "leila",
+        "state": "intact",
+        "isRevealed": true,
+        "location": null,
+        "tags": [],
+        "lastEventSequence": 1,
+        "updatedAt": "2026-07-14T18:23:45.618187"
+      },
+      {
+        "id": 9,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "artifactId": "photo_A",
+        "sceneId": "photo_lab_2008",
+        "ownerId": "leila",
+        "state": "in_envelope",
+        "isRevealed": false,
+        "location": null,
+        "tags": [],
+        "lastEventSequence": 1,
+        "updatedAt": "2026-07-14T18:23:45.618187"
+      },
+      {
+        "id": 10,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "artifactId": "photo_B",
+        "sceneId": "photo_lab_2008",
+        "ownerId": "leila",
+        "state": "in_envelope",
+        "isRevealed": false,
+        "location": null,
+        "tags": [],
+        "lastEventSequence": 1,
+        "updatedAt": "2026-07-14T18:23:45.618187"
+      }
+    ],
+    "beliefs": [
+      {
+        "id": 5,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "characterId": "arash",
+        "subject": "photo_in_pocket",
+        "beliefState": "reinforced",
+        "confidence": 0.8,
+        "evidenceMemoryId": null,
+        "previousState": null,
+        "eventSequence": 1,
+        "reasonCode": "npc_proposal",
+        "createdAt": "2026-07-14T18:23:45.619185"
+      }
+    ],
+    "memories": [],
+    "causalSeeds": [
+      {
+        "id": 5,
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "seedId": "photo_in_pocket",
+        "sourceScene": "photo_lab_2008",
+        "sourceEventId": null,
+        "description": "莱拉把毕业照放进斜挎包内袋",
+        "triggerCondition": {
+          "type": "scene_match",
+          "predicate": "current_scene in target_scenes",
+          "minEcho": 0
+        },
+        "targetScenes": [
+          "reunion_2024"
+        ],
+        "echoIntensity": 0.9,
+        "isSecret": false,
+        "isDormant": true,
+        "firedAtEvent": null,
+        "firedInSceneId": null,
+        "linkedCharacterIds": [
+          "leila",
+          "arash"
+        ],
+        "decayRate": 0.02,
+        "tags": [
+          "mandatory_echo",
+          "w4_demo"
+        ],
+        "createdAt": "2026-07-14T18:23:45.619185"
+      }
+    ],
+    "branches": [],
+    "modelCalls": [
+      {
+        "id": 5,
+        "requestId": "bb186587-5391-4ab7-8f1b-417511c40f44",
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "sceneId": "photo_lab_2008",
+        "taskType": "npc_proposer",
+        "agent": "npc_agent",
+        "model": "writer",
+        "provider": "writer",
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "latencyMs": 0,
+        "costCny": 0,
+        "finishReason": "fallback",
+        "degradationLevel": "L1",
+        "usedFallback": true,
+        "attempts": 2,
+        "metadata": {},
+        "createdAt": "2026-07-14T18:23:45.622186"
+      },
+      {
+        "id": 6,
+        "requestId": "f9f5396a-9d89-422f-a971-137371519854",
+        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "sceneId": "photo_lab_2008",
+        "taskType": "director_proposer",
+        "agent": "director_agent",
+        "model": "writer",
+        "provider": "writer",
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "latencyMs": 0,
+        "costCny": 0,
+        "finishReason": "fallback",
+        "degradationLevel": "L3",
+        "usedFallback": true,
+        "attempts": 2,
+        "metadata": {},
+        "createdAt": "2026-07-14T18:23:45.624185"
+      }
+    ]
+  }
+}

@@ -178,7 +178,14 @@ def check_proposal_four_questions(
     """
 
     artifact_updates = proposal.get("artifactUpdates", []) or []
-    belief_updates = proposal.get("beliefUpdates", []) or []
+    # The NPC schema names the field ``beliefUpdatesRequested``;
+    # the Director schema doesn't carry belief updates.  Support
+    # both keys for resilience.
+    belief_updates = (
+        proposal.get("beliefUpdatesRequested")
+        or proposal.get("beliefUpdates")
+        or []
+    )
     # Director beats don't carry belief updates; they fire seeds.
     fired_seeds = proposal.get("firedCausalSeeds", []) or []
     if not fired_seeds and "newCausalSeeds" in proposal:

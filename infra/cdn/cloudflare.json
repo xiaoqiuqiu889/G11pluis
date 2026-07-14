@@ -1,0 +1,288 @@
+{
+  "$comment_purpose": "G1N W9 — Cloudflare CDN configuration. Two surfaces: Pages (client) + Workers (API gateway). This JSON is the deploy-time source of truth; the wrangler / pages.toml files are derived from it. NEVER cache LLM output.",
+  "$comment_see_also": [
+    "docs/design/requirements-review-v1.md (decision 4 + 5)",
+    "infra/scaling/k8s.yaml (origin server)",
+    "server/observability.py (alert wiring)"
+  ],
+
+  "version": "1.0.0",
+  "deployedAt": "2026-07-15T00:00:00Z",
+
+  "account": {
+    "$comment_account": "Deploy-time override via the CLOUDFLARE_ACCOUNT_ID env var; do NOT commit a real account id.",
+    "id": "${CLOUDFLARE_ACCOUNT_ID}",
+    "zoneId": "${CLOUDFLARE_ZONE_ID}",
+    "apiToken": "${CLOUDFLARE_API_TOKEN}"
+  },
+
+  "pages": {
+    "$comment_pages": "Cloudflare Pages hosts the Electron renderer + Vite-built static client. The output directory is client/dist/; build command is `npm run build` (vite build). Direct Upload mode (no git integration) keeps the build artefact deterministic.",
+    "projectName": "g1n-client",
+    "productionBranch": "main",
+    "buildCommand": "npm --prefix client run build",
+    "buildOutputDirectory": "client/dist",
+    "rootDirectory": "",
+    "deploymentTrigger": {
+      "type": "direct-upload",
+      "$comment_deploymentTrigger": "CI uploads the built dist/ via `wrangler pages deploy` after the Vite build; pages' git integration is intentionally NOT used (the build needs the case_01 scene YAML copied into the bundle)."
+    },
+    "environmentVariables": {
+      "VITE_USE_MOCK": "false",
+      "VITE_API_BASE": "https://api.g1n.example.com/v1",
+      "VITE_CDN_BASE": "https://cdn.g1n.example.com",
+      "$comment_environmentVariables": "VITE_API_BASE points at the Workers API gateway. VITE_CDN_BASE points at the R2-backed static asset CDN (separate bucket; see r2.buckets[])."
+    },
+    "headers": {
+      "$comment_headers": "Pages-level headers apply to every static asset. The per-type overrides live in cache.rules[]; this block is the unconditional layer (security headers).",
+      "/*": [
+        { "name": "X-Content-Type-Options", "value": "nosniff" },
+        { "name": "X-Frame-Options", "value": "DENY" },
+        { "name": "Referrer-Policy", "value": "no-referrer" },
+        { "name": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "name": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ],
+      "/assets/audio/*": [
+        { "name": "Cache-Control", "value": "public, max-age=7776000, immutable" },
+        { "name": "Accept-Ranges", "value": "bytes" }
+      ],
+      "/assets/images/*": [
+        { "name": "Cache-Control", "value": "public, max-age=2592000, immutable" }
+      ],
+      "/manifest.json": [
+        { "name": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+      ]
+    },
+    "redirects": {
+      "/api/*": "https://api.g1n.example.com/v1/:splat",
+      "$comment_redirects": "The Pages site proxies /api/* to the Workers API gateway. This keeps the client a single-origin app (no CORS preflight on the hot path)."
+    }
+  },
+
+  "workers": {
+    "$comment_workers": "Cloudflare Workers is the API gateway in front of the FastAPI origin (k8s). It does TLS termination, geo-steering, request coalescing, and the per-route cache policy. It does NOT cache any LLM-derived output (decision 5 R2 cap + W9 红线 2).",
+    "name": "g1n-api-gateway",
+    "main": "infra/cdn/workers/src/index.ts",
+    "compatibilityDate": "2025-09-01",
+    "compatibilityFlags": ["nodejs_compat"],
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.1,
+      "$comment_observability": "Workers tail logs feed the same Grafana instance that scrapes the k8s pods. Sampling at 10% keeps the bill under the 1M-requests/month free tier."
+    },
+    "vars": {
+      "G1N_API_ORIGIN": "https://api.g1n.example.com",
+      "$comment_G1N_API_ORIGIN": "Origin URL. Set per-environment: staging points at the staging k8s cluster, production at the prod cluster. The Workers route is stateless — every env var change is a redeploy, not a hot reload."
+    },
+    "routes": [
+      {
+        "pattern": "api.g1n.example.com/v1/*",
+        "zoneName": "g1n.example.com"
+      }
+    ],
+    "triggers": [
+      "http"
+    ],
+    "limits": {
+      "cpu_ms": 50,
+      "$comment_cpu_ms": "50ms CPU budget per request — well under the action endpoint's 4s P95 target. The 4s budget lives at the origin (decision 5 R4); the Workers gateway adds at most 1ms of overhead."
+    },
+    "bindings": [
+      {
+        "type": "kv_namespace",
+        "name": "G1N_STATIC_META",
+        "namespaceId": "${CF_KV_NAMESPACE_ID}",
+        "$comment_G1N_STATIC_META": "KV holds the static scene metadata (immutable per case slug). Reads from KV are eventually consistent (< 60s globally), which is fine for scene metadata."
+      }
+    ]
+  },
+
+  "cache": {
+    "$comment_cache": "Per-route cache policy.  - artifacts (images / illustrations): 30 days, immutable  - audio (motifs / ambient / music): 90 days, immutable  - api: NO CACHE  The api rule is the W9 红线 2 enforcement: a stale LLM response would break decision 5 acceptance, so we set Cache-Control: no-store on every API route.",
+
+    "rules": [
+      {
+        "name": "artifacts-30d",
+        "description": "Illustrations + scene atmosphere images. Hash-named in the bundle so 30-day immutable cache is safe.",
+        "expression": "(http.request.uri.path matches \"^/assets/images/artifacts/.*\") or (http.request.uri.path matches \"^/assets/images/atmosphere/.*\")",
+        "action": "set_cache_settings",
+        "edge_ttl": 2592000,
+        "browser_ttl": 2592000,
+        "cache_level": "cache_everything",
+        "cache_key_fields": ["uri_query"],
+        "respect_strong_etags": true
+      },
+      {
+        "name": "audio-90d",
+        "description": "Audio motifs + ambient + music. Larger TTL because the files are bigger and rarely change.",
+        "expression": "(http.request.uri.path matches \"^/assets/audio/.*\")",
+        "action": "set_cache_settings",
+        "edge_ttl": 7776000,
+        "browser_ttl": 7776000,
+        "cache_level": "cache_everything",
+        "respect_strong_etags": true
+      },
+      {
+        "name": "manifest-5m",
+        "description": "Vite build manifest. Short TTL so a new build rolls out within 5 minutes without purging.",
+        "expression": "(http.request.uri.path eq \"/manifest.json\") or (http.request.uri.path matches \"^/assets/manifest-.*\\.json$\")",
+        "action": "set_cache_settings",
+        "edge_ttl": 300,
+        "browser_ttl": 0,
+        "cache_level": "cache_everything"
+      },
+      {
+        "name": "api-no-cache",
+        "description": "W9 红线 2 — every API route sets Cache-Control: no-store. The Workers gateway adds the header before forwarding to the origin so a misconfigured origin cannot leak a stale LLM response.",
+        "expression": "(http.request.uri.path matches \"^/v1/.*\")",
+        "action": "set_cache_settings",
+        "edge_ttl": 0,
+        "browser_ttl": 0,
+        "cache_level": "bypass",
+        "response_headers": [
+          { "name": "Cache-Control", "value": "no-store" },
+          { "name": "Pragma", "value": "no-cache" }
+        ]
+      },
+      {
+        "name": "metrics-no-cache",
+        "description": "Prometheus scrape endpoint — never cache.",
+        "expression": "(http.request.uri.path eq \"/metrics\")",
+        "action": "set_cache_settings",
+        "edge_ttl": 0,
+        "browser_ttl": 0,
+        "cache_level": "bypass"
+      },
+      {
+        "name": "health-bypass",
+        "description": "Health endpoint — bypass cache for accurate liveness signal.",
+        "expression": "(http.request.uri.path eq \"/health\")",
+        "action": "set_cache_settings",
+        "edge_ttl": 0,
+        "browser_ttl": 0,
+        "cache_level": "bypass"
+      }
+    ],
+
+    "purge": {
+      "$comment_purge": "The deploy pipeline calls this API after a successful build. We only purge the bundle paths (not the immutable assets) so the audio/image cache stays warm across deploys.",
+      "on_deploy_paths": [
+        "/index.html",
+        "/manifest.json",
+        "/assets/*.js",
+        "/assets/*.css"
+      ],
+      "on_demand_paths": [
+        "/assets/audio/music/*"
+      ],
+      "$comment_on_demand_paths": "Music files are bigger (5-15 MB each) and rarely updated; the deploy pipeline purges them explicitly when a new motif ships."
+    }
+  },
+
+  "r2": {
+    "$comment_r2": "R2 holds the immutable asset bundle (images + audio) so the edge cache can serve them without going back to Pages. R2 egress is free within Cloudflare, so the W9 static-asset bill is essentially zero.",
+    "buckets": [
+      {
+        "name": "g1n-assets-images",
+        "location": "enam",
+        "publicUrl": "https://cdn.g1n.example.com/assets/images",
+        "lifecycle": {
+          "rule_id": "expire-staging",
+          "prefix": "staging/",
+          "expiration_days": 7
+        }
+      },
+      {
+        "name": "g1n-assets-audio",
+        "location": "enam",
+        "publicUrl": "https://cdn.g1n.example.com/assets/audio",
+        "lifecycle": {
+          "rule_id": "no-expire-prod",
+          "prefix": "prod/"
+        }
+      }
+    ]
+  },
+
+  "security": {
+    "$comment_security": "Defence-in-depth: WAF managed rules + bot score + rate limit + the page-rule headers above. The rate limit protects the W9 acceptance number (P95 < 4s) from a single bad actor saturating the cluster.",
+
+    "waf": {
+      "managedRulesets": [
+        { "id": "4818274a-a1c1-4c8b-9b6c-4d7a5a0a3a3c", "mode": "on" },
+        { "id": "e2f5d4f0-d2d3-4d3a-9c0d-3b3a4d3a3a3a", "mode": "on" }
+      ],
+      "$comment_managedRulesets": "Cloudflare OWASP + Leaked Credentials rulesets. 'on' = block (default), not 'challenge', because the player base is not large enough to tolerate a CAPTCHA on every request."
+    },
+
+    "botScore": {
+      "enabled": true,
+      "challengeOn": 30,
+      "$comment_challengeOn": "Bot score 30 = 'likely automated'. Below 30 we serve a JS challenge to keep analytics scrapers out of the model_calls cost column."
+    },
+
+    "rateLimit": {
+      "ruleId": "g1n_api_per_ip",
+      "match": {
+        "requestPath": { "operator": "matches", "value": "/v1/*" }
+      },
+      "threshold": 600,
+      "period": 60,
+      "action": "managed_challenge",
+      "$comment_rateLimit": "600 requests / minute / IP — the brief's '千人在线' (1000 concurrent) headroom: 1000 users × 0.6 actions/sec = 600 RPM, the edge of the limit. Above that the CF edge serves a managed challenge rather than forwarding to origin (so the origin P95 stays green)."
+    },
+
+    "transformRules": {
+      "$comment_transformRules": "Strip the X-Powered-By header (information disclosure); force the request through the Workers route (defence in depth — even if the k8s ingress is exposed, the Workers route is the public surface)."
+    }
+  },
+
+  "analytics": {
+    "$comment_analytics": "Cloudflare Analytics Engine + Logpush to the same Grafana Loki instance. The observability.py module's Prometheus metrics cover the origin; these rules cover the edge.",
+    "retentionDays": 30,
+    "logpush": {
+      "enabled": true,
+      "destination": "loki",
+      "dataset": "http_requests",
+      "fields": [
+        "ClientIP",
+        "ClientRequestHost",
+        "ClientRequestMethod",
+        "ClientRequestURI",
+        "EdgeResponseStatus",
+        "EdgeStartTimestamp",
+        "EdgeEndTimestamp",
+        "OriginResponseTime"
+      ]
+    }
+  },
+
+  "deploy": {
+    "$comment_deploy": "Reproducible deploy. The CI workflow wraps the wrangler command and reads the env vars from a CI secret store. The local developer uses `wrangler pages deploy ./client/dist --project-name g1n-client` and `wrangler deploy --config infra/cdn/workers/wrangler.toml`.",
+
+    "commands": {
+      "pages_deploy": "wrangler pages deploy ./client/dist --project-name g1n-client --branch main",
+      "workers_deploy": "wrangler deploy --config infra/cdn/workers/wrangler.toml",
+      "cache_purge": "wrangler pages deployment tail g1n-client | xargs -I {} curl -X POST 'https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache' -H 'Authorization: Bearer ${CLOUDFLARE_API_TOKEN}' -d '{\"files\": [\"/index.html\", \"/manifest.json\"]}'",
+      "verify": "curl -fsS https://api.g1n.example.com/v1/health | jq -e '.status == \"ok\"'"
+    },
+
+    "rollback": {
+      "strategy": "previous-deployment",
+      "command": "wrangler pages deployment rollback g1n-client --deployment-id ${PREV_DEPLOYMENT_ID}",
+      "$comment_rollback": "Pages keeps the last 50 deployments; rollback is a metadata flip, not a redeploy. Workers' rollback uses `wrangler rollback --message 'W9 hotfix'` which restores the previous script + bindings."
+    }
+  },
+
+  "acceptanceChecklist": {
+    "$comment_acceptanceChecklist": "CI / pre-deploy gates. The deploy script fails if any of these return non-zero. Mirrors the W9 brief.",
+
+    "artifacts_30d_cache_header": "curl -fsS -I https://cdn.g1n.example.com/assets/images/artifacts/photo_A.png | grep -i '^cache-control:.*max-age=2592000'",
+    "audio_90d_cache_header": "curl -fsS -I https://cdn.g1n.example.com/assets/audio/motifs/leila_theme.mp3 | grep -i '^cache-control:.*max-age=7776000'",
+    "api_no_cache_header": "curl -fsS -I https://api.g1n.example.com/v1/health | grep -i '^cache-control:.*no-store'",
+    "manifest_5m_cache_header": "curl -fsS -I https://cdn.g1n.example.com/manifest.json | grep -i '^cache-control:.*max-age=300'",
+    "metrics_bypass": "curl -fsS -I https://api.g1n.example.com/metrics | grep -iE 'cache-control:.*(no-store|no-cache)'",
+    "rate_limit_active": "for i in $(seq 1 700); do curl -s -o /dev/null https://api.g1n.example.com/v1/catalog; done | tail -1 | grep -E '4(03|29|31)'",
+    "$comment_rate_limit_active": "Above the 600 RPM threshold the response code flips to 4xx; the deployment fails the gate if every request returns 200 (the rule is not active)."
+  }
+}

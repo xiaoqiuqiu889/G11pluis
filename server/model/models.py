@@ -411,8 +411,10 @@ def safe_parse_json(content: str) -> dict[str, Any] | None:
 
     Models often wrap JSON in ```json ... ``` fences or in a
     single line of prose.  We try a strict parse first, then
-    strip code fences, then look for a JSON object in the
-    middle of the text.
+    strip code fences, then look for a balanced JSON object
+    inside the prose.
+
+    Returns ``None`` only if no candidate parses.
     """
 
     if not content:
@@ -434,13 +436,51 @@ def safe_parse_json(content: str) -> dict[str, Any] | None:
             return json.loads(stripped.strip())
         except json.JSONDecodeError:
             pass
-    # Last resort: scan for the first balanced JSON object
-    for opener in ("{", "["):
-        idx = stripped.find(opener)
-        if idx < 0:
+    # Last resort: find a balanced JSON object / array inside
+    # the prose.  The previous implementation naively sliced
+    # from the first ``{``/``[`` to end-of-string, which fails
+    # when there is trailing prose (e.g. ``Here is JSON: {"a":1} -- end.``).
+    for opener, closer in (("{", "}"), ("[", "]")):
+        candidate = _extract_balanced_json(stripped, opener, closer)
+        if candidate is not None:
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+    return None
+
+
+def _extract_balanced_json(text: str, opener: str, closer: str) -> str | None:
+    """Find the first balanced JSON ``opener...closer`` substring.
+
+    Honours quoted strings (so a ``}`` inside a string does not
+    close the object) and ignores braces inside single-line
+    comments (rare in LLM output, but cheap to handle).
+    Returns ``None`` if no balanced run exists.
+    """
+
+    idx = text.find(opener)
+    if idx < 0:
+        return None
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(idx, len(text)):
+        ch = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
             continue
-        try:
-            return json.loads(stripped[idx:])
-        except json.JSONDecodeError:
-            continue
+        if ch == '"':
+            in_string = True
+        elif ch == opener:
+            depth += 1
+        elif ch == closer:
+            depth -= 1
+            if depth == 0:
+                return text[idx : i + 1]
     return None

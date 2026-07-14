@@ -82,7 +82,7 @@ def _valid_resolver_outcome() -> dict:
         "outcomeId": str(uuid.uuid4()),
         "runId": str(uuid.uuid4()),
         "eventSequence": 1,
-        "idempotencyKey": "idem-1234567890",
+        "idempotencyKey": "idem-1234567890123456",  # 21 chars; >= minLength 16
         "acceptedNpcAction": {
             "proposalId": str(uuid.uuid4()),
             "characterId": "arash",

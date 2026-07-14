@@ -1,0 +1,51 @@
+﻿{
+  "experiment": {
+    "id": 1,
+    "experimentId": "paywall_position",
+    "label": "付费墙位置",
+    "description": "在 4 个位置（act 后 / scene 后 / recap 后 / 仅在 scene 结束时）放付费墙。",
+    "arms": [
+      "after-act-1",
+      "after-scene-1",
+      "after-recap-1",
+      "scene-ended-only"
+    ],
+    "metric": "passport_purchase",
+    "policy": "thompson-sampling",
+    "epsilon": 0.1,
+    "ucbC": 1.4,
+    "minSamplesPerArm": 100,
+    "isActive": true,
+    "startedAt": "2026-07-14T19:21:22.501888",
+    "endedAt": null
+  },
+  "stats": {
+    "after-act-1": {
+      "arm": "after-act-1",
+      "exposures": 1,
+      "conversions": 1,
+      "conversionRate": 1.0
+    },
+    "after-scene-1": {
+      "arm": "after-scene-1",
+      "exposures": 0,
+      "conversions": 0,
+      "conversionRate": 0.0
+    },
+    "after-recap-1": {
+      "arm": "after-recap-1",
+      "exposures": 0,
+      "conversions": 0,
+      "conversionRate": 0.0
+    },
+    "scene-ended-only": {
+      "arm": "scene-ended-only",
+      "exposures": 0,
+      "conversions": 0,
+      "conversionRate": 0.0
+    }
+  },
+  "bestArm": null,
+  "totalExposures": 1,
+  "totalConversions": 1
+}

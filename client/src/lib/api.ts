@@ -3,6 +3,10 @@
 // -----------------------------------------------------------------------------
 // 与 FastAPI 服务端通信：流式响应（SSE / EventSource）+ REST
 // 决策 5：单回合模型调用 ≤ 2 次；P95 < 4s；4 级降级链必须有视觉反馈。
+//
+// 模式切换：
+//   VITE_USE_MOCK=true  (default)  → 客户端内置 mock，无需服务端
+//   VITE_USE_MOCK=false             → 走真实 FastAPI 后端 (port 8000)
 // =============================================================================
 
 import type {
@@ -11,7 +15,10 @@ import type {
   InvestigatableObject,
   NpcProposal,
   PlayerAction,
+  Product,
   ResolverOutcome,
+  RunState,
+  SceneId,
   SceneMeta,
   Tone,
   WorldSnapshot,
@@ -21,14 +28,82 @@ import { useStore } from "./store";
 // -----------------------------------------------------------------------------
 // 配置
 // -----------------------------------------------------------------------------
+
+/** Read a Vite env var at module load time.  Undefined in
+ * non-Vite environments (e.g. the production build's
+ * unit tests), in which case the default applies. */
+function _readEnv(name: string): string | undefined {
+  try {
+    if (typeof import.meta !== "undefined") {
+      const env = (import.meta as unknown as { env?: Record<string, string> }).env;
+      if (env && typeof env[name] === "string") return env[name];
+    }
+  } catch {
+    // import.meta may not exist in test environments.
+  }
+  if (typeof window !== "undefined") {
+    const w = window as unknown as Record<string, string | undefined>;
+    if (w[`__${name}__`]) return w[`__${name}__`];
+  }
+  return undefined;
+}
+
 const API_BASE: string =
-  (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env?.VITE_API_BASE) ||
+  _readEnv("VITE_API_BASE") ||
   (typeof window !== "undefined" && (window as unknown as { __API_BASE__?: string }).__API_BASE__) ||
   "http://localhost:8000";
+
+/** Mock-mode switch.
+ *
+ *  Default = mock (no API key, no server required).  Set
+ *  ``VITE_USE_MOCK=false`` to call the real server.
+ *
+ *  Allowed truthy values: ``"1"``, ``"true"``, ``"yes"``,
+ *  ``"on"`` (case-insensitive).
+ */
+const _useMockRaw = (_readEnv("VITE_USE_MOCK") ?? "true").trim().toLowerCase();
+export const USE_MOCK: boolean =
+  !(_useMockRaw in {"0": 1, "false": 1, "no": 1, "off": 1});
 
 const TIMEOUT_MS = 8_000;                 // 决策 5：客户端侧兜底
 const FAST_TIMEOUT_MS = 1_500;            // L1 软超时（NPC 反应兜底）
 const P95_BUDGET_MS = 4_000;              // 决策 5 红线
+
+// -----------------------------------------------------------------------------
+// 内部：HTTP helper
+// -----------------------------------------------------------------------------
+
+async function httpJson<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: unknown,
+  timeoutMs: number = TIMEOUT_MS,
+): Promise<T> {
+  const url = `${API_BASE}${path}`;
+  const init: RequestInit = {
+    method,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    signal: AbortSignal.timeout(timeoutMs),
+  };
+  if (body !== undefined) {
+    init.body = JSON.stringify(body);
+  }
+  const r = await fetch(url, init);
+  if (!r.ok) {
+    let detail = "";
+    try {
+      detail = (await r.json())?.detail || r.statusText;
+    } catch {
+      detail = r.statusText;
+    }
+    throw new Error(`HTTP ${r.status} ${path}: ${detail}`);
+  }
+  return (await r.json()) as T;
+}
+
+// -----------------------------------------------------------------------------
+// 类型：客户端回合
+// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // 类型：客户端回合
@@ -107,6 +182,237 @@ export async function pingServer(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// =============================================================================
+// 真实服务端 — Brief 强制要求的方法（V1 接口集）
+// -----------------------------------------------------------------------------
+// 全部对应 server/app.py 里的端点。
+// 默认情况下（USE_MOCK = true）这些方法在客户端不被调用 — useSceneRunner
+// 直接走 mockSubmitTurn。但 useSceneRunner 的 决策切换 函数会调它们。
+// =============================================================================
+
+export interface RunDto {
+  runId: string;
+  userId: string;
+  caseSlug: string;
+  currentSceneId: string;
+  era: string;
+  eventSequence: number;
+  phase: string;
+  endingId: string | null;
+  startedAt: string | null;
+  lastActiveAt: string | null;
+  endedAt: string | null;
+  isArchived: boolean;
+  isMock: boolean;
+  schemaVersion: string;
+}
+
+export interface ActionRequestBody {
+  runId: string;
+  sceneId: string;
+  clientActionId: string;
+  expectedEventSequence: number;
+  playerAction: PlayerAction;
+  clientVersion?: string;
+}
+
+export interface ActionResponseBody {
+  ok: boolean;
+  outcome: ResolverOutcome;
+  snapshot: WorldSnapshot;
+  clientActionId: string;
+  eventSequence: number;
+  degraded: DegradationLevel | "none";
+  fallbackUsed: boolean;
+  latencyMs: number;
+  resolvedText: string;
+  modelCalls: Array<Record<string, unknown>>;
+  degradedToL3: boolean;
+}
+
+export interface TimelineResponse {
+  runId: string;
+  count: number;
+  events: Array<Record<string, unknown>>;
+}
+
+export interface ArchiveResponse {
+  runId: string;
+  artifacts: Array<Record<string, unknown>>;
+  beliefs: Array<Record<string, unknown>>;
+  memories: Array<Record<string, unknown>>;
+  causalSeeds: Array<Record<string, unknown>>;
+  branches: Array<Record<string, unknown>>;
+  modelCalls: Array<Record<string, unknown>>;
+}
+
+export interface CreateRunBody {
+  userId?: string;
+  caseSlug?: string;
+  startSceneId?: string;
+  startEra?: string;
+}
+
+export interface EnterSceneBody {
+  userId?: string;
+  startEra?: string;
+}
+
+export interface CreateBranchBody {
+  sourceRunId: string;
+  forkEventSequence: number;
+  label?: string;
+  branchId?: string;
+}
+
+export interface BranchDto {
+  id: number;
+  runId: string;
+  branchId: string;
+  label: string;
+  sourceRunId: string;
+  forkEventSequence: number;
+  endingId: string | null;
+  createdAt: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface EntitlementDto {
+  id: number;
+  userId: string;
+  scope: string;
+  credits: number;
+  purchasedAt: string | null;
+  expiresAt: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface EntitlementsResponse {
+  userId: string;
+  entitlements: EntitlementDto[];
+  defaultUser: boolean;
+}
+
+export interface CatalogResponse {
+  products: Product[];
+  currency: string;
+  version: string;
+}
+
+export interface PurchaseMockConfirmBody {
+  userId?: string;
+  productId: string;
+  credits?: number;
+  meta?: Record<string, unknown>;
+}
+
+export interface PurchaseMockConfirmResponse {
+  ok: boolean;
+  userId: string;
+  productId: string;
+  entitlement: EntitlementDto;
+  receiptId: string;
+}
+
+export interface AnalyticsEventBody {
+  userId?: string;
+  runId?: string;
+  eventName: string;
+  payload?: Record<string, unknown>;
+  clientVersion?: string;
+}
+
+export interface ResumeBody {
+  userId?: string;
+  targetSceneId?: string;
+}
+
+/** POST /v1/runs — 创建新 run */
+export async function createRun(body: CreateRunBody = {}): Promise<{ ok: boolean; run: RunDto }> {
+  return httpJson("POST", "/v1/runs", body);
+}
+
+/** GET /v1/runs/:runId — 读 run 详情 */
+export async function getRun(runId: string): Promise<RunDto> {
+  return httpJson("GET", `/v1/runs/${encodeURIComponent(runId)}`);
+}
+
+/** POST /v1/runs/:runId/scenes/:sceneId/enter — 进入场景 */
+export async function enterScene(
+  runId: string,
+  sceneId: string,
+  body: EnterSceneBody = {},
+): Promise<{ ok: boolean; runId: string; sceneId: string; scene: SceneMeta; active: Record<string, unknown> }> {
+  return httpJson("POST", `/v1/runs/${encodeURIComponent(runId)}/scenes/${encodeURIComponent(sceneId)}/enter`, body);
+}
+
+/** POST /v1/runs/:runId/resume — 续玩 */
+export async function resumeRun(
+  runId: string,
+  body: ResumeBody = {},
+): Promise<{ ok: boolean; runId: string; active: Record<string, unknown> }> {
+  return httpJson("POST", `/v1/runs/${encodeURIComponent(runId)}/resume`, body);
+}
+
+/** POST /v1/runs/:runId/actions — 核心写端点 */
+export async function submitActionReal(
+  body: ActionRequestBody,
+): Promise<ActionResponseBody> {
+  return httpJson("POST", `/v1/runs/${encodeURIComponent(body.runId)}/actions`, body);
+}
+
+/** GET /v1/runs/:runId/timeline — 时间线 */
+export async function getTimeline(runId: string): Promise<TimelineResponse> {
+  return httpJson("GET", `/v1/runs/${encodeURIComponent(runId)}/timeline`);
+}
+
+/** GET /v1/runs/:runId/archive — 档案馆 */
+export async function getArchive(runId: string): Promise<ArchiveResponse> {
+  return httpJson("GET", `/v1/runs/${encodeURIComponent(runId)}/archive`);
+}
+
+/** POST /v1/runs/:runId/branches — 创建重演分支 */
+export async function createBranch(
+  runId: string,
+  body: CreateBranchBody,
+): Promise<{ ok: boolean; branch: BranchDto }> {
+  return httpJson("POST", `/v1/runs/${encodeURIComponent(runId)}/branches`, body);
+}
+
+/** GET /v1/runs/:runId/branches — 列分支 */
+export async function listBranches(runId: string): Promise<{ runId: string; count: number; branches: BranchDto[] }> {
+  return httpJson("GET", `/v1/runs/${encodeURIComponent(runId)}/branches`);
+}
+
+/** GET /v1/catalog — 商品目录 */
+export async function getCatalog(): Promise<CatalogResponse> {
+  return httpJson("GET", "/v1/catalog");
+}
+
+/** GET /v1/entitlements — 用户权益 */
+export async function getEntitlements(userId: string = "demo-user"): Promise<EntitlementsResponse> {
+  return httpJson("GET", `/v1/entitlements?userId=${encodeURIComponent(userId)}`);
+}
+
+/** POST /v1/purchases/mock-confirm — 模拟购买 */
+export async function purchaseMockConfirm(
+  body: PurchaseMockConfirmBody,
+): Promise<PurchaseMockConfirmResponse> {
+  return httpJson("POST", "/v1/purchases/mock-confirm", body);
+}
+
+/** POST /v1/analytics/events — 埋点 */
+export async function recordAnalytics(
+  body: AnalyticsEventBody,
+): Promise<{ ok: boolean; event: Record<string, unknown> }> {
+  return httpJson("POST", "/v1/analytics/events", body);
+}
+
+/** GET /v1/scenes/:sceneId — 场景元数据 */
+export async function fetchSceneMetaReal(sceneId: SceneId): Promise<SceneMeta> {
+  return httpJson("GET", `/v1/scenes/${encodeURIComponent(sceneId)}`);
 }
 
 // =============================================================================
@@ -420,6 +726,95 @@ export async function mockSubmitTurn(action: PlayerAction): Promise<TurnResponse
     latencyMs: Math.round(latency),
     resolvedText: pick.text,
   };
+}
+
+// =============================================================================
+// 模式切换：VITE_USE_MOCK=false 时走真实服务端
+// -----------------------------------------------------------------------------
+// 这一段是 useSceneRunner 的主入口。
+//   submitAction(PlayerAction)  ← 客户端 hook 唯一调用
+//     ├─ USE_MOCK=true  → mockSubmitTurn
+//     └─ USE_MOCK=false → submitActionReal (FastAPI /v1/runs/:id/actions)
+// =============================================================================
+
+/**
+ * Submit a player action — switchable between mock and real
+ * server.  Used by :func:`useSceneRunner` and any other client
+ * code that needs to advance the run.
+ *
+ * The shape returned is :class:`TurnResponse`, regardless of
+ * which path ran — the UI never has to branch.
+ */
+export async function submitAction(
+  action: PlayerAction,
+  options: { clientVersion?: string } = {},
+): Promise<TurnResponse> {
+  if (USE_MOCK) {
+    return mockSubmitTurn(action);
+  }
+  return submitActionViaServer(action, options);
+}
+
+async function submitActionViaServer(
+  action: PlayerAction,
+  options: { clientVersion?: string },
+): Promise<TurnResponse> {
+  const started = performance.now();
+  useStore.getState().setPendingAction({ clientActionId: action.clientActionId, actionType: action.actionType });
+  useStore.getState().setNetworkState("connecting");
+
+  try {
+    const resp = await submitActionReal({
+      runId: action.runId,
+      sceneId: action.sceneId,
+      clientActionId: action.clientActionId,
+      expectedEventSequence: action.expectedEventSequence,
+      playerAction: action,
+      clientVersion: options.clientVersion,
+    });
+
+    const latency = (resp.latencyMs) || Math.round(performance.now() - started);
+    useStore.getState().recordLatency(latency);
+    const outcome = resp.outcome as ResolverOutcome;
+    useStore.getState().appendOutcome(outcome);
+    useStore.getState().bumpTurn();
+    useStore.getState().setDegradation((resp.degraded as DegradationLevel) || "none");
+    useStore.getState().setNetworkState("idle");
+    useStore.getState().setPendingAction(null);
+
+    if (resp.degradedToL3 || resp.degraded === "L3") {
+      // 决策 5：L3 提示
+      useStore.getState().setDegradation("L3");
+    }
+
+    return {
+      outcome,
+      npcProposals: [],
+      clientActionId: action.clientActionId,
+      degraded: (resp.degraded as DegradationLevel) || "none",
+      fallbackUsed: resp.fallbackUsed,
+      latencyMs: latency,
+      resolvedText: resp.resolvedText || outcome.acceptedNpcAction.resolvedText,
+    };
+  } catch (e) {
+    const err = e as Error;
+    useStore.getState().recordError(err.message);
+    useStore.getState().setDegradation("L4");
+    useStore.getState().setNetworkState("error");
+    useStore.getState().setPendingAction(null);
+    // L4 fallback: serve a local outcome so the UI keeps
+    // advancing.  Decision 5 L4 = "服务暂不可用"+ 保留存档.
+    const fallback = localFallbackOutcome(action, pickFallback("comfort"));
+    useStore.getState().appendOutcome(fallback);
+    return {
+      outcome: fallback,
+      clientActionId: action.clientActionId,
+      degraded: "L4",
+      fallbackUsed: true,
+      latencyMs: Math.round(performance.now() - started),
+      resolvedText: fallback.acceptedNpcAction.resolvedText,
+    };
+  }
 }
 
 // =============================================================================

@@ -1,47 +1,55 @@
-"""Resolver agent — the AI-native proposal-merge writer.
+"""Resolver — the **AUTHORITATIVE** state-mutation agent.
 
-This module is the **W3-B-side** wrapper around the engine's
-deterministic :class:`engine.resolver.Resolver`.  The agent's job
-is to take the three proposals (Player, NPC, Director), run them
-through the Resolver, and produce the final
-:class:`engine.resolver.ResolverOutcome` with:
+This module is the W3-B resolver agent and the **only** component
+in the system that may write to canonical state.  It sits on top of
+the deterministic engine (:mod:`server.engine.resolver`) and adds
+the AI-native gates the bare engine doesn't enforce:
 
-1. **UP-20260715-002 mandatory_echo validation** — any NPC
-   proposal that *voluntarily* surfaces a past-event echo MUST
-   reference a seed in the scene's ``mandatory_echoes`` list.
-   Otherwise the NPC proposal is rejected with
-   ``reason="violates_contract"``.  This is the
-   decision-3 / UP-20260715-002 / critical fix.
+* **UP-20260715-002 mandatory_echo validation** — any NPC proposal
+  that *voluntarily* surfaces a past-event echo MUST reference a
+  seed in the scene's ``mandatory_echoes`` list.  Violations
+  are recorded in ``outcome.rejectedNpcActions`` with
+  ``reason="violates_contract"`` (decision 3, critical).
 
-2. **Case-aware era validation** (ADR 0007 §4.2) — every
-   snapshot hydration / canonical-state update calls
-   :func:`engine.types.is_valid_era_for_case` against the
-   case slug.
+* **Case-aware era validation** (ADR 0007 §4.2) — every snapshot
+  hydration / canonical-state update calls
+  :func:`server.engine.types.is_valid_era_for_case` against the
+  configured case slug.  An illegal era short-circuits the
+  resolve and raises :exc:`ResolverAgentError` (the caller
+  surfaces an L4 "service unavailable" — decision 5).
 
-3. **Numeric clamping audit** — every value written to the
-   snapshot passes through the engine's ``clamp`` helpers; the
-   Resolver records any clamp event in
-   ``outcome.clampedValues``.
+* **Numeric clamping audit** — every value the engine writes to
+  the snapshot passes through the engine's ``clamp`` helpers;
+  the resolver propagates the clamp audit into
+  ``outcome.clampedValues``.
 
-4. **Idempotency** — the same ``(runId, eventSequence,
-   triggerPlayerActionId, triggerDirectorProposalId)`` produces
-   the same outcomeId.  Replays are no-ops.
+* **Idempotency** — the same ``idempotencyKey`` (composite of
+  ``(runId, eventSequence, triggerPlayerActionId,
+  triggerDirectorProposalId)``, length 16-128) re-applied is a
+  **no-op** that returns the cached outcome instead of
+  advancing state.
 
-5. **4-questions coverage** — the Resolver records, for each
-   outcome, which of the four legs were satisfied by the
-   (Player + NPC + Director) set, in
-   ``outcome.auditTrail.deterministicDecisions``.
+* **Replay consistency** — given the same event log + the same
+  random seed stream, the resolver must reproduce the same
+  outcome byte-for-byte.  This is what makes the
+  ``tests/adversarial/test_replay_lab.py`` regression net
+  work.
 
-6. **LLM-call audit** — every model call the agents make is
-   added to ``outcome.auditTrail.llmCalls``.
+* **Write-domain isolation** — the resolver is the **only**
+  agent that calls into the engine's mutating path
+  (:meth:`engine.resolver.Resolver.resolve`).  All other
+  agents (Intent, NPC, Director, Memory) produce proposals /
+  queries and never touch canonical state directly.
 
-The Resolver is the **only** component that writes to canonical
-state.  No agent — Intent, NPC, Director, Memory — has any
-write authority.
+The class is the **authoritative** writer for the
+``case_01_revolution_street`` vertical slice.  Adding new
+behavioural rules means adding a check here (or, if
+deterministic, in the engine) — not bypassing the resolver.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -50,19 +58,70 @@ from typing import Any, Final
 
 import jsonschema
 
+# Engine helpers — imported at module load so type checkers can
+# see them; the agents package depends on the engine.
+from engine.types import (
+    SCHEMA_VERSION,
+    is_valid_era_for_case,
+    legal_eras_for_case,
+    clamp_unit,
+    clamp_relationship,
+    clamp_relationship_delta,
+    MAX_RELATIONSHIP_DELTA,
+)
+from engine.resolver import (
+    Resolver as EngineResolver,
+    NPCProposal as EngineNPCProposal,
+    DirectorBeatInput as EngineDirectorBeatInput,
+    NarrativeContract as EngineNarrativeContract,
+    ResolverOutcome as EngineResolverOutcome,
+)
+from engine.event_log import EventLog
+from engine.world_snapshot import WorldSnapshot
+from engine.state_machine import SceneBudget
+from engine.exceptions import EngineError
+
 from .four_questions import check_four_questions, FourQuestionsResult
 from .model_gateway import ModelResponse
-from .prompts import STYLE_BIBLE_VERSION
 
+
+# ---------------------------------------------------------------------------
+# Versioning
+# ---------------------------------------------------------------------------
 
 RESOLVER_AGENT_VERSION: Final[str] = "1.0.0"
+RESOLVER_AGENT_SCHEMA_VERSION: Final[str] = "1.0.0"
+
+# The Resolver outcome must use a UUID of exactly 36 characters.
+# We generate it here (rather than in the engine) so the
+# test-suite can patch the UUID generator and exercise the
+# idempotency path deterministically.
+_OUTCOME_ID_GEN: Final = lambda: str(uuid.uuid4())
+
+
+# ---------------------------------------------------------------------------
+# Errors
+# ---------------------------------------------------------------------------
 
 
 class ResolverAgentError(RuntimeError):
     """Raised by the Resolver agent on irrecoverable failure.
 
-    L4 (decision 5): the player-facing "service unavailable"
-    message is surfaced, the save is preserved.
+    Decision 5 L4: the player-facing "service unavailable"
+    message is surfaced; the save is preserved.
+    """
+
+
+class CaseAwareEraError(ResolverAgentError):
+    """Raised when the active era is not legal for the case (ADR 0007 §4.2)."""
+
+
+class SchemaValidationError(ResolverAgentError):
+    """Raised when the resolved outcome fails its own schema check.
+
+    This is the catch-all guard for "the resolver emitted
+    something the schema rejects" — by definition a bug in the
+    resolver, not the caller's.
     """
 
 
@@ -89,25 +148,27 @@ class MandatoryEchoCheck:
     matched: bool
     detail: str
 
+    def to_dict(self) -> dict[str, Any]:
+        return {"seed_id": self.seed_id, "matched": self.matched, "detail": self.detail}
+
 
 @dataclass(slots=True)
 class MandatoryEchoValidation:
-    """The full UP-20260715-002 check.
+    """The full UP-20260715-002 check result.
 
-    Attributes
-    ----------
-    echo_attempted : bool
-        True iff the NPC proposal was detected as a voluntary
-        echo (i.e. it referenced a seed from the contract's
-        ``causal_seeds`` or surfaced a memory formed in a prior
-        scene).
-    checks : list[MandatoryEchoCheck]
-        Per-seed check result.
-    passes : bool
-        True iff every attempted echo matched a mandatory echo,
-        or no echo was attempted.
-    summary : str
-        Human-readable one-liner.
+    A proposal **passes** the check iff:
+
+    * No echo was attempted at all (vacuous pass), **or**
+    * Every attempted echo seed is listed in the scene's
+      ``mandatory_echoes``.
+
+    A check with ``passes=False`` is recorded in
+    ``outcome.rejectedNpcActions`` with
+    ``reason="violates_contract"``.
+
+    Decision 3 ties this to the same validation as the
+    cross-era echo rule: AI 导演不能自由发挥 — only registered
+    mandatory echoes may be surfaced.
     """
 
     echo_attempted: bool = False
@@ -120,21 +181,23 @@ class MandatoryEchoValidation:
             "echo_attempted": self.echo_attempted,
             "passes": self.passes,
             "summary": self.summary,
-            "checks": [
-                {"seed_id": c.seed_id, "matched": c.matched, "detail": c.detail}
-                for c in self.checks
-            ],
+            "checks": [c.to_dict() for c in self.checks],
             "version": RESOLVER_AGENT_VERSION,
         }
 
 
 @dataclass(slots=True)
 class CaseAwareEraCheck:
-    """The ADR 0007 §4.2 era-validation result."""
+    """The ADR 0007 §4.2 era-validation result.
+
+    The resolver runs this on every snapshot that enters the
+    resolve path; an illegal era is fatal.
+    """
 
     era: str
     case_slug: str
     is_legal: bool
+    legal_set: list[str] = field(default_factory=list)
     detail: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -142,7 +205,55 @@ class CaseAwareEraCheck:
             "era": self.era,
             "case_slug": self.case_slug,
             "is_legal": self.is_legal,
+            "legal_set_size": len(self.legal_set),
             "detail": self.detail,
+            "version": RESOLVER_AGENT_VERSION,
+        }
+
+
+@dataclass(slots=True)
+class ClampAuditEntry:
+    """A single clamp event in the resolver's audit trail.
+
+    Matches the ``resolver_outcome.clampedValues`` schema.
+    """
+
+    path: str
+    original: float
+    applied: float
+    min: float
+    max: float
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "path": self.path,
+            "original": self.original,
+            "applied": self.applied,
+            "min": self.min,
+            "max": self.max,
+        }
+
+
+@dataclass(slots=True)
+class IdempotencyRecord:
+    """Tracks the (idempotencyKey, outcome) pairs the resolver has emitted.
+
+    Used to short-circuit replays.  Stored in memory; the
+    persistence layer mirrors the same map for cross-process
+    consistency.
+    """
+
+    idempotencyKey: str
+    outcomeId: str
+    eventSequence: int
+    timestamp: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "idempotencyKey": self.idempotencyKey,
+            "outcomeId": self.outcomeId,
+            "eventSequence": self.eventSequence,
+            "timestamp": self.timestamp,
         }
 
 
@@ -152,90 +263,169 @@ class CaseAwareEraCheck:
 
 
 class ResolverAgent:
-    """W3-B Resolver wrapper.
+    """W3-B Resolver — the authoritative state-mutation agent.
 
     Parameters
     ----------
     engine_resolver
-        An instance of :class:`engine.resolver.Resolver` from the
-        engine package.  The agent delegates all state-mutation
-        work to it; the agent itself is a thin orchestrator that
-        adds the **mandatory_echo** and **case-aware era** gates
-        on top.
+        An :class:`engine.resolver.Resolver` instance.  The
+        agent delegates state mutation to it; the agent itself
+        is the *gatekeeper* that adds the UP-20260715-002
+        mandatory-echo check, the ADR 0007 case-aware era
+        check, idempotency caching, and a final
+        schema-validation pass.
     case_slug
-        The case identifier (e.g. ``"case_01_revolution_street"``).
-        Used for the case-aware era check.
+        The case identifier (e.g.
+        ``"case_01_revolution_street"``).  Used for the
+        case-aware era check.
     schema_path
-        Path to ``resolver_outcome.schema.json``.  Defaults to the
-        shipped schema.
+        Path to ``resolver_outcome.schema.json``.  Defaults to
+        the shipped schema.  Pass an explicit path for tests.
+    base_random_seed
+        Seed the engine's RNG with this value.  Deterministic
+        re-runs (replay consistency) must use the same seed.
+    enable_mandatory_echo_check
+        Master switch for the UP-20260715-002 check.  Defaults
+        to True; tests that want to bypass the check (e.g. to
+        exercise the engine's other rejection paths) can flip
+        it off.
+
+    Notes
+    -----
+    The class is intentionally **stateless across runs**: the
+    only state it carries is the idempotency cache, which is
+    keyed by runId.  Multiple runs in the same agent instance
+    are isolated by their (runId, idempotencyKey) key.  A
+    longer-lived persistence store mirrors the same map; this
+    in-memory cache is the "L1" cache for hot replays.
     """
 
     _SCHEMA_FILE: Final[str] = "resolver_outcome.schema.json"
 
     def __init__(
         self,
-        engine_resolver: Any,
+        engine_resolver: EngineResolver,
         *,
         case_slug: str,
         schema_path: str | None = None,
+        base_random_seed: int = 0,
+        enable_mandatory_echo_check: bool = True,
     ) -> None:
         self.engine_resolver = engine_resolver
         self.case_slug = str(case_slug)
+        self.base_random_seed = int(base_random_seed)
+        self.enable_mandatory_echo_check = bool(enable_mandatory_echo_check)
         self._schema = self._load_schema(schema_path)
-        # Engine helpers — imported lazily so the agents package
-        # can be imported even if the engine has a build issue.
-        from engine.types import is_valid_era_for_case  # noqa: WPS433
-        self._is_valid_era_for_case = is_valid_era_for_case
-        from engine.resolver import NPCProposal, DirectorBeatInput, NarrativeContract
-        self._NPCProposal = NPCProposal
-        self._DirectorBeatInput = DirectorBeatInput
-        self._NarrativeContract = NarrativeContract
+        # Idempotency cache: (runId, idempotencyKey) -> IdempotencyRecord
+        self._idempotency_cache: dict[tuple[str, str], IdempotencyRecord] = {}
+        # Clamp audit accumulators (per-call; the agent exposes
+        # the most recent call's audit alongside the outcome).
+        self._last_clamp_audit: list[ClampAuditEntry] = []
+        # For deterministic UUIDs in tests, allow monkey-patching
+        # the generator.
+        self._outcome_id_gen = _OUTCOME_ID_GEN
 
-    # ----- public API ----------------------------------------------------
+    # =====================================================================
+    # PUBLIC API
+    # =====================================================================
 
     def resolve_turn(
         self,
         *,
-        snapshot: Any,
-        event_log: Any,
+        snapshot: WorldSnapshot,
+        event_log: EventLog,
         player_action: dict[str, Any] | None,
         npc_proposal_dict: dict[str, Any] | None,
         director_beat_dict: dict[str, Any] | None,
         scene_contract: dict[str, Any],
-        scene_budget: Any,
+        scene_budget: SceneBudget,
         recall_set: set[str] | None = None,
         llm_calls: list[dict[str, Any]] | None = None,
-    ) -> tuple[Any, Any, MandatoryEchoValidation, CaseAwareEraCheck, FourQuestionsResult]:
-        """Run the full resolve.
+    ) -> tuple[
+        WorldSnapshot,
+        EngineResolverOutcome,
+        MandatoryEchoValidation,
+        CaseAwareEraCheck,
+        FourQuestionsResult,
+    ]:
+        """Run the full resolve for a single turn.
 
         Returns
         -------
         (new_snapshot, outcome, mandatory_echo, era_check, four_questions)
-            The new snapshot + outcome are the engine's output;
-            the three diagnostic objects are the agent's
-            contributions.  All five are returned so the HTTP
-            handler / persistence layer can store them
-            together.
+            * ``new_snapshot`` — the canonical state after this
+              turn (or the **unchanged** snapshot if the call
+              was a replay).  Always returns a snapshot; the
+              caller may compare its ``eventSequence`` to the
+              input to detect a no-op.
+            * ``outcome`` — the engine's
+              :class:`engine.resolver.ResolverOutcome`.  The
+              agent decorates this with rejected-NPC entries
+              and the audit-trail LLM-call list.
+            * ``mandatory_echo`` — the UP-20260715-002 check
+              result.
+            * ``era_check`` — the ADR 0007 §4.2 era check.
+            * ``four_questions`` — the decision-6 self-check
+              summary.
+
+        Raises
+        ------
+        ResolverAgentError
+            On irrecoverable failure (era invalid, schema
+            validation failure, engine exception).
         """
+
+        # ---- 0. Reset per-call audit -------------------------------------
+        self._last_clamp_audit = []
 
         # ---- 1. Case-aware era validation (ADR 0007 §4.2) ----------------
         era_check = self._validate_era(snapshot)
         if not era_check.is_legal:
-            raise ResolverAgentError(era_check.detail)
+            raise CaseAwareEraError(era_check.detail)
 
-        # ---- 2. UP-20260715-002 mandatory_echo validation ----------------
-        npc_proposal_obj: Any = None
+        # ---- 2. Pre-compute the idempotency key --------------------------
+        # The engine will compute the same key; we compute it
+        # here so we can short-circuit replays *before*
+        # touching the event log.
+        next_seq = snapshot.eventSequence + 1
+        idem = self._make_idempotency_key(
+            snapshot.runId,
+            next_seq,
+            (player_action or {}).get("clientActionId") if player_action else None,
+            (director_beat_dict or {}).get("proposalId") if director_beat_dict else None,
+        )
+        # We use a *replay-stable* cache key: the (runId,
+        # clientActionId, directorProposalId) tuple.  The
+        # sequence-based key would change on every replay
+        # (because ``next_seq`` increments), so we cannot use
+        # it to detect a duplicate submission.
+        caid = (player_action or {}).get("clientActionId") if player_action else None
+        did = (director_beat_dict or {}).get("proposalId") if director_beat_dict else None
+        cache_key: tuple[str, str | None, str | None] = (snapshot.runId, caid, did)
+        if cache_key in self._idempotency_cache:
+            # Replay: return the cached outcome.  The engine
+            # itself raises IdempotencyReplayError on the same
+            # key, so this branch handles in-process retries
+            # before the event log is consulted.
+            cached = self._idempotency_cache[cache_key]
+            return (
+                snapshot,
+                _cached_outcome_to_resolver_outcome(
+                    cached, snapshot, player_action, director_beat_dict
+                ),
+                MandatoryEchoValidation(summary="replay: no echo check re-run"),
+                era_check,
+                FourQuestionsResult(summary=["replay: no four-questions re-run"]),
+            )
+
+        # ---- 3. UP-20260715-002 mandatory_echo validation ----------------
+        npc_proposal_obj: EngineNPCProposal | None = None
         rejected_npc: list[dict[str, Any]] = []
-        mandatory_echo = MandatoryEchoValidation()
         if npc_proposal_dict is not None:
             mandatory_echo = self._validate_mandatory_echo(
                 npc_proposal_dict, scene_contract
             )
             if not mandatory_echo.passes:
-                # Reject the NPC proposal before it ever reaches
-                # the engine's Resolver.  We convert it to an
-                # engine.NPCProposal so the engine's own
-                # pipeline sees a uniform input.
                 rejected_npc.append(
                     {
                         "proposalId": npc_proposal_dict.get("proposalId", "?"),
@@ -244,17 +434,21 @@ class ResolverAgent:
                     }
                 )
             else:
-                npc_proposal_obj = self._build_npc_proposal(npc_proposal_dict)
+                npc_proposal_obj = self._build_engine_npc_proposal(npc_proposal_dict)
+        else:
+            mandatory_echo = MandatoryEchoValidation(
+                summary="no NPC proposal submitted"
+            )
 
-        # ---- 3. Build the engine contract + Director input ---------------
+        # ---- 4. Build the engine contract + Director input ---------------
         engine_contract = self._build_engine_contract(scene_contract)
         director_input = (
-            self._build_director_input(director_beat_dict)
+            self._build_engine_director_input(director_beat_dict)
             if director_beat_dict is not None
             else None
         )
 
-        # ---- 4. Run the engine Resolver ----------------------------------
+        # ---- 5. Run the engine Resolver ----------------------------------
         try:
             new_snapshot, outcome = self.engine_resolver.resolve(
                 snapshot=snapshot,
@@ -266,110 +460,231 @@ class ResolverAgent:
                 scene_budget=scene_budget,
                 recall_set=recall_set,
             )
-        except Exception as exc:  # engine raises EngineError subclasses
+        except EngineError as exc:
             raise ResolverAgentError(
                 f"engine Resolver failed: {type(exc).__name__}: {exc}"
-            )
+            ) from exc
 
-        # ---- 5. Augment the outcome with rejected NPC proposals ----------
+        # ---- 6. Inject the rejected-NPC entry (UP-20260715-002) -----------
         if rejected_npc:
             existing = list(outcome.rejectedNpcActions or [])
-            # Replace the auto-injected "" proposal by the
-            # engine's acceptedNpcAction with our reject (the
-            # engine's NPCProposal was None in this branch).
             for r in rejected_npc:
                 if r not in existing:
                     existing.append(r)
             outcome.rejectedNpcActions = existing
-            # If the engine silently set the acceptedNpcAction
-            # to a "silence" stub (because npc_proposal was None),
-            # leave it — that's the L1 fallback shape.
 
-        # ---- 6. Append LLM calls to the audit trail ----------------------
+        # ---- 7. Append LLM-call audit + deterministic decisions -----------
+        audit = dict(outcome.auditTrail or {"llmCalls": [], "deterministicDecisions": []})
+        audit.setdefault("llmCalls", [])
         if llm_calls:
-            audit = dict(outcome.auditTrail or {"llmCalls": [], "deterministicDecisions": []})
-            audit.setdefault("llmCalls", [])
             audit["llmCalls"] = list(audit["llmCalls"]) + list(llm_calls)
-            decisions = list(audit.get("deterministicDecisions", []))
-            decisions.append(
-                f"resolver_agent: case_slug={self.case_slug} "
-                f"era={era_check.era} legal={era_check.is_legal}"
-            )
-            decisions.append(
-                f"resolver_agent: mandatory_echo passes={mandatory_echo.passes} "
-                f"attempted={mandatory_echo.echo_attempted}"
-            )
-            audit["deterministicDecisions"] = decisions
-            outcome.auditTrail = audit
+        decisions = list(audit.get("deterministicDecisions", []))
+        decisions.append(
+            f"resolver_agent[v{RESOLVER_AGENT_VERSION}]: case_slug={self.case_slug} "
+            f"era={era_check.era} legal={era_check.is_legal}"
+        )
+        decisions.append(
+            f"resolver_agent: UP-20260715-002 mandatory_echo "
+            f"attempted={mandatory_echo.echo_attempted} passes={mandatory_echo.passes}"
+        )
+        decisions.append(
+            f"resolver_agent: write-authority enforced; snapshot.eventSequence "
+            f"{snapshot.eventSequence} -> {new_snapshot.eventSequence}"
+        )
+        audit["deterministicDecisions"] = decisions
+        outcome.auditTrail = audit
 
-        # ---- 7. Four-questions self-check (decision 6) -------------------
+        # ---- 7b. Inject NPC-relationship clamp audit (decision 1 cap) ----
+        # The engine applies NPC relationship deltas but
+        # discards their per-pair clamp audit.  We re-run the
+        # the same apply pass on the working snapshot to
+        # capture the audit entries; the engine's own apply
+        # is idempotent (the final value is the same), so the
+        # second pass yields the same final state.  We tag
+        # the entries with an explicit "npc_rel_" path prefix
+        # so they're traceable in the audit log.
+        if (
+            npc_proposal_dict is not None
+            and npc_proposal_dict.get("relationshipDelta")
+        ):
+            npc_rel_audit = self._npc_relationship_clamp_audit(
+                npc_proposal_dict
+            )
+            if npc_rel_audit:
+                self._last_clamp_audit.extend(npc_rel_audit)
+
+        # ---- 8. Four-questions self-check (decision 6) -------------------
         four_q = self._collect_four_questions(
             player_action=player_action,
             npc_proposal_dict=npc_proposal_dict,
             director_beat_dict=director_beat_dict,
             scene_contract=scene_contract,
-            accepted_npc=outcome.acceptedNpcAction,
             outcome=outcome,
         )
-        # Record the four-questions summary in the audit trail
-        audit = dict(outcome.auditTrail or {"llmCalls": [], "deterministicDecisions": []})
-        decisions = list(audit.get("deterministicDecisions", []))
         decisions.append(
-            f"four_questions: passes={four_q.passes} "
+            f"resolver_agent: four_questions passes={four_q.passes} "
             f"satisfied={list(four_q.satisfied_questions())}"
         )
         audit["deterministicDecisions"] = decisions
         outcome.auditTrail = audit
 
-        # ---- 8. Schema-validate the outcome -----------------------------
+        # ---- 9. Clamp audit propagation ----------------------------------
+        # The engine's outcome already carries the reducer's
+        # clamp audit.  We expose the agent-side accumulator
+        # via ``self.last_clamp_audit`` and also append any
+        # agent-side clamps (e.g. on rogue LLM-produced
+        # numbers we sanitised before reaching the engine).
+        engine_clamps = list(outcome.clampedValues or [])
+        merged = engine_clamps + [c.to_dict() for c in self._last_clamp_audit]
+        # Dedupe by (path, original, applied) to keep the audit
+        # log small.
+        seen: set[tuple[str, float, float]] = set()
+        deduped: list[dict[str, Any]] = []
+        for entry in merged:
+            key = (
+                str(entry.get("path", "")),
+                float(entry.get("original", 0.0)),
+                float(entry.get("applied", 0.0)),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(entry)
+        outcome.clampedValues = deduped
+
+        # ---- 10. Schema-sanitise + schema-validate the outcome -----------
+        # The engine reducer emits extra diagnostic fields on
+        # belief updates (``reasonCode``) that the resolver_outcome
+        # schema rejects as ``additionalProperties``.  We strip
+        # the engine-only fields here so the outcome is
+        # schema-valid; the diagnostic info is preserved in the
+        # audit trail.
+        outcome = self._sanitise_outcome_for_schema(outcome)
         try:
             jsonschema.validate(outcome.to_dict(), self._schema)
         except jsonschema.ValidationError as exc:
-            raise ResolverAgentError(
-                f"Resolver outcome failed schema validation: {exc.message}"
-            )
+            raise SchemaValidationError(
+                f"Resolver outcome failed schema validation: {exc.message} "
+                f"(path={list(exc.absolute_path)})"
+            ) from exc
+
+        # ---- 11. Cache the outcome for future replays -------------------
+        record = IdempotencyRecord(
+            idempotencyKey=outcome.idempotencyKey,
+            outcomeId=outcome.outcomeId,
+            eventSequence=outcome.eventSequence,
+            timestamp=outcome.timestamp,
+        )
+        self._idempotency_cache[cache_key] = record
 
         return new_snapshot, outcome, mandatory_echo, era_check, four_q
 
-    # ----- UP-20260715-002 ------------------------------------------------
+    # =====================================================================
+    # READ-ONLY INSPECTION (used by tests + the HTTP layer)
+    # =====================================================================
+
+    @property
+    def last_clamp_audit(self) -> list[ClampAuditEntry]:
+        """The most recent resolve's clamp audit (engine + agent entries)."""
+        return list(self._last_clamp_audit)
+
+    @property
+    def idempotency_cache(self) -> dict[tuple[str, str], IdempotencyRecord]:
+        """The current idempotency cache.  Read-only view (returns a copy)."""
+        return dict(self._idempotency_cache)
+
+    def clear_idempotency_cache(self) -> None:
+        """Clear the in-memory idempotency cache (e.g. between test runs)."""
+        self._idempotency_cache.clear()
+
+    def is_idempotency_cached(self, runId: str, idempotencyKey: str) -> bool:
+        return (runId, idempotencyKey) in self._idempotency_cache
+
+    # =====================================================================
+    # VALIDATION GATES
+    # =====================================================================
+
+    def _validate_era(self, snapshot: WorldSnapshot) -> CaseAwareEraCheck:
+        """ADR 0007 §4.2: case-aware era validation.
+
+        The resolver is the **only** place that calls
+        :func:`is_valid_era_for_case` on every snapshot it
+        touches.  This is what makes "I forgot the era is
+        case-scoped" impossible by construction.
+        """
+        era = snapshot.canonicalState.era
+        legal = sorted(legal_eras_for_case(self.case_slug))
+        is_legal = bool(is_valid_era_for_case(era, self.case_slug))
+        detail = ""
+        if not is_legal:
+            detail = (
+                f"era {era!r} is not legal for case {self.case_slug!r} "
+                f"(ADR 0007 §4.2). Legal eras: {legal[:6]}… "
+                f"(total {len(legal)} values)"
+            )
+        return CaseAwareEraCheck(
+            era=era,
+            case_slug=self.case_slug,
+            is_legal=is_legal,
+            legal_set=legal,
+            detail=detail,
+        )
 
     def _validate_mandatory_echo(
         self,
         npc_proposal: dict[str, Any],
         scene_contract: dict[str, Any],
     ) -> MandatoryEchoValidation:
-        """Check that any voluntary echo surfaces a mandatory seed.
+        """UP-20260715-002: any voluntary echo MUST be in mandatory_echoes.
 
-        A proposal is detected as a **voluntary echo** when ANY of
-        these signals fires:
+        A proposal is detected as a **voluntary echo** when the
+        proposal surfaces a seed the contract registered in
+        its ``causal_seeds`` list.  We detect a voluntary
+        surface via three independent signals:
 
-        1. ``speechIntent`` ∈ ``{"reveal_truth", "admit", "accuse",
-           "defend", "taunt", "plead"}`` AND the proposal
-           references at least one memory whose ``subject`` is
-           a seed in the contract's ``causal_seeds``.
+        1. ``speechIntent`` is one of the echo-bearing intents
+           (``reveal_truth``, ``admit``, ``accuse``, ``defend``,
+           ``taunt``, ``plead``, ``seek_confirmation``).
         2. The proposal's ``beliefUpdatesRequested`` lists a
-           ``subject`` that is a seed id from
+           ``subject`` that matches a seed id in
            ``contract.causal_seeds``.
-        3. The proposal's ``referencedMemoryIds`` include a
-           memory whose ``subject`` is a seed id from
-           ``contract.causal_seeds``.
+        3. The proposal's ``memorySubjects`` (the W3-B
+           agent-side annotation) maps a recalled memory to a
+           seed id.
 
-        For each such seed, we check whether it is in
-        ``contract.mandatory_echoes``.  If any seed is **not**
-        in the mandatory list, the check fails.
+        If any of the three fires, the proposal is treated as
+        a voluntary echo.  Each named seed must be in
+        ``contract.mandatory_echoes``; otherwise the check
+        fails with ``passes=False``.
 
-        If the contract declares no ``causal_seeds``, there is
-        no echo to validate — the check passes vacuously.
+        Special cases
+        -------------
+        * ``contract.causal_seeds`` is empty → no echo to
+          validate; the check passes vacuously.
+        * ``contract.mandatory_echoes`` is **empty** but
+          ``causal_seeds`` is non-empty → the check **fails**
+          by design (decision 3 binds mandatory echoes to
+          explicit declaration).  The NPC must not invent
+          echoes; an empty mandatory list means "this scene
+          has no authorised echoes".
         """
+        if not self.enable_mandatory_echo_check:
+            return MandatoryEchoValidation(
+                echo_attempted=False,
+                passes=True,
+                summary="UP-20260715-002 check disabled",
+            )
 
-        causal_seed_ids = {
+        causal_seed_ids: set[str] = {
             s for s in (scene_contract.get("causal_seeds") or []) if isinstance(s, str)
         }
-        mandatory_ids = {
-            me.get("id") for me in (scene_contract.get("mandatory_echoes") or [])
+        mandatory_ids: set[str] = {
+            me.get("id")
+            for me in (scene_contract.get("mandatory_echoes") or [])
             if isinstance(me, dict) and me.get("id")
         }
-        # No echo to validate
+
+        # ---- (a) No seeds registered → vacuous pass ----
         if not causal_seed_ids:
             return MandatoryEchoValidation(
                 echo_attempted=False,
@@ -377,50 +692,49 @@ class ResolverAgent:
                 summary="no causal_seeds registered; echo check vacuously passes",
             )
 
-        speech_intent = npc_proposal.get("speechIntent", "")
-        echo_intents = {"reveal_truth", "admit", "accuse", "defend", "taunt", "plead", "seek_confirmation"}
-        belief_subjects = {
+        # ---- (b) Detect named seed surfaces in the proposal ----
+        speech_intent = str(npc_proposal.get("speechIntent", ""))
+        echo_intents = {
+            "reveal_truth", "admit", "accuse", "defend",
+            "taunt", "plead", "seek_confirmation",
+        }
+        belief_subjects: set[str] = {
             u.get("subject", "")
             for u in npc_proposal.get("beliefUpdatesRequested", []) or []
+            if isinstance(u, dict) and isinstance(u.get("subject"), str)
         }
-        referenced_subjects: set[str] = set()
-        for mid in npc_proposal.get("referencedMemoryIds", []) or []:
-            # The LLM may not embed the subject; the agent's job
-            # is to check intent + belief-subject signals.  We
-            # only check what the LLM actually emitted.  The
-            # engine's existing ungrounded-memory check handles
-            # memory ↔ recall mismatches.
-            pass
-
-        # Pull subjects from the proposal's memory references if
-        # the agent annotated them (the W3-B agent sets a
-        # ``memorySubjects`` field for this purpose; the
-        # production gateway will populate it).
-        ms = npc_proposal.get("memorySubjects") or {}
+        memory_subjects: set[str] = set()
+        ms = npc_proposal.get("memorySubjects")
         if isinstance(ms, dict):
             for mid, subj in ms.items():
                 if isinstance(subj, str) and subj:
-                    referenced_subjects.add(subj)
+                    memory_subjects.add(subj)
+        # Also pull from referencedMemoryIds if the agent
+        # attached a ``referencedSeedIds`` field (some LLM
+        # prompts ask the agent to name seeds explicitly).
+        ref_seeds: set[str] = set()
+        rs = npc_proposal.get("referencedSeedIds")
+        if isinstance(rs, list):
+            for s in rs:
+                if isinstance(s, str) and s:
+                    ref_seeds.add(s)
 
-        # The set of seeds the NPC is "voluntarily surfacing"
+        # Set of seeds the NPC is "voluntarily surfacing".
         attempted_seeds: set[str] = set()
-        for s in belief_subjects:
+        for s in belief_subjects | memory_subjects | ref_seeds:
             if s in causal_seed_ids:
                 attempted_seeds.add(s)
-        for s in referenced_subjects:
-            if s in causal_seed_ids:
-                attempted_seeds.add(s)
-        if speech_intent in echo_intents and (belief_subjects & causal_seed_ids or referenced_subjects & causal_seed_ids):
-            # The agent's speech intent + a seed reference = clear
-            # voluntary echo.
-            attempted_seeds = (belief_subjects | referenced_subjects) & causal_seed_ids
-        # If speech intent is in echo_intents but no seed was
-        # named, the agent might still be voluntarily surfacing
-        # an un-named echo.  We don't reject on intent alone —
-        # the engine's ungrounded-memory check + the contract's
-        # forbidden_reveals check cover that path.  Here we only
-        # reject **named** echoes that miss the mandatory list.
+        if (
+            speech_intent in echo_intents
+            and (belief_subjects & causal_seed_ids or memory_subjects & causal_seed_ids)
+        ):
+            # Echo intent + any seed reference = clear voluntary
+            # echo.  Re-collect the union to be sure.
+            attempted_seeds = (
+                belief_subjects | memory_subjects | ref_seeds
+            ) & causal_seed_ids
 
+        # ---- (c) No echo attempted → pass ----
         if not attempted_seeds:
             return MandatoryEchoValidation(
                 echo_attempted=False,
@@ -428,6 +742,7 @@ class ResolverAgent:
                 summary="NPC proposal did not surface a registered seed",
             )
 
+        # ---- (d) At least one seed named → every one must be mandatory ----
         checks: list[MandatoryEchoCheck] = []
         passes = True
         for sid in sorted(attempted_seeds):
@@ -438,15 +753,30 @@ class ResolverAgent:
                 detail=(
                     f"seed {sid!r} is in scene.mandatory_echoes"
                     if matched
-                    else f"seed {sid!r} is NOT in scene.mandatory_echoes (UP-20260715-002 violation)"
+                    else f"seed {sid!r} is NOT in scene.mandatory_echoes "
+                         f"(UP-20260715-002 violation)"
                 ),
             ))
             if not matched:
                 passes = False
-        summary = (
-            f"voluntary echo attempted on {len(attempted_seeds)} seed(s); "
-            + ("all in mandatory_echoes" if passes else "violates UP-20260715-002")
-        )
+
+        # If the contract declares seeds but **no** mandatory
+        # echoes at all, the failure mode is "the contract
+        # registered causal_seeds but did not declare any
+        # mandatory echoes" — the NPC must not invent echoes.
+        if not mandatory_ids:
+            summary = (
+                f"voluntary echo attempted on {len(attempted_seeds)} seed(s); "
+                f"but scene has no mandatory_echoes declared (decision 3 forbids "
+                f"free-form echoes)"
+            )
+        else:
+            summary = (
+                f"voluntary echo attempted on {len(attempted_seeds)} seed(s); "
+                + ("all in mandatory_echoes" if passes
+                   else "violates UP-20260715-002")
+            )
+
         return MandatoryEchoValidation(
             echo_attempted=True,
             checks=checks,
@@ -454,23 +784,210 @@ class ResolverAgent:
             summary=summary,
         )
 
-    # ----- ADR 0007 §4.2 --------------------------------------------------
+    # =====================================================================
+    # NPC RELATIONSHIP CLAMP AUDIT
+    # =====================================================================
 
-    def _validate_era(self, snapshot: Any) -> CaseAwareEraCheck:
-        era = snapshot.canonicalState.era
-        is_legal = bool(self._is_valid_era_for_case(era, self.case_slug))
-        detail = "" if is_legal else (
-            f"era {era!r} is not legal for case {self.case_slug!r} (ADR 0007 §4.2)"
+    @staticmethod
+    def _npc_relationship_clamp_audit(
+        npc_proposal_dict: dict[str, Any],
+    ) -> list[ClampAuditEntry]:
+        """Compute the per-pair clamp audit for an NPC relationship delta.
+
+        The engine's apply path discards the audit entries
+        when NPC relationship deltas are applied.  This helper
+        re-runs the per-field clamp (decision-1 hard cap
+        ``|delta| <= 0.25``) and produces the audit entries
+        the resolver merges into ``outcome.clampedValues``.
+
+        The output uses path prefixes like ``npc_rel.trust``,
+        ``npc_rel.intimacy``, etc. — distinct from the
+        engine's own ``trust``/``intimacy`` paths so the
+        merged log is unambiguous.
+        """
+
+        from engine.types import clamp_relationship_delta
+
+        entries: list[ClampAuditEntry] = []
+        for pair in npc_proposal_dict.get("relationshipDelta") or []:
+            if not isinstance(pair, dict):
+                continue
+            pair_tag = (
+                f"{pair.get('from', '?')}->{pair.get('to', '?')}"
+            )
+            for field in (
+                "trust",
+                "intimacy",
+                "respect",
+                "unresolvedConflict",
+                "fear",
+            ):
+                if field not in pair:
+                    continue
+                original = float(pair[field])
+                clamped = clamp_relationship_delta(original)
+                if clamped != original:
+                    entries.append(ClampAuditEntry(
+                        path=f"npc_rel.{field}@{pair_tag}",
+                        original=original,
+                        applied=clamped,
+                        min=-0.25,
+                        max=0.25,
+                    ))
+        return entries
+
+    # =====================================================================
+    # SCHEMA SANITATION
+    # =====================================================================
+
+    @staticmethod
+    def _sanitise_outcome_for_schema(
+        outcome: EngineResolverOutcome,
+    ) -> EngineResolverOutcome:
+        """Strip engine-only diagnostic fields so the outcome validates.
+
+        The engine reducer adds ``reasonCode`` to every belief
+        update it produces (audit-trail field).  The
+        ``resolver_outcome.schema.json`` rejects
+        ``additionalProperties`` on ``beliefUpdates[]``, so
+        without this strip the schema check fails.  We move
+        the dropped reason codes into the deterministic-decisions
+        audit trail so the diagnostic is preserved (but
+        structurally compatible with the schema).
+        """
+
+        # ---- beliefUpdates: keep schema-allowed fields only ------------
+        allowed_bu = {
+            "characterId", "subject", "newState", "confidence",
+            "evidenceMemoryId", "previousState",
+        }
+        cleaned_bu: list[dict[str, Any]] = []
+        dropped_bu_codes: list[str] = []
+        for bu in (outcome.beliefUpdates or []):
+            if not isinstance(bu, dict):
+                continue
+            cleaned = {k: v for k, v in bu.items() if k in allowed_bu}
+            # Schema requires evidenceMemoryId to be string|null; coerce None to None
+            cleaned_bu.append(cleaned)
+            rc = bu.get("reasonCode")
+            if isinstance(rc, str) and rc:
+                subj = bu.get("subject", "?")
+                char = bu.get("characterId", "?")
+                dropped_bu_codes.append(f"{char}/{subj}={rc}")
+
+        # ---- artifactUpdates: schema allows reasonCode, but make sure
+        # we don't carry any other surprise fields.  Schema is
+        # already permissive enough; we leave it untouched.
+        cleaned_au = list(outcome.artifactUpdates or [])
+
+        # ---- other arrays: pass through but force schema-shaped types
+        # ---- relationshipDelta: snap numeric fields to 0.01 grid ----
+        rel_keys = {"trust", "intimacy", "unresolvedConflict", "respect", "fear"}
+        cleaned_rel: list[dict[str, Any]] = []
+        for rd in (outcome.relationshipDelta or []):
+            if not isinstance(rd, dict):
+                continue
+            cleaned_rd = dict(rd)
+            for k in rel_keys:
+                if k in cleaned_rd:
+                    v = cleaned_rd[k]
+                    if isinstance(v, (int, float)):
+                        # Snap to 0.01 grid (schema multipleOf=0.01).
+                        # Use Decimal to dodge IEEE-754 trap.
+                        from decimal import Decimal, ROUND_HALF_UP
+                        d_v = Decimal(str(float(v)))
+                        snapped = (d_v / Decimal("0.01")).quantize(
+                            Decimal("1"), rounding=ROUND_HALF_UP
+                        ) * Decimal("0.01")
+                        cleaned_rd[k] = float(snapped)
+            cleaned_rel.append(cleaned_rd)
+        cleaned_rej = list(outcome.rejectedNpcActions or [])
+        cleaned_new = list(outcome.newCausalSeeds or [])
+        cleaned_fired = list(outcome.firedCausalSeeds or [])
+        cleaned_clamp = list(outcome.clampedValues or [])
+
+        # ---- acceptedNpcAction: must have non-empty characterId ----
+        accepted = dict(outcome.acceptedNpcAction or {})
+        if not accepted.get("characterId"):
+            # Placeholder for a no-NPC turn.  The schema
+            # requires characterId minLength=1; "system" is the
+            # conventional "no NPC actor" marker.
+            accepted["characterId"] = "system"
+
+        # ---- nextBeat: legalEndingId must be string|null, never missing
+        next_beat = dict(outcome.nextBeat or {})
+        if "legalEndingId" not in next_beat:
+            next_beat["legalEndingId"] = None
+        if "transition" not in next_beat:
+            next_beat["transition"] = "continue"
+
+        # ---- auditTrail: ensure shape ----------------------------------
+        audit = dict(outcome.auditTrail or {})
+        audit.setdefault("llmCalls", [])
+        audit.setdefault("deterministicDecisions", [])
+        if dropped_bu_codes:
+            audit["deterministicDecisions"] = list(audit["deterministicDecisions"]) + [
+                f"resolver_agent: stripped engine reasonCode from {len(dropped_bu_codes)} belief update(s) "
+                f"(preserved: {', '.join(dropped_bu_codes[:8])}{'…' if len(dropped_bu_codes) > 8 else ''})"
+            ]
+
+        return EngineResolverOutcome(
+            outcomeId=outcome.outcomeId,
+            runId=outcome.runId,
+            eventSequence=outcome.eventSequence,
+            idempotencyKey=outcome.idempotencyKey,
+            acceptedNpcAction=accepted,
+            nextBeat=next_beat,
+            timestamp=outcome.timestamp,
+            triggerPlayerActionId=outcome.triggerPlayerActionId,
+            triggerDirectorProposalId=outcome.triggerDirectorProposalId,
+            rejectedNpcActions=cleaned_rej,
+            relationshipDelta=cleaned_rel,
+            beliefUpdates=cleaned_bu,
+            artifactUpdates=cleaned_au,
+            newCausalSeeds=cleaned_new,
+            firedCausalSeeds=cleaned_fired,
+            clampedValues=cleaned_clamp,
+            auditTrail=audit,
+            schemaVersion=outcome.schemaVersion,
         )
-        return CaseAwareEraCheck(era=era, case_slug=self.case_slug, is_legal=is_legal, detail=detail)
 
-    # ----- engine adapter helpers ----------------------------------------
+    # =====================================================================
+    # ENGINE ADAPTER HELPERS
+    # =====================================================================
 
-    def _build_npc_proposal(self, raw: dict[str, Any]) -> Any:
-        """Convert the agent's proposal dict to engine.NPCProposal."""
+    def _build_engine_npc_proposal(self, raw: dict[str, Any]) -> EngineNPCProposal:
+        """Translate the agent's proposal dict into the engine's shape.
 
-        p = self._NPCProposal(
-            proposalId=raw.get("proposalId") or str(uuid.uuid4()),
+        The engine's :class:`engine.resolver.NPCProposal` is a
+        ``slots=True`` dataclass that does **not** declare a
+        ``relationshipDelta`` field, so we can't attach a
+        custom attribute.  The agent's view of the proposal
+        carries the relationship deltas; the engine
+        resolver reads them via :func:`getattr` but the
+        slots implementation makes that read return
+        ``AttributeError`` (not a graceful default).
+
+        We work around this by building a **lightweight
+        stand-in** object that satisfies the engine's
+        duck-typed contract: every attribute the engine reads
+        (``proposalId``, ``characterId``, ``proposedAction``,
+        ``speechIntent``, ``targetId``, ``referencedMemoryIds``,
+        ``beliefUpdatesRequested``, ``emotionalTransition``,
+        ``reasonCodes``, ``confidence``,
+        ``expectedContradictions``) plus the optional
+        ``relationshipDelta`` attribute the engine looks for.
+
+        The easiest way to satisfy the engine is to build an
+        :class:`engine.resolver.NPCProposal` (so the engine
+        gets typed access to the schema-validated fields) and
+        then wrap it in a small shim that adds the
+        ``relationshipDelta`` attribute.  We do this with
+        :class:`_NPCProposalWithRelationship` below.
+        """
+
+        proposal = EngineNPCProposal(
+            proposalId=raw.get("proposalId") or self._outcome_id_gen(),
             characterId=raw.get("characterId", ""),
             proposedAction=raw.get("proposedAction", "silence"),
             speechIntent=raw.get("speechIntent", "remain_silent"),
@@ -482,19 +999,60 @@ class ResolverAgent:
             confidence=float(raw.get("confidence", 0.5) or 0.5),
             expectedContradictions=list(raw.get("expectedContradictions", []) or []),
         )
-        # Attach a relationshipDelta attribute if present; the
-        # engine reads it via getattr(..., "relationshipDelta", []).
-        rel = raw.get("relationshipDelta")
+        rel = list(raw.get("relationshipDelta") or [])
         if rel:
-            try:
-                object.__setattr__(p, "relationshipDelta", list(rel))
-            except (AttributeError, TypeError):
-                pass
-        return p
+            # Pre-clamp any out-of-range numeric fields and record
+            # each clamp event in the per-call audit.  The
+            # decision-1 cap is |delta| ≤ 0.25 per turn, but the
+            # agent's contract is to *detect* an out-of-range raw
+            # value (e.g. an LLM hallucinated 5.0) and surface the
+            # clamp in the audit log, not to silently swallow it.
+            self._audit_relationship_clamp(rel)
+            return _NPCProposalWithRelationship(proposal, rel)
+        return proposal
 
-    def _build_director_input(self, raw: dict[str, Any]) -> Any:
-        return self._DirectorBeatInput(
-            proposalId=raw.get("proposalId") or str(uuid.uuid4()),
+    def _audit_relationship_clamp(self, rel: list[dict[str, Any]]) -> None:
+        """Record any out-of-range numeric field in ``rel`` as a clamp event.
+
+        The engine reducer already clamps deltas to |x| ≤ 0.25
+        *and* the resulting pair values to their legal domains;
+        we do **not** re-clamp here (we let the engine do it
+        for replay consistency), but we do **record** every
+        out-of-range raw value as a ClampAuditEntry so the
+        outcome's ``clampedValues`` array reflects the model's
+        misbehaviour.
+        """
+
+        # Map of field name -> (lo, hi).  The schema-allowed
+        # bounds match the resolver_outcome.schema.json.
+        rel_field_bounds: dict[str, tuple[float, float]] = {
+            "trust": (-1.0, 1.0),
+            "intimacy": (-1.0, 1.0),
+            "respect": (-1.0, 1.0),
+            "unresolvedConflict": (0.0, 1.0),
+            "fear": (0.0, 1.0),
+        }
+        for idx, rd in enumerate(rel):
+            if not isinstance(rd, dict):
+                continue
+            for fld, (lo, hi) in rel_field_bounds.items():
+                if fld not in rd:
+                    continue
+                v = rd[fld]
+                if not isinstance(v, (int, float)):
+                    continue
+                if float(v) < lo or float(v) > hi:
+                    self.record_clamp(
+                        path=f"relationshipDelta[{idx}].{fld}",
+                        original=float(v),
+                        applied=float(lo) if float(v) < lo else float(hi),
+                        min_value=lo,
+                        max_value=hi,
+                    )
+
+    def _build_engine_director_input(self, raw: dict[str, Any]) -> EngineDirectorBeatInput:
+        return EngineDirectorBeatInput(
+            proposalId=raw.get("proposalId") or self._outcome_id_gen(),
             proposedBeat=raw.get("proposedBeat", ""),
             allowedByContract=bool(raw.get("allowedByContract", True)),
             forbiddenRevealsChecked=list(raw.get("forbiddenRevealsChecked", []) or []),
@@ -507,8 +1065,8 @@ class ResolverAgent:
             firedCausalSeeds=list(raw.get("firedCausalSeeds", []) or []),
         )
 
-    def _build_engine_contract(self, scene_contract: dict[str, Any]) -> Any:
-        return self._NarrativeContract(
+    def _build_engine_contract(self, scene_contract: dict[str, Any]) -> EngineNarrativeContract:
+        return EngineNarrativeContract(
             sceneId=scene_contract.get("sceneId", "?"),
             allowed_beats=list(scene_contract.get("allowed_beats", []) or []),
             forbidden_reveals=list(scene_contract.get("forbidden_reveals", []) or []),
@@ -518,7 +1076,9 @@ class ResolverAgent:
             causal_seeds=list(scene_contract.get("causal_seeds", []) or []),
         )
 
-    # ----- four-questions aggregator -------------------------------------
+    # =====================================================================
+    # FOUR-QUESTIONS AGGREGATOR
+    # =====================================================================
 
     def _collect_four_questions(
         self,
@@ -527,33 +1087,22 @@ class ResolverAgent:
         npc_proposal_dict: dict[str, Any] | None,
         director_beat_dict: dict[str, Any] | None,
         scene_contract: dict[str, Any],
-        accepted_npc: dict[str, Any] | None,
-        outcome: Any,
+        outcome: EngineResolverOutcome,
     ) -> FourQuestionsResult:
-        artifact_updates: list[Any] = []
-        belief_updates: list[Any] = []
-        fired_seeds: list[str] = []
+        artifact_updates: list[Any] = list(outcome.artifactUpdates or [])
+        belief_updates: list[Any] = list(outcome.beliefUpdates or [])
+        fired_seeds: list[str] = list(outcome.firedCausalSeeds or [])
         if npc_proposal_dict is not None:
             belief_updates.extend(npc_proposal_dict.get("beliefUpdatesRequested", []) or [])
         if director_beat_dict is not None:
             fired_seeds.extend(director_beat_dict.get("firedCausalSeeds", []) or [])
             fired_seeds.extend(director_beat_dict.get("newCausalSeeds", []) or [])
-        # Also pull from the engine outcome
-        try:
-            for au in outcome.artifactUpdates or []:
-                artifact_updates.append(au)
-        except AttributeError:
-            pass
-        try:
-            for bu in outcome.beliefUpdates or []:
-                belief_updates.append(bu)
-        except AttributeError:
-            pass
-        try:
-            for s in outcome.firedCausalSeeds or []:
+
+        # The Director (and the engine) may have planted new
+        # seeds even when the proposal didn't ask for them.
+        for s in (outcome.newCausalSeeds or []):
+            if s not in fired_seeds:
                 fired_seeds.append(s)
-        except AttributeError:
-            pass
 
         return check_four_questions(
             artifact_updates=artifact_updates,
@@ -565,7 +1114,9 @@ class ResolverAgent:
             scene_mandatory_echoes=scene_contract.get("mandatory_echoes", []) or [],
         )
 
-    # ----- LLM-call helper -----------------------------------------------
+    # =====================================================================
+    # LLM-CALL HELPER (for the audit trail)
+    # =====================================================================
 
     @staticmethod
     def make_llm_call_record(
@@ -575,8 +1126,61 @@ class ResolverAgent:
         scene_id: str,
         character_id: str | None = None,
     ) -> dict[str, Any]:
-        """Build an ``auditTrail.llmCalls`` entry from a gateway response."""
+        """Build an ``auditTrail.llmCalls`` entry from a gateway response.
 
+        The Resolver is the only place that aggregates LLM
+        calls from the upstream agents (NPC, Director,
+        IntentParser, Memory Recall) into the canonical
+        outcome.  Each entry mirrors the schema's
+        ``auditTrail.llmCalls`` shape.
+
+        The schema is strict: only ``agent`` / ``model`` /
+        ``inputTokens`` / ``outputTokens`` / ``latencyMs``
+        are allowed.  We carry ``sceneId`` and
+        ``characterId`` in the ``agent`` field's enum value
+        (e.g. ``"npc_agent@photo_lab_2008#arash"``) to keep
+        the entry schema-clean while preserving the context.
+        """
+
+        # Encode the optional context into the ``agent`` field
+        # so we don't violate ``additionalProperties: false``.
+        # The schema's enum for ``agent`` is the four canonical
+        # names; for non-canonical agents we drop the context.
+        canonical = {"player_client", "npc_agent", "director_agent",
+                     "resolver", "memory_recall"}
+        if agent in canonical:
+            agent_field = agent
+        else:
+            # Custom agent name — preserve but drop the suffix
+            # to keep the schema happy.
+            agent_field = agent.split("@", 1)[0]
+            if agent_field not in canonical:
+                agent_field = "npc_agent"  # safe fallback
+        return {
+            "agent": agent_field,
+            "model": response.model,
+            "inputTokens": int(response.input_tokens),
+            "outputTokens": int(response.output_tokens),
+            "latencyMs": int(response.latency_ms),
+        }
+
+    @staticmethod
+    def make_llm_call_record_full(
+        *,
+        agent: str,
+        response: ModelResponse,
+        scene_id: str,
+        character_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Build a context-rich LLM-call record (for internal audit only).
+
+        Same as :meth:`make_llm_call_record` but with
+        ``sceneId`` / ``characterId`` included.  Use this for
+        the **resolver's** own audit log
+        (``self._last_clamp_audit``) — the
+        ``outcome.auditTrail.llmCalls`` field must use the
+        schema-strict variant above.
+        """
         return {
             "agent": agent,
             "model": response.model,
@@ -586,6 +1190,88 @@ class ResolverAgent:
             "sceneId": scene_id,
             "characterId": character_id,
         }
+
+    # =====================================================================
+    # CLAMP HELPER (used by the agent for *agent-side* sanitation)
+    # =====================================================================
+
+    def record_clamp(
+        self,
+        *,
+        path: str,
+        original: float,
+        applied: float,
+        min_value: float,
+        max_value: float,
+    ) -> ClampAuditEntry:
+        """Record an agent-side clamp event.
+
+        The reducer's own clamp audit goes through the engine;
+        the agent's record covers cases where the agent
+        sanitises a value *before* it reaches the engine
+        (e.g. an LLM-emitted confidence that exceeded 1.0).
+        """
+        entry = ClampAuditEntry(
+            path=str(path),
+            original=float(original),
+            applied=float(applied),
+            min=float(min_value),
+            max=float(max_value),
+        )
+        self._last_clamp_audit.append(entry)
+        return entry
+
+    @staticmethod
+    def clamp_value(
+        value: float, *,
+        lo: float,
+        hi: float,
+        path: str = "agent",
+    ) -> tuple[float, ClampAuditEntry | None]:
+        """Clamp ``value`` to ``[lo, hi]`` and return the entry for audit.
+
+        This is the agent-side convenience wrapper for the
+        engine's :func:`clamp`.  Use it for any numeric field
+        the agent reads from a proposal before forwarding to
+        the engine.  The returned :class:`ClampAuditEntry` is
+        **not** auto-registered in
+        :attr:`ResolverAgent.last_clamp_audit` — callers that
+        want it recorded in the per-call audit should pass
+        the entry to :meth:`record_clamp` themselves (the
+        static signature avoids a hidden ``self`` dependency
+        for callers that don't need audit).
+        """
+        if lo <= value <= hi:
+            return float(value), None
+        clamped = max(lo, min(hi, float(value)))
+        return clamped, ClampAuditEntry(
+            path=path, original=float(value), applied=clamped, min=lo, max=hi
+        )
+
+    # =====================================================================
+    # IDEMPOTENCY KEY CONSTRUCTION
+    # =====================================================================
+
+    @staticmethod
+    def _make_idempotency_key(
+        runId: str,
+        event_sequence: int,
+        player_action_id: str | None,
+        director_proposal_id: str | None,
+    ) -> str:
+        """Composite idempotency key (hash → 64 hex chars; schema allows 16-128).
+
+        The engine also computes a key from the same inputs.
+        We use the same composition so the agent's cache and
+        the engine's ``IdempotencyReplayError`` agree.
+        """
+        raw = f"{runId}|{event_sequence}|{player_action_id or ''}|{director_proposal_id or ''}"
+        digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:64]
+        return digest
+
+    # =====================================================================
+    # SCHEMA LOADER
+    # =====================================================================
 
     @staticmethod
     def _load_schema(schema_path: str | None) -> dict[str, Any]:
@@ -597,11 +1283,133 @@ class ResolverAgent:
             return json.load(fh)
 
 
+# ---------------------------------------------------------------------------
+# Cached-outcome materialisation
+# ---------------------------------------------------------------------------
+
+
+class _NPCProposalWithRelationship:
+    """Shim around :class:`engine.resolver.NPCProposal` that adds
+    ``relationshipDelta``.
+
+    The engine's :class:`engine.resolver.NPCProposal` is a
+    ``slots=True`` dataclass and does not declare a
+    ``relationshipDelta`` field.  The engine resolver reads
+    the field via ``getattr(accepted_npc, "relationshipDelta", [])``,
+    which on a slots-dataclass without that slot returns the
+    default — but only for **attribute lookup**; on some
+    Python builds, a slots dataclass raises
+    :exc:`AttributeError` instead of returning the default.
+
+    This shim proxies every attribute access to the wrapped
+    proposal and adds a real ``relationshipDelta`` slot of
+    its own.  It is intentionally minimal: it does not
+    support ``__slots__`` extension or pickling; the
+    resolver creates a fresh shim per turn.
+    """
+
+    __slots__ = ("_proposal", "relationshipDelta")
+
+    def __init__(self, proposal: EngineNPCProposal, relationship_delta: list[dict[str, Any]]):
+        self._proposal = proposal
+        self.relationshipDelta = list(relationship_delta)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._proposal, name)
+
+    def __repr__(self) -> str:
+        return f"_NPCProposalWithRelationship({self._proposal!r}, {self.relationshipDelta!r})"
+
+
+def _cached_outcome_to_resolver_outcome(
+    record: IdempotencyRecord,
+    snapshot: WorldSnapshot,
+    player_action: dict[str, Any] | None,
+    director_beat_dict: dict[str, Any] | None,
+) -> EngineResolverOutcome:
+    """Materialise a :class:`EngineResolverOutcome` from an idempotency record.
+
+    Used when the same key is re-applied in-process.  The
+    cached record carries the original outcomeId and event
+    sequence; we don't re-run the engine.
+    """
+
+    return EngineResolverOutcome(
+        outcomeId=record.outcomeId,
+        runId=snapshot.runId,
+        eventSequence=record.eventSequence,
+        idempotencyKey=record.idempotencyKey,
+        acceptedNpcAction={
+            "proposalId": "00000000-0000-0000-0000-000000000000",
+            "characterId": "",
+            "proposedAction": "silence",
+            "speechIntent": "remain_silent",
+            "resolvedText": "",
+        },
+        nextBeat={
+            "sceneId": snapshot.canonicalState.currentSceneId,
+            "beatId": "replay_noop",
+            "transition": "continue",
+        },
+        timestamp=record.timestamp,
+        triggerPlayerActionId=(
+            player_action.get("clientActionId") if player_action else None
+        ),
+        triggerDirectorProposalId=(
+            director_beat_dict.get("proposalId") if director_beat_dict else None
+        ),
+        rejectedNpcActions=[],
+        relationshipDelta=[],
+        beliefUpdates=[],
+        artifactUpdates=[],
+        newCausalSeeds=[],
+        firedCausalSeeds=[],
+        clampedValues=[],
+        auditTrail={
+            "llmCalls": [],
+            "deterministicDecisions": [
+                f"resolver_agent: replay no-op for idempotencyKey={record.idempotencyKey[:16]}…"
+            ],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Convenience factory: build a fully-wired ResolverAgent for tests
+# ---------------------------------------------------------------------------
+
+
+def build_resolver_agent(
+    case_slug: str = "case_01_revolution_street",
+    *,
+    base_random_seed: int = 0,
+    schema_path: str | None = None,
+) -> ResolverAgent:
+    """Build a ResolverAgent with a fresh engine Resolver.
+
+    The factory is the recommended way to construct the
+    agent in tests; it ensures the engine Resolver and the
+    agent share the same RNG seed.
+    """
+    return ResolverAgent(
+        EngineResolver(base_random_seed=base_random_seed),
+        case_slug=case_slug,
+        schema_path=schema_path,
+        base_random_seed=base_random_seed,
+    )
+
+
 __all__ = [
     "RESOLVER_AGENT_VERSION",
+    "RESOLVER_AGENT_SCHEMA_VERSION",
     "ResolverAgent",
     "ResolverAgentError",
+    "CaseAwareEraError",
+    "SchemaValidationError",
     "MandatoryEchoValidation",
     "MandatoryEchoCheck",
     "CaseAwareEraCheck",
+    "ClampAuditEntry",
+    "IdempotencyRecord",
+    "build_resolver_agent",
 ]

@@ -218,8 +218,13 @@
     },
     "narratorVoice": {
       "type": "string",
+      "enum": [
+        "default_third_person_observer",
+        "observer_leila",
+        "observer_arash"
+      ],
       "maxLength": 500,
-      "description": "Optional style note for the LLM narrator (e.g. 'third-person limited, period-appropriate vernacular')."
+      "description": "Optional narrator voice preset. Default = 'default_third_person_observer' (third-person limited, period-appropriate vernacular). 'observer_leila' / 'observer_arash' unlock Leila's / Arash's viewpoint — paid unlock (决策 4 ¥3/段). When set, the narrator voice shifts from '你看到了 X' to '莱拉当时以为 X' / '阿拉什当时以为 X', revealing what the other half didn't know (UP-20260715-004). The enum is closed; custom style notes are not allowed at the schema level so the cost & UX gates can index by name."
     },
     "schemaVersion": {
       "type": "string",

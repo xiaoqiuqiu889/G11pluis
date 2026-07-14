@@ -71,16 +71,12 @@ class RouterIterationTests(unittest.TestCase):
 
     def test_get_unknown_task_raises(self) -> None:
         r = build_default_router()
-        with self.assertRaises(KeyError):
-            r.get(TaskType.NPC_PROPOSER)  # ok, exists
-        # No unknown task in the enum, so this is a "key error on
-        # an internal bug" rather than a user error.  Manually
-        # remove the config and re-test.
-        r.set(TaskType.NPC_PROPOSER, TaskConfig(
-            task_type=TaskType.NPC_PROPOSER, routes=[]
-        ))
-        # We monkey-patched the default; restore via the same path
-        # to make sure the negative path works.
+        # Sanity: a known task does NOT raise.
+        cfg = r.get(TaskType.NPC_PROPOSER)
+        self.assertIsNotNone(cfg)
+        # The TaskType enum has no "unknown" value, so the only
+        # way to provoke a missing config is to remove it after
+        # construction.  Manually remove the config and re-test.
         r._configs.pop(TaskType.NPC_PROPOSER)  # type: ignore[attr-defined]
         with self.assertRaises(KeyError):
             r.get(TaskType.NPC_PROPOSER)

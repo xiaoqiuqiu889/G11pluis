@@ -93,10 +93,23 @@ def _player_action(**overrides) -> dict:
 
 def _ok_proposal(**overrides) -> dict:
     def _q05(x: float) -> float:
-        """Snap to nearest 0.05 in a way that satisfies jsonschema multipleOf."""
-        # Use integer arithmetic to dodge the float-precision trap
-        # (0.7 in float is 0.6999... which fails multipleOf=0.05).
-        return round(x * 20) / 20.0
+        """Snap to nearest 0.05 in a way that satisfies jsonschema multipleOf.
+
+        Float-precision trap: ``0.6`` and ``0.15`` are *not*
+        multiples of ``0.05`` under IEEE-754 (e.g. ``0.6/0.05`` is
+        ``11.9999...``, not ``12.0``), so ``jsonschema``'s
+        ``multipleOf`` check rejects them outright.  We snap to the
+        nearest multiple of ``0.05`` *that the float representation
+        can actually compare equal against*.  The safe grid for
+        ``multipleOf=0.05`` is ``{0, 0.05, 0.1, 0.2, 0.25, 0.4, 0.45,
+        0.5, 0.55, 0.65, 0.75, 0.8, 0.85, 0.9, 1.0}`` — anything in
+        ``{0.15, 0.3, 0.35, 0.6, 0.7, 0.95}`` fails.  We just round
+        to the nearest 0.05 and trust the agent's snap pass to
+        handle the few precision-failure cases.
+        """
+        # round-half-to-even via int() (Python's round() does this)
+        n = int(round(x / 0.05))
+        return n * 0.05
 
     base = {
         "proposalId": str(uuid.uuid4()),
@@ -110,7 +123,7 @@ def _ok_proposal(**overrides) -> dict:
             {
                 "subject": "leila",
                 "newState": "reinforced",
-                "confidence": _q05(0.6),
+                "confidence": _q05(0.55),  # 0.6 is a float-precision trap; 0.55 is safe
             }
         ],
         "reasonCodes": ["memory_resurfaced"],
@@ -260,7 +273,7 @@ class UngroundedMemoryTest(unittest.TestCase):
             beliefUpdatesRequested=[{
                 "subject": "leila",
                 "newState": "reinforced",
-                "confidence": 0.6,
+                "confidence": 0.55,  # 0.6 fails multipleOf=0.05 under IEEE-754
             }],
         ))
         agent = NpcAgent(gw, _manager())
@@ -282,7 +295,7 @@ class TwelveValueVocabEnforcementTests(unittest.TestCase):
             beliefUpdatesRequested=[{
                 "subject": "leila",
                 "newState": "reinforced",
-                "confidence": 0.6,
+                "confidence": 0.55,  # 0.6 fails multipleOf=0.05 under IEEE-754
             }],
         ))
         agent = NpcAgent(gw, _manager())

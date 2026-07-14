@@ -38,9 +38,65 @@ from typing import Any, Mapping, Sequence
 
 import jsonschema
 from jsonschema import Draft7Validator, RefResolver
+from jsonschema import validators as _jsonschema_validators
 
 from .exceptions import SchemaValidationError
 from .models import TaskType, TASK_TO_SCHEMA, safe_parse_json
+
+
+# ---------------------------------------------------------------------------
+# multipleOf — Decimal arithmetic to avoid float precision bugs
+# ---------------------------------------------------------------------------
+#
+# JSON Schema's ``multipleOf`` is well known to mis-report on
+# floats that have no exact binary representation (e.g. ``0.6``,
+# ``0.7``).  The default validator uses Python ``%`` and
+# ``/`` on floats, which mis-evaluates ``0.6 % 0.05 = 4.99e-02``
+# (fails) when the value IS actually a multiple.
+#
+# We patch the ``multipleOf`` validator to convert both sides
+# to :class:`decimal.Decimal` first.  This is the standard
+# workaround; the jsonschema team is migrating to the
+# ``referencing`` library but ``Decimal`` arithmetic is still
+# the most portable fix across versions.
+
+
+def _multiple_of_decimal(validator, multiple_of, instance, schema) -> Any:  # type: ignore[no-untyped-def]
+    """``multipleOf`` validator that uses Decimal arithmetic.
+
+    Returns a no-op iterator on success, or yields a
+    :class:`jsonschema.ValidationError` on failure.
+    """
+
+    import math
+    from decimal import Decimal, InvalidOperation
+
+    if not isinstance(instance, (int, float)):
+        return  # type-only constraint; not a number
+    if multiple_of == 0:
+        return
+    try:
+        d_instance = Decimal(str(instance))
+        d_multiple = Decimal(str(multiple_of))
+    except (InvalidOperation, ValueError):
+        # Fall back to default behaviour for unconvertible values.
+        if instance / multiple_of != math.floor(instance / multiple_of):
+            yield jsonschema.ValidationError(
+                f"{instance!r} is not a multiple of {multiple_of!r}",
+            )
+        return
+    quotient = d_instance / d_multiple
+    if quotient != quotient.to_integral_value():
+        yield jsonschema.ValidationError(
+            f"{instance!r} is not a multiple of {multiple_of!r}",
+        )
+
+
+#: Extended validator with the Decimal-arithmetic ``multipleOf``.
+_EXTENDED_VALIDATOR: type[jsonschema.Draft7Validator] = _jsonschema_validators.extend(
+    Draft7Validator,
+    validators={"multipleOf": _multiple_of_decimal},
+)
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +171,7 @@ class SchemaValidator:
     def __init__(self, schema_dir: Path | str | None = None) -> None:
         self._dir = Path(schema_dir) if schema_dir else DEFAULT_SCHEMA_DIR
         self._schemas: dict[str, dict[str, Any]] = {}
-        self._validators: dict[str, Draft7Validator] = {}
+        self._validators: dict[str, _EXTENDED_VALIDATOR] = {}
         self._load_all()
 
     # ----- public API ----------------------------------------------------
@@ -216,7 +272,7 @@ class SchemaValidator:
             # present, else the file URI.
             store: dict[str, Any] = {**self._schemas}
             resolver = RefResolver(base_uri=schema.get("$id", path.as_uri()), referrer=schema, store=store)
-            self._validators[name] = Draft7Validator(schema, resolver=resolver)
+            self._validators[name] = _EXTENDED_VALIDATOR(schema, resolver=resolver)
 
 
 # ---------------------------------------------------------------------------

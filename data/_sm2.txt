@@ -1,0 +1,10 @@
+﻿{
+  "status": "ok",
+  "scenesCached": [],
+  "scenesInOrder": [
+    "photo_lab_2008",
+    "farewell_2011",
+    "reunion_2024"
+  ],
+  "contentRoot": "D:\\G1-ai-native\\content"
+}

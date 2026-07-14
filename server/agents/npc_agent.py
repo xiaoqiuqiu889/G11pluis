@@ -324,14 +324,25 @@ def _snap_to_quantum(target: dict[str, Any], field: str, quantum: float) -> None
     snapped = (d_value / d_q).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     target[field] = float(snapped * d_q)
 
-    @staticmethod
-    def _load_schema(schema_path: str | None) -> dict[str, Any]:
-        if schema_path is None:
-            from pathlib import Path
-            root = Path(__file__).resolve().parents[1]
-            schema_path = str(root / "config" / "schemas" / "npc_proposal.schema.json")
-        with open(schema_path, "r", encoding="utf-8") as fh:
-            return json.load(fh)
+
+class _NpcAgentSchemaLoader:  # pragma: no cover — placeholder
+    pass
+
+
+# Re-define the class method that was displaced by the helper
+# (kept in a single class block above).  The actual binding
+# happens at class-definition time below.
+def _load_npc_proposal_schema(schema_path: str | None) -> dict[str, Any]:
+    if schema_path is None:
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        schema_path = str(root / "config" / "schemas" / "npc_proposal.schema.json")
+    with open(schema_path, "r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+# Bind as a class method on NpcAgent.
+NpcAgent._load_schema = staticmethod(_load_npc_proposal_schema)
 
 
 __all__ = [

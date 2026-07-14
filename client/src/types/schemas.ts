@@ -364,7 +364,10 @@ export interface NarrativeContract {
     tone?: EndingTone;
   }>;
   causal_seeds?: string[];
-  narratorVoice?: string;
+  // UP-20260715-004: enum mirrors server/config/schemas/narrative_contract.schema.json
+  // (default_third_person_observer | observer_leila | observer_arash).
+  // observer_leila / observer_arash are paid unlocks (决策 4 ¥3/段).
+  narratorVoice?: "default_third_person_observer" | "observer_leila" | "observer_arash";
   schemaVersion: "1.0.0";
 }
 

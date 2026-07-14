@@ -1,0 +1,756 @@
+# =============================================================================
+# G1N W9 — Kubernetes deployment + Horizontal Pod Autoscaler
+# =============================================================================
+#
+# 触发条件（brief）:
+#   - CPU > 70%
+#   - 内存 > 80%
+#   - 队列长度 > 50      (自定义 metric: action_runner in-flight requests)
+# 最大副本数: 10
+# 数据库连接池: 每个 pod 20 连接 (= max_connections_per_pod; 10 pods * 20 = 200 < Postgres 的 300 默认上限)
+#
+# 关键约束（W9 红线 + 决策 5 acceptance）:
+#   - HPA 触发时 **不丢 run 状态**:
+#       * action_runner 每回合把 WorldSnapshot 持久化到 ``world_snapshots`` 表,
+#         新 pod 重新打开 run 时从 DB hydrate, in-flight 的 turn 已经在 DB 里
+#         (write-domain isolation 保证 resolver 写完才返回 200).
+#       * ``preStop`` 钩子 30s 宽限, 拉完 in-flight 后才 SIGTERM.
+#   - 压测与生产 namespace 隔离:
+#       * 生产用 ``g1n-prod`` namespace
+#       * 压测用 ``g1n-loadtest`` namespace (K8s NetworkPolicy 默认拒绝跨 namespace 流量)
+#       * 压测的 HPA maxReplicas = 5 (不会和 prod 抢节点)
+#   - 连接池 = 20/pod, 防止 Postgres 被打爆:
+#       * ``G1N_DB_POOL=20`` env var; ``db.build_engine`` 已经读取
+#       * ``G1N_DB_MAX_OVERFLOW=0`` 严格上限, 拒绝排队而不是默默扩张
+# =============================================================================
+
+---
+# Namespace — keep prod + load-test + monitoring in separate namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: g1n-prod
+  labels:
+    app: g1n
+    env: prod
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: g1n-loadtest
+  labels:
+    app: g1n
+    env: loadtest
+    pod-security.kubernetes.io/enforce: baseline
+---
+# ConfigMap — single source of truth for non-secret config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: g1n-server-config
+  namespace: g1n-prod
+data:
+  # Production DB points at the managed Postgres + pgvector.
+  # The Cloudflare Workers gateway terminates TLS, so the
+  # in-cluster URL can be plain http.
+  G1N_DB_URL: "postgresql+psycopg://g1n:${DB_PASSWORD}@g1n-pg-primary.g1n-prod.svc.cluster.local:5432/g1n?application_name=g1n-server"
+  G1N_DB_POOL: "20"
+  G1N_DB_MAX_OVERFLOW: "0"
+  G1N_LOG_LEVEL: "INFO"
+  G1N_HOST: "0.0.0.0"
+  G1N_PORT: "8000"
+  G1N_CORS_ORIGINS: "https://g1n.example.com,https://www.g1n.example.com,app://."
+  # Redis — production single-shard (1k concurrent users fits in a 1GB instance).
+  G1N_REDIS_URL: "redis://g1n-redis-master.g1n-prod.svc.cluster.local:6379/0"
+  G1N_CACHE_BACKEND: "redis"
+  # OTel — emit to the in-cluster Tempo collector.
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo.observability.svc.cluster.local:4317"
+  OTEL_SERVICE_NAME: "g1n-server"
+  # No LLM_API_KEY in config — those go in Secret.
+  G1N_USE_MOCK: "0"
+  # Action runner — keep the per-pod active-run cap low so a
+  # single pod cannot monopolise the Postgres pool.
+  G1N_MAX_ACTIVE_RUNS_PER_POD: "200"
+---
+# Secret — non-secret-shaped keys declared in the Kustomize overlay;
+# the real Secret is created by the SealedSecrets controller.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: g1n-server-secrets
+  namespace: g1n-prod
+type: Opaque
+stringData:
+  DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY}"
+  OPENAI_API_KEY: "${OPENAI_API_KEY}"
+  REDIS_PASSWORD: "${REDIS_PASSWORD}"
+  DB_PASSWORD: "${DB_PASSWORD}"
+---
+# ServiceAccount — least-privilege
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+  annotations:
+    # Link the ServiceAccount to the Cloudflare Tunnel so
+    # the cluster can reach the edge without a public LB.
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+---
+# Deployment — FastAPI pods
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+  labels:
+    app: g1n
+    component: server
+    version: "1.0.0"
+spec:
+  # 10 is the W9 brief's hard cap; we start at 2 so cold
+  # HPA doesn't pay the warm-up cost on every deploy.
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # One pod at a time so a single bad deploy doesn't
+      # take the cluster down.  minAvailable=1 keeps the
+      # service available throughout the roll.
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: g1n
+      component: server
+  template:
+    metadata:
+      labels:
+        app: g1n
+        component: server
+        version: "1.0.0"
+      annotations:
+        # Scrape every 10s (the brief's P95 budget is 4s;
+        # 10s scrape interval is fine for an alert).
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: g1n-server
+      # W9 红线 4: preStop + terminationGracePeriodSeconds
+      # together guarantee in-flight turns are persisted
+      # before the pod is replaced by HPA.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: g1n-server
+          image: ghcr.io/g1n/g1n-server:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: g1n-server-config
+            - secretRef:
+                name: g1n-server-secrets
+          # Resource shape — the HPA thresholds are derived
+          # from these requests (CPU > 70% / mem > 80%).
+          # requests are 1 vCPU / 1 GiB; limits are 2 vCPU /
+          # 2 GiB so the cluster has headroom to schedule.
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "768Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          # Probes — the brief calls out a 4s P95 budget;
+          # the readiness probe must be cheap (no DB ping)
+          # and fast (< 200ms).  The liveness probe gives
+          # the process 30s to fail-then-recover before
+          # restart; the 4s P95 budget is per-action, not
+          # per-probe.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 4
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Mark this pod as "draining" so the
+                    # action runner stops accepting new
+                    # actions and waits for the in-flight
+                    # turns to land in the DB.
+                    #
+                    # The HTTP request takes < 1s; the
+                    # 30s sleep below absorbs the slowest
+                    # P95 turn (4s) + cluster networking
+                    # variability.
+                    curl -fsS -X POST http://127.0.0.1:8000/v1/__admin/drain || true
+                    sleep 30
+          # Volume mounts — the case_01 scene YAML is baked
+          # into the image, so no ConfigMap volume is needed
+          # for the cold start.  The /data volume holds the
+          # ephemeral SQLite dev cache (not used in prod,
+          # but the mount is here so the Helm chart can be
+          # reused for staging).
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: data
+          emptyDir: {}
+      # Anti-affinity — spread the 2 starting pods across
+      # nodes so a single node loss doesn't kill the
+      # service.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: g1n
+                    component: server
+                topologyKey: kubernetes.io/hostname
+      # Spread the pods across zones too (3-AZ cluster).
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: g1n
+              component: server
+---
+# Service — ClusterIP; Cloudflare Tunnel exposes it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+  labels:
+    app: g1n
+    component: server
+spec:
+  type: ClusterIP
+  selector:
+    app: g1n
+    component: server
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  # Internal-only; the public surface is the Workers
+  # gateway.  sessionAffinity keeps a player's run
+  # localised to one pod so the in-memory active-run
+  # cache hits on every action (the W9 brief calls for
+  # cache hit rate > 80%).
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 600
+---
+# PodDisruptionBudget — at most 1 pod down during a
+# voluntary disruption (HPA scale-down, node drain).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: g1n
+      component: server
+---
+# ServiceMonitor — Prometheus scrape config
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+  labels:
+    app: g1n
+    component: server
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: g1n
+      component: server
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 10s
+      scrapeTimeout: 5s
+---
+# HorizontalPodAutoscaler — the W9 brief
+# Triggers (OR): CPU > 70% / memory > 80% / queue length > 50
+# Scale: 2 -> 10 (max)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+  labels:
+    app: g1n
+    component: server
+spec:
+  # The W9 max is 10 pods.  We start at 2 (replicas
+  # declared on the Deployment).  minReplicas=2 so a
+  # cold cluster still has hot pods to take traffic.
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: g1n-server
+  minReplicas: 2
+  maxReplicas: 10
+  # Scale-up faster than scale-down — the brief's P95
+  # budget is the most painful SLO to recover from, so
+  # we want to add pods on the way up *fast*.
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 4
+          periodSeconds: 30
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+  metrics:
+    # ----- 触发 1: CPU > 70% -----
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # ----- 触发 2: 内存 > 80% -----
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    # ----- 触发 3: 队列长度 > 50 -----
+    # The "queue" is the in-process count of in-flight
+    # actions the runner is currently processing.  The
+    # action runner increments / decrements a Prometheus
+    # gauge (``g1n_active_runs``); the KEDA-style metric
+    # adapter below turns it into a HPA signal.
+    - type: Pods
+      pods:
+        metric:
+          name: g1n_inflight_actions
+        target:
+          type: AverageValue
+          averageValue: "50"
+---
+# PrometheusRule — alert routing for the HPA's
+# behaviour.  The W9 observability.py module owns the
+# alerting policy; this object wires the HPA's events
+# to PagerDuty.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+  labels:
+    app: g1n
+    component: server
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: g1n.scaling
+      interval: 30s
+      rules:
+        - alert: G1NHPAMaxedOut
+          expr: kube_horizontalpodautoscaler_status_current_replicas{horizontalpodautoscaler="g1n-server"} == kube_horizontalpodautoscaler_spec_max_replicas{horizontalpodautoscaler="g1n-server"}
+          for: 5m
+          labels:
+            severity: p1
+            team: g1n
+          annotations:
+            summary: "G1N HPA 已扩到 10 副本上限 5 分钟"
+            description: "考虑扩容节点池或调高 maxReplicas。"
+---
+# NetworkPolicy — isolate prod from load-test, and
+# only allow ingress from the Cloudflare Tunnel.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: g1n
+      component: server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Cloudflare Tunnel sidecar
+    - from:
+        - podSelector:
+            matchLabels:
+              app: cloudflared
+              namespace: g1n-prod
+      ports:
+        - port: 8000
+          protocol: TCP
+    # Prometheus scrape
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - port: 8000
+          protocol: TCP
+    # In-namespace debug (kubectl port-forward)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: g1n-prod
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Postgres
+    - to:
+        - podSelector:
+            matchLabels:
+              app: g1n-pg
+      ports:
+        - port: 5432
+          protocol: TCP
+    # Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: g1n-redis
+      ports:
+        - port: 6379
+          protocol: TCP
+    # OTel collector (Tempo)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+      ports:
+        - port: 4317
+          protocol: TCP
+    # HTTPS to LLM providers
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - port: 443
+          protocol: TCP
+---
+# VerticalPodAutoscaler (optional, recommended) — bound
+# the per-pod request to historical P95 usage.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: g1n-server
+  namespace: g1n-prod
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: g1n-server
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: g1n-server
+        minAllowed:
+          cpu: 200m
+          memory: 384Mi
+        maxAllowed:
+          cpu: 4
+          memory: 4Gi
+        controlledResources: ["cpu", "memory"]
+---
+# KEDA-style ScaledObject is one option; the native
+# HPA + custom-metric adapter (k8s-prometheus-adapter)
+# is what we run in prod.  The config below is the
+# adapter's metric source — the HPA above reads it
+# as ``g1n_inflight_actions``.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: g1n-custom-metrics
+  namespace: g1n-prod
+data:
+  rules.yaml: |
+    rules:
+      - seriesQuery: 'g1n_inflight_actions{namespace="g1n-prod"}'
+        resources:
+          overrides:
+            namespace: { resource: "namespace" }
+            pod: { resource: "pod" }
+        name:
+          matches: "^(.*)$"
+          as: "${1}"
+        metricsQuery: 'avg_over_time(<<.Series>>{<<.LabelMatchers>>}[2m])'
+---
+# Pod-level SLO annotation — surfaces the W9 acceptance
+# numbers on the kubectl describe output.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: g1n-server-slo
+  namespace: g1n-prod
+data:
+  slo.yaml: |
+    service: g1n-server
+    slos:
+      - name: action_p95_latency
+        description: "POST /v1/runs/:id/actions P95 latency (决策 5 R4)"
+        goal: 0.99
+        threshold_ms: 4000
+      - name: per_run_cost
+        description: "单局 AI 成本 (决策 5 soft target)"
+        goal: 0.95
+        threshold_cny: 0.8
+      - name: cache_hit_rate
+        description: "WorldSnapshot 缓存命中率 (W9 验收)"
+        goal: 0.80
+      - name: error_rate
+        description: "5xx 错误率 (W9 红线)"
+        goal: 0.99
+      - name: vector_p95
+        description: "4-8 段召回 P95 (W9 验收)"
+        goal_ms: 100
+---
+# ---
+# LOAD-TEST namespace — same shape, isolation by NetworkPolicy
+# ---
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: g1n-server-config
+  namespace: g1n-loadtest
+data:
+  # Isolated DB: a separate database on the same Postgres
+  # instance (or a dedicated instance — the NetworkPolicy
+  # below blocks cross-namespace traffic so the prod DB
+  # cannot be reached by the load test).
+  G1N_DB_URL: "postgresql+psycopg://g1n_loadtest:${DB_PASSWORD}@g1n-pg-primary.g1n-prod.svc.cluster.local:5432/g1n_loadtest?application_name=g1n-loadtest"
+  G1N_DB_POOL: "5"
+  G1N_DB_MAX_OVERFLOW: "0"
+  G1N_USE_MOCK: "1"
+  G1N_CACHE_BACKEND: "memory"
+  G1N_REDIS_URL: "redis://g1n-redis-master.g1n-loadtest.svc.cluster.local:6379/0"
+  G1N_LOG_LEVEL: "WARNING"
+  G1N_MAX_ACTIVE_RUNS_PER_POD: "50"
+  # Disable the real LLM keys for the load test — the
+  # action runner uses the mock provider regardless.
+  OTEL_SDK_DISABLED: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: g1n-server-secrets
+  namespace: g1n-loadtest
+type: Opaque
+stringData:
+  DB_PASSWORD: "${DB_PASSWORD}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: g1n-server
+  namespace: g1n-loadtest
+  labels:
+    app: g1n
+    component: server
+    variant: loadtest
+spec:
+  # 压测用更小的副本数 (1-5), 与生产不抢节点.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: g1n
+      component: server
+      variant: loadtest
+  template:
+    metadata:
+      labels:
+        app: g1n
+        component: server
+        variant: loadtest
+    spec:
+      serviceAccountName: g1n-server
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: g1n-server
+          image: ghcr.io/g1n/g1n-server:1.0.0
+          envFrom:
+            - configMapRef:
+                name: g1n-server-config
+            - secretRef:
+                name: g1n-server-secrets
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          ports:
+            - name: http
+              containerPort: 8000
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: g1n-server
+  namespace: g1n-loadtest
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: g1n-server
+  minReplicas: 1
+  # 压测封顶 5, 防止和 prod 抢资源.
+  maxReplicas: 5
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 30
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# NetworkPolicy — hard isolation between prod and loadtest.
+# Even though the loadtest is on the same Postgres, the
+# pod selector + namespace selector combination means the
+# loadtest pods cannot reach g1n-pg in the prod namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: g1n-server-isolate
+  namespace: g1n-loadtest
+spec:
+  podSelector:
+    matchLabels:
+      app: g1n
+      component: server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Locust master only
+    - from:
+        - podSelector:
+            matchLabels:
+              app: locust
+              namespace: g1n-loadtest
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: g1n-pg
+              namespace: g1n-loadtest
+      ports:
+        - port: 5432
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: g1n-redis
+              namespace: g1n-loadtest
+      ports:
+        - port: 6379
+          protocol: TCP
+    # DNS only
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP

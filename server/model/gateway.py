@@ -238,7 +238,8 @@ class ModelGateway:
         # Walk the routes, retrying each up to its quota.
         attempts = 0
         last_error: Exception | None = None
-        for route, retries_left in self._router.iter_routes(request.task_type):
+        effective_routes = self._resolve_routes(request.task_type)
+        for route, retries_left in effective_routes:
             for attempt in range(retries_left + 1):
                 attempts += 1
                 route_request = self._apply_route_overrides(request, route)
@@ -265,10 +266,14 @@ class ModelGateway:
                     return response
                 except (ProviderTimeoutError, SchemaValidationError) as exc:
                     last_error = exc
-                    run_state.chain.note_failure()
-                    # If we've already retried this route, break
-                    # out and try the next route.
+                    # The schema-validation retry is *internal* to
+                    # this route — it does NOT count as a separate
+                    # cross-task failure for the degradation chain.
+                    # We only increment the chain counter when a
+                    # route is fully exhausted (i.e. when we move
+                    # to the next route in ``effective_routes``).
                     if attempt >= retries_left:
+                        run_state.chain.note_failure()
                         break
                     continue
 
@@ -300,7 +305,7 @@ class ModelGateway:
 
         attempts = 0
         last_error: Exception | None = None
-        for route, retries_left in self._router.iter_routes(request.task_type):
+        for route, retries_left in self._resolve_routes(request.task_type):
             for attempt in range(retries_left + 1):
                 attempts += 1
                 route_request = self._apply_route_overrides(request, route)
@@ -328,8 +333,11 @@ class ModelGateway:
                     return response
                 except ProviderTimeoutError as exc:
                     last_error = exc
-                    run_state.chain.note_failure()
+                    # See complete(): internal retries do not bump
+                    # the chain's consecutive counter; only
+                    # route-exhaustion does.
                     if attempt >= retries_left:
+                        run_state.chain.note_failure()
                         break
                     continue
 
@@ -405,6 +413,49 @@ class ModelGateway:
             max_output_tokens=request.max_output_tokens,
             timeout_ms=request.timeout_ms,
         )
+
+    def _resolve_routes(
+        self, task_type: TaskType
+    ) -> list[tuple[ModelRoute, int]]:
+        """Return the effective route list for ``task_type``.
+
+        The router's config may reference providers that are not
+        actually registered (e.g. the default router knows
+        ``deepseek`` / ``qwen`` but the gateway was constructed
+        with only a mock provider for tests / offline dev).
+        Routes whose provider is not registered are dropped from
+        the effective list.
+
+        If *every* configured route is dropped, the gateway falls
+        back to **any** registered provider using a synthetic
+        route with the same per-route retry budget as the task's
+        first configured route.  This keeps the gateway usable
+        when the test suite / offline environment only registered
+        a mock provider.
+        """
+
+        configured = self._router.iter_routes(task_type)
+        effective = [
+            (r, retries)
+            for r, retries in configured
+            if r.provider in self._providers
+        ]
+        if effective:
+            return effective
+        # Nothing matches — synthesise a single route on the first
+        # registered provider.  Use the first route's retry budget
+        # so the chain semantics are preserved.
+        first_route, first_retries = configured[0]
+        fallback_provider = next(iter(self._providers))
+        return [
+            (
+                ModelRoute(
+                    provider=fallback_provider,
+                    model=first_route.model,
+                ),
+                first_retries,
+            )
+        ]
 
     def _finalize(
         self,

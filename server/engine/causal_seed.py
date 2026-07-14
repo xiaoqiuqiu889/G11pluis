@@ -60,12 +60,25 @@ class EraSpan:
 
     def __post_init__(self) -> None:
         # Empty strings mean "no constraint".  Validating only when set.
-        from .types import Era as _Era
+        # ADR 0007 §2.5 / P0-7: era values may be the 13 canonical
+        # Era enum values *or* case-scoped shorthands declared in
+        # ``server.engine.types.CASE_ERAS`` (e.g. "2008", "2011",
+        # "2024", "EPILOGUE" for case_01_revolution_street).
+        from .types import Era as _Era, CASE_ERAS as _CASE_ERAS
 
-        if self.from_ and self.from_ not in {e.value for e in _Era}:
-            raise ValueError(f"invalid era: {self.from_!r}")
-        if self.to and self.to not in {e.value for e in _Era}:
-            raise ValueError(f"invalid era: {self.to!r}")
+        legal_eras = {e.value for e in _Era}
+        for case_map in _CASE_ERAS.values():
+            legal_eras.update(case_map.values())
+        if self.from_ and self.from_ not in legal_eras:
+            raise ValueError(
+                f"invalid era: {self.from_!r} "
+                f"(not in Era enum or any case-scoped override in CASE_ERAS)"
+            )
+        if self.to and self.to not in legal_eras:
+            raise ValueError(
+                f"invalid era: {self.to!r} "
+                f"(not in Era enum or any case-scoped override in CASE_ERAS)"
+            )
 
     def to_json_dict(self) -> dict[str, str]:
         d: dict[str, str] = {}
@@ -186,13 +199,30 @@ class CausalSeed:
             return False
         if self.echo_intensity < self.trigger_condition.minEcho:
             return False
-        # Era span constraint (always applied if set)
+        # Era span constraint (always applied if set).
+        # ADR 0007 §2.5 / P0-7: case-scoped era shorthands
+        # ("2008" / "2011" / "2024" / "EPILOGUE") are not in the
+        # canonical Era order, so we use a position-aware
+        # comparison: case-scoped eras are *additive* and the
+        # span rule is "current era equals the span bound" when
+        # the bound is case-scoped.  Only canonical Era values
+        # participate in the from..to ordering.
         if self.eraSpan.from_ or self.eraSpan.to:
-            eras = [e.value for e in __import__("server.engine.types", fromlist=["Era"]).Era]
-            if self.eraSpan.from_ and eras.index(current_era) < eras.index(self.eraSpan.from_):
-                return False
-            if self.eraSpan.to and eras.index(current_era) > eras.index(self.eraSpan.to):
-                return False
+            from .types import Era as _Era
+            canonical_eras = [e.value for e in _Era]
+            if self.eraSpan.from_ and self.eraSpan.from_ not in canonical_eras:
+                # Case-scoped "from" bound: equality test.
+                if current_era != self.eraSpan.from_:
+                    return False
+            elif self.eraSpan.from_ and current_era in canonical_eras:
+                if canonical_eras.index(current_era) < canonical_eras.index(self.eraSpan.from_):
+                    return False
+            if self.eraSpan.to and self.eraSpan.to not in canonical_eras:
+                if current_era != self.eraSpan.to:
+                    return False
+            elif self.eraSpan.to and current_era in canonical_eras:
+                if canonical_eras.index(current_era) > canonical_eras.index(self.eraSpan.to):
+                    return False
         if t == TriggerType.SCENE_MATCH.value:
             return current_scene_id in self.target_scenes and scene_match
         if t == TriggerType.ERA_MATCH.value:
