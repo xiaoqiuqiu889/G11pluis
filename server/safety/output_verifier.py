@@ -53,13 +53,19 @@ from typing import Any, Iterable
 
 try:
     import jsonschema
-    from jsonschema import Draft7Validator
+    from jsonschema import Draft7Validator, FormatChecker
     from jsonschema.exceptions import ValidationError as _JsonSchemaError
 except ImportError as exc:  # pragma: no cover - jsonschema is documented as required
     raise ImportError(
         "The safety package requires the 'jsonschema' library. "
         "Install it with: pip install jsonschema"
     ) from exc
+
+#: A :class:`FormatChecker` with the canonical format set
+#: (uuid, date-time, email, etc.).  Draft-07 does not enable
+#: format checking by default; we opt in so the verifier
+#: catches ``format: uuid`` violations on bad runIds.
+_FORMAT_CHECKER: FormatChecker = FormatChecker()
 
 
 # ---------------------------------------------------------------------------
@@ -517,7 +523,9 @@ class OutputVerifier:
                 summary=self._summary_from_categories([ErrorCategory.FORMAT_ERROR.value]),
             )
 
-        validator = Draft7Validator(schema)
+        # Enable format checking (uuid / date-time / email) so bad
+        # runIds are caught as format_error.
+        validator = Draft7Validator(schema, format_checker=_FORMAT_CHECKER)
         errors: list[FieldError] = []
         for err in sorted(validator.iter_errors(instance), key=lambda e: list(e.absolute_path)):
             errors.append(self._convert(err, schema))

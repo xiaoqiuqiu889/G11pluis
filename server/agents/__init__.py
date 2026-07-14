@@ -44,6 +44,8 @@ from .memory_manager import (
     MEMORY_MANAGER_VERSION,
     DEFAULT_SIMILARITY_THRESHOLD,
     DEFAULT_TOP_K,
+    InMemoryVectorIndex,
+    VectorIndex,
 )
 from .npc_agent import (
     NpcAgent,
@@ -90,6 +92,8 @@ __all__ = [
     "MEMORY_MANAGER_VERSION",
     "DEFAULT_SIMILARITY_THRESHOLD",
     "DEFAULT_TOP_K",
+    "InMemoryVectorIndex",
+    "VectorIndex",
     # npc agent
     "NpcAgent",
     "NpcAgentError",
