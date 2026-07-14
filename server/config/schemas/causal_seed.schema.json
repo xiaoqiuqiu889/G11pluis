@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/causal_seed.schema.json",
+  "title": "CausalSeed",
+  "description": "Cross-era causal seed. A seed is a small narrative payload (a sentence, an object, a promise) planted in one scene that may echo into other scenes decades later. The Resolver is the only component that decides when a seed's trigger_condition matches and activates it. Active seeds are listed in the world snapshot; fired seeds are retired.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "source_scene",
+    "source_event",
+    "description",
+    "trigger_condition",
+    "target_scenes",
+    "echo_intensity",
+    "is_secret",
+    "schemaVersion"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Stable seed identifier, e.g. 'seed_photograph_1937_to_2012'."
+    },
+    "source_scene": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "SceneId that planted this seed."
+    },
+    "source_event": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "ResolverOutcomeId of the event that created the seed."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Plain prose description of the seed (the thing being planted)."
+    },
+    "trigger_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "predicate"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "scene_match",
+              "character_present",
+              "era_match",
+              "belief_state",
+              "memory_recall",
+              "artifact_present",
+              "location_match",
+              "composite"
+            ],
+            "description": "Category of trigger. 'composite' means the predicates are AND-joined."
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Predicate string the Resolver evaluates. DSL subset: subject/operator/value."
+          },
+          "minEcho": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "Minimum echo_intensity required for the seed to fire."
+          }
+        }
+    },
+    "target_scenes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "maxItems": 64,
+      "uniqueItems": true,
+      "description": "SceneIds this seed is allowed to echo into. Resolver will not fire the seed outside this list."
+    },
+    "echo_intensity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "multipleOf": 0.01,
+      "description": "Current intensity of the echo. Decays with time, surges when reinforced. Clamped to [0,1]."
+    },
+    "is_secret": {
+      "type": "boolean",
+      "description": "True iff the player should not be told the seed exists until it fires. Used to hide plot twists."
+    },
+    "firedAt": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 100000,
+      "description": "Event sequence at which the seed fired; null while dormant."
+    },
+    "firedInSceneId": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "SceneId in which the seed fired; null while dormant."
+    },
+    "eraSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string",
+          "enum": [
+            "pre_1911_qing", "1911_1927_republic", "1927_1937_nanjing_decade",
+            "1937_1945_war", "1945_1949_civil_war", "1949_1965_socialist_build",
+            "1966_1976_cultural_revolution", "1977_1989_reform_early",
+            "1989_2000_boom", "2000_2012_globalization", "2012_present_ai_age",
+            "present", "epilogue"
+          ]
+        },
+        "to": {
+          "type": "string",
+          "enum": [
+            "pre_1911_qing", "1911_1927_republic", "1927_1937_nanjing_decade",
+            "1937_1945_war", "1945_1949_civil_war", "1949_1965_socialist_build",
+            "1966_1976_cultural_revolution", "1977_1989_reform_early",
+            "1989_2000_boom", "2000_2012_globalization", "2012_present_ai_age",
+            "present", "epilogue"
+          ]
+        }
+      },
+      "description": "Optional era constraints; the seed only fires when the active era is within [from, to] inclusive."
+    },
+    "linkedCharacterIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "maxItems": 32,
+      "uniqueItems": true,
+      "description": "Characters implicated in the seed; used for memory recall weighting."
+    },
+    "decayRate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "multipleOf": 0.001,
+      "description": "Per-turn echo_intensity multiplier. 0 = eternal, 1 = instant decay. Default 0.02."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 32 },
+      "maxItems": 16,
+      "uniqueItems": true,
+      "description": "Free-form tags for memory-recall filtering. Linter warns if any tag is not in the project glossary."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  },
+  "allOf": [
+    {
+      "description": "If firedAt is set, firedInSceneId MUST also be set (and vice versa)."
+    },
+    {
+      "description": "If is_secret is true, the seed MUST NOT appear in any client-visible response until it has fired."
+    }
+  ]
+}

@@ -1,0 +1,533 @@
+# =============================================================================
+# 革命街没有尽头 · 第一案 · 第一案纵切片
+# 场景 1 / 3 ：photo_lab_2008（地下放映室与同版毕业照）
+# -----------------------------------------------------------------------------
+# 时代：2008 年夏，德黑兰，毕业季
+# 锚点说明：这是 V5 / V6 设计契约中"毕业照那天（promise）"时刻的纵切片，
+#           也是 choice-one（折诗 / 主动吻 / 先行离开）之后的直接延续。
+#           摄影师大刚问"照片要冲两张吗？"之后，莱拉与阿拉什要在地下放映室
+#           决定如何分配这两张同版冲印的毕业照。
+# 跨年代回响：必须影响 2011（farewell_2011）和 2024（reunion_2024）两个场景。
+# 写入规范：UTF-8；YAML 1.2；任何字符不被转义；所有中文为正文。
+# =============================================================================
+
+scene_id: photo_lab_2008
+title: 革命街地下放映室与两张同版毕业照
+era: "2008"
+location: 德黑兰大学·革命街旧书店地下室·地下放映室
+atmosphere:
+  - 闷热
+  - 旧灯泡
+  - 机油
+  - 毕业季
+  - 胶片气味
+  - 黄昏透进窄窗
+  - 偶尔的地铁震动
+  - 折叠椅腿的吱嘎声
+  - 等待显影的耐心
+
+# -----------------------------------------------------------------------------
+# 固定锚点：策划硬性要求，AI 导演不得违反
+# -----------------------------------------------------------------------------
+required_anchors:
+  - 锚点 1：两张毕业照必须来自同一张 canonical asset，画面、站位、裁切一致
+  - 锚点 2：摄影师大刚确实在按下快门前问过"照片要冲两张吗？"
+  - 锚点 3：莱拉是 21—22 岁的年轻版本（椭圆脸、深色杏仁眼、浅灰头巾、卷黑发）
+  - 锚点 4：阿拉什是 22—23 岁的年轻版本（瘦高、卷黑发、轻胡茬、深海军蓝夹克）
+  - 锚点 5：地下放映室有一台 16mm 放映机、一把木椅、一只金属片盒
+  - 锚点 6：照片背面的冲印批次号必须显影为 G1N-DEMO-2008-01（第一章礼包源）
+  - 锚点 7：场景发生在 2008 年夏，毕业典礼当天或次日
+  - 锚点 8：场景必须为 2011 机场送别准备至少一种可被远期回响捡到的"携带物"
+  - 锚点 9：场景必须为 2024 伊斯坦布尔重逢准备至少一种可被诗集打开的"共同证据"
+
+# -----------------------------------------------------------------------------
+# 核心冲突：场景要解决的具体张力
+# -----------------------------------------------------------------------------
+core_conflict:
+  - 冲突 1：是否把两张同版毕业照分别交给两人，让每一张都陪对方度过未来 13 年
+  - 冲突 2：是否在分配照片时承认"我希望你留着"或"我也想留一张"——即未说出的告白
+  - 冲突 3：是否让阿拉什亲手把其中一张夹进诗集，还是莱拉替他把这一动作做完
+  - 冲突 4：是否在背面手写一个只有两人知道的暗号（与之后 2011 行李牌呼应）
+
+# -----------------------------------------------------------------------------
+# 行为白名单：AI 导演只能从这些节拍中选择（v0.1 PRD 第 9 节）
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - 试探
+  - 玩笑
+  - 回避
+  - 表白未遂
+  - 共同秘密形成
+  - 替对方做决定
+  - 替自己保留退路
+  - 留下一个不属于当下的字
+  - 在意对方是否在意
+  - 把动作藏进工具盒
+
+# -----------------------------------------------------------------------------
+# 禁止揭露：未达条件的秘密不能输出
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - 莱拉未来的婚姻（与卡姆兰）
+  - 莱拉与卡姆兰的圣何塞视频通话
+  - 莱拉 2011 年的单程行李牌
+  - 十三年后的伊斯坦布尔重逢
+  - 玛兹雅 2009 年 6 月获释的消息
+  - 阿拉什父亲的复健预约与维修铺的债务
+  - 莱拉未来在圣何塞做波斯语本地化的工作
+  - 玛丽亚姆与流星观测表
+  - 阿拉什带去机场的两张旧公交票
+  - 2011 机场航班号、登机口、目的地
+  - 2009 学校刊物事件与处分通知
+  - 莱拉姨妈第一次介绍卡姆兰的电话
+
+# -----------------------------------------------------------------------------
+# AI 行为白名单：12 种结构化行为
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate   # 调查：检查照片正面 / 背面 / 放映机 / 工具盒
+  - reveal        # 揭露：让一个此前被藏起的事实浮出水面（限本场景内）
+  - conceal       # 隐藏：把一句话 / 一个动作收回去
+  - question      # 询问：向阿拉什 / 大刚 / 自己的记忆发问
+  - confront      # 直面：让一段悬而未决的关系在动作里被承认
+  - comfort       # 安抚：把对方的紧张接住
+  - give          # 给出：把照片 / 工具 / 一句话交给对方
+  - destroy       # 销毁：把冲印废片、未寄出的字条处理掉
+  - promise       # 承诺：在某物上许下不写明日期的约定
+  - wait          # 等待：让一段沉默持续三秒以上
+  - leave         # 离开：先走出地下放映室、留对方独自面对灯泡
+  - silence       # 沉默：把已经成型的句子咽回去
+
+# -----------------------------------------------------------------------------
+# 行为预算：本场景玩家可执行次数限制
+# -----------------------------------------------------------------------------
+turn_budget:
+  total: 8
+  investigate: 3
+  reveal: 2
+  conceal: 1
+  question: 2
+  confront: 2
+  comfort: 1
+  give: 3
+  destroy: 1
+  promise: 2
+  wait: 2
+  leave: 1
+  silence: 2
+
+# -----------------------------------------------------------------------------
+# 可调查对象：玩家在场景中可以 investigate 的物件
+# -----------------------------------------------------------------------------
+investigatable_objects:
+  - id: photo_front
+    name: 照片正面
+    description: 同版冲印的毕业合影，两人隔人群互望，画面上共 15 名学生
+    initial_location: 木椅旁的牛皮纸袋
+    visibility: 莱拉视角可见
+    keywords: [照片, 正面, 毕业, 站位, 人群]
+    requires: []
+    leads_to: [shared_secret, one_sided_memory]
+
+  - id: photo_back
+    name: 照片背面
+    description: 冲印批次号 + 毕业典礼日期 + 莱拉手写的两行小字（一处可被涂改）
+    initial_location: 牛皮纸袋内
+    visibility: 莱拉视角可见
+    keywords: [照片, 背面, 批次号, G1N-DEMO-2008-01]
+    requires: []
+    leads_to: [shared_secret, promise_formed]
+
+  - id: photo_pair
+    name: 两张同版照片
+    description: 来自同一底片、同一裁切的两个冲印件，目前仍贴合放置
+    initial_location: 牛皮纸袋
+    visibility: 莱拉视角可见
+    keywords: [两张, 同版, 一张一张]
+    requires: []
+    leads_to: [give_to_arash, keep_in_pocket]
+
+  - id: envelope
+    name: 牛皮纸袋
+    description: 装着两张冲印件，袋口没有封，可以看见摄影师的小票
+    initial_location: 桌面
+    visibility: 莱拉视角可见
+    keywords: [纸袋, 冲印, 小票]
+    requires: []
+    leads_to: [photo_pair, photo_back]
+
+  - id: receipt
+    name: 冲印小票
+    description: 印着 2008 年某月某日、2 张、批次号前 4 位
+    initial_location: 牛皮纸袋内
+    visibility: 莱拉视角可见
+    keywords: [小票, 冲印, 批次, 日期]
+    requires: [envelope]
+    leads_to: [photo_back]
+
+  - id: projector
+    name: 16mm 放映机
+    description: 阿拉什白天修的旧放映机，灯泡刚被点亮，机身仍有油渍
+    initial_location: 放映室中央木桌
+    visibility: 莱拉视角可见
+    keywords: [放映机, 灯泡, 胶片, 螺丝刀]
+    requires: []
+    leads_to: [toolbox, film_canister]
+
+  - id: film_canister
+    name: 金属片盒
+    description: 装过修理用胶片，里面放着半颗石榴和一张未署名的折诗
+    initial_location: 放映机旁
+    visibility: 莱拉视角可见
+    keywords: [片盒, 石榴, 折诗]
+    requires: [projector]
+    leads_to: [poem_in_toolbox, shared_secret]
+
+  - id: toolbox
+    name: 阿拉什的工具盒
+    description: 装着螺丝刀、备用灯泡、一小卷胶带；盖内有油渍
+    initial_location: 放映机下
+    visibility: 莱拉视角可见
+    keywords: [工具盒, 螺丝刀, 灯泡]
+    requires: [projector]
+    leads_to: [poem_in_toolbox, promise_formed]
+
+  - id: folded_poem
+    name: 折诗
+    description: 文学课莱拉撕下的一页诗，沿原有折痕折了四次（仅在 choice-one 选 poem 时存在）
+    initial_location: 阿拉什工具盒内
+    visibility: 莱拉视角可见
+    keywords: [诗, 折痕, 纸]
+    requires: [toolbox]
+    leads_to: [poem_in_toolbox, far_echo_2024]
+
+  - id: halve_pomegranate
+    name: 半颗石榴
+    description: 莱拉放进片盒的维修费，红籽在灯泡下隐约发亮
+    initial_location: 金属片盒
+    visibility: 莱拉视角可见
+    keywords: [石榴, 红籽, 片盒]
+    requires: [film_canister]
+    leads_to: [shared_secret, misread_gesture]
+
+  - id: book_jalal
+    name: 旧版诗集
+    description: 阿拉什的贾拉鲁丁·鲁米诗集，书脊已开裂，封面有油渍
+    initial_location: 阿拉什夹克内
+    visibility: 莱拉视角可见
+    keywords: [诗集, 鲁米, 书脊, 油渍]
+    requires: []
+    leads_to: [photo_in_book, far_echo_2024]
+
+  - id: sugar_bowl
+    name: 桌上糖罐
+    description: 革命街旧书店的旧糖罐，内有方糖与一把小铜勺
+    initial_location: 桌面
+    visibility: 莱拉视角可见
+    keywords: [糖罐, 铜勺, 方糖]
+    requires: []
+    leads_to: [far_echo_2024, shared_secret]
+
+  - id: small_chair
+    name: 木椅
+    description: 用来踩高修放映机的木椅，椅腿吱嘎作响
+    initial_location: 放映室角落
+    visibility: 莱拉视角可见
+    keywords: [木椅, 吱嘎, 踩高]
+    requires: []
+    leads_to: [first_kiss_memory, near_echo_2011]
+
+  - id: bus_ticket_pair
+    name: 旧公交票（两张）
+    description: 阿拉什今天下午坐 304 路回维修铺时多撕的一张票，夹在工具盒盖内
+    initial_location: 工具盒盖内
+    visibility: 莱拉视角可见
+    keywords: [公交票, 304, 两张, 工具盒]
+    requires: [toolbox]
+    leads_to: [bus_ticket_in_book, far_echo_2024]
+
+  - id: student_id_leila
+    name: 莱拉学生证
+    description: 德黑兰大学文学系三年级学生证，背面有图书馆借阅记录
+    initial_location: 莱拉斜挎包
+    visibility: 莱拉视角可见
+    keywords: [学生证, 文学, 借阅]
+    requires: []
+    leads_to: [far_echo_2011, secret_kept]
+
+  - id: lab_card_arash
+    name: 阿拉什实验门卡
+    description: 物理实验室门卡，挂着物理系的塑料夹
+    initial_location: 阿拉什脖子
+    visibility: 莱拉视角可见
+    keywords: [门卡, 实验, 物理]
+    requires: []
+    leads_to: [near_echo_2011, far_echo_2024]
+
+  - id: graduation_roster
+    name: 毕业合影名单
+    description: 摄影师给的 15 人站位表，莱拉与阿拉什分别列在第 7 与第 13 位
+    initial_location: 牛皮纸袋
+    visibility: 莱拉视角可见
+    keywords: [名单, 站位, 毕业]
+    requires: [envelope]
+    leads_to: [shared_secret, misread_gesture]
+
+# -----------------------------------------------------------------------------
+# 在场人物
+# -----------------------------------------------------------------------------
+characters_present:
+  - id: leila
+    name: 莱拉
+    initial_state: 试探
+    visibility: 主角视角可见
+    state_notes:
+      - 文学系三年级，今天毕业典礼刚结束
+      - 头巾边缘露出的卷黑发还沾着礼堂的彩屑
+      - 手里抱着牛皮纸袋，里面有刚冲印好的两张照片
+
+  - id: arash
+    name: 阿拉什
+    initial_state: 紧张
+    visibility: 主角视角可见
+    state_notes:
+      - 物理系毕业，父亲中风后维修铺、药单和账本都在等他
+      - 下午在放映室修了两个钟头 16mm 放映机
+      - 工具盒里还放着今天多撕的一张 304 路公交票
+
+  - id: dagang
+    name: 大刚（摄影师，临时在场）
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 毕业季接散活的摄影师，刚把冲印件送到
+      - 问过"照片要冲两张吗？"之后没有立刻离开
+      - 手里夹着半根没点的烟
+
+# -----------------------------------------------------------------------------
+# 因果种子：本场景行为会触发哪些远期回响
+# -----------------------------------------------------------------------------
+causal_seeds:
+  - id: photo_in_pocket
+    description: 莱拉把其中一张毕业照放进斜挎包内袋
+    trigger: 玩家对 photo_pair 执行 give_to_self 或 conceal
+    effects:
+      - 锚点 1 2011 机场送别时，莱拉伸手进包找登机牌时会摸到这张照片
+      - 锚点 2 2024 伊斯坦布尔咖啡馆，莱拉会从包里取出这张照片与阿拉什的诗集照片配对
+      - 锚点 3 2024 路口分开前，莱拉会把这张照片重新滑回包中
+
+  - id: photo_in_book
+    description: 阿拉什把其中一张毕业照夹进贾拉鲁丁·鲁米诗集
+    trigger: 玩家对 book_jalal 或 photo_pair 执行 give 并由阿拉什收下
+    effects:
+      - 锚点 1 2011 机场，阿拉什在转身离开时诗集从夹克内袋滑落，照片露出来一角
+      - 锚点 2 2024 重逢，阿拉什推门时诗集就抱在臂弯里，是莱拉最先认出的旧物
+      - 锚点 3 2024 路口，阿拉什合上诗集时照片的磨损边角压到了最后一页
+
+  - id: both_photos_with_one
+    description: 莱拉把两张同版照片都收进自己包里
+    trigger: 玩家对 photo_pair 执行 give_to_self 两次或 conceal_with_intent
+    effects:
+      - 锚点 1 2011 机场，阿拉什没有带任何属于那一天的物件
+      - 锚点 2 2024 咖啡馆，莱拉必须独自从包里取出两张中的一张，另一张仍留在包里
+      - 锚点 3 2024 阿拉什翻诗集时，里面没有照片，必须先看莱拉的手
+
+  - id: no_photo_handed_over
+    description: 莱拉把照片全留在牛皮纸袋
+    trigger: 玩家对 envelope 执行 wait 或 conceal
+    effects:
+      - 锚点 1 2011 机场送别，两人都没有那张照片作为随身物
+      - 锚点 2 2024 重逢时，桌上不会自然出现照片，必须由莱拉主动拿出
+      - 锚点 3 2024 路口分开时，莱拉没有可重新滑回包中的那张照片
+
+  - id: poem_in_toolbox
+    description: 那张没有署名的折诗被阿拉什放进工具盒（前置：choice-one 已选 poem）
+    trigger: 玩家对 folded_poem 执行 give 并由阿拉什收下
+    effects:
+      - 锚点 1 2011 机场，阿拉什口袋里仍夹着这张折诗
+      - 锚点 2 2024 重逢，阿拉什会主动提到"工具盒里那张诗的方向"——如果他仍在用那个工具盒
+
+  - id: bus_ticket_in_book
+    description: 莱拉把阿拉什多撕的 304 路公交票夹进诗集
+    trigger: 玩家对 bus_ticket_pair 执行 give 并由阿拉什收下
+    effects:
+      - 锚点 1 2011 机场，阿拉什不再带着那两张旧公交票——这一动作被玩家提前消费
+      - 锚点 2 2024 重逢，诗集里没有公交票，阿拉什不会"在路口把手从外套口袋里抽出来"
+
+  - id: date_written_on_back
+    description: 莱拉在照片背面手写"2008.6.21 革命街放映室"或类似
+    trigger: 玩家对 photo_back 执行 give（写下一个字）
+    effects:
+      - 锚点 1 2011 机场，莱拉翻看照片时会重新读到这一行字
+      - 锚点 2 2024 咖啡馆，莱拉把照片翻到背面，日期成为两人无言对视的支点
+
+  - id: grip_then_release
+    description: 莱拉和阿拉什在分照片时握了一下手，又立刻松开
+    trigger: 玩家对 arash 执行 comfort + give + silence
+    effects:
+      - 锚点 1 2011 机场，安检口前阿拉什会下意识重复这个"握—松"动作
+      - 锚点 2 2024 重逢，他们先认出对方在端茶时拇指摩挲杯沿的旧习惯
+
+  - id: first_kiss_revisited
+    description: 莱拉在分照片前补上了停电那晚未完成的吻（前置：choice-one 已选 leave）
+    trigger: 玩家对 arash 执行 confront + give + promise
+    effects:
+      - 锚点 1 2011 机场，阿拉什会先伸手找她，但她这次没有更早碰到那只手
+      - 锚点 2 2024 重逢，咖啡馆的灯闪一下时，两人没有再靠近——但莱拉的眼神里仍有这次补上的吻
+
+  - id: dagang_paid_extra
+    description: 莱拉付钱让大刚再多冲印一张
+    trigger: 玩家对 dagang 执行 give（现金）
+    effects:
+      - 锚点 1 大刚从两张变三张，多出来的一张会被莱拉寄给姨妈
+      - 锚点 2 2011 机场，姨妈拿着那张照片在电话里说"她现在能自己决定"
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+# 选种依据：3 跳链最完整——物质证据从 2008 出发，在 2011 仍在手中，
+# 在 2024 仍可被取出。这是整个叙事弧的物质骨架。
+mandatory_echoes:
+  - id: photo_in_pocket
+    description: 莱拉把毕业照放进斜挎包内袋 → 2011 摸到 → 2024 取出
+    trigger: 玩家对 photo_pair 执行 give_to_self 或 conceal
+    target_scenes: [farewell_2011, reunion_2024]
+    ai_director_must_invoke: true
+
+  - id: photo_in_book
+    description: 阿拉什把毕业照夹进鲁米诗集 → 2011 滑出 → 2024 抱在臂弯
+    trigger: 玩家对 book_jalal 或 photo_pair 执行 give
+    target_scenes: [farewell_2011, reunion_2024]
+    ai_director_must_invoke: true
+
+# -----------------------------------------------------------------------------
+# 合法结局：本场景可能的结束状态
+# -----------------------------------------------------------------------------
+legal_endings:
+  - id: shared_secret
+    label: 共同秘密
+    description: 两人各拿一张同版照片，并在背面写下同一行字（或同一暗号）
+    causal_seed_required:
+      - photo_in_pocket
+      - photo_in_book
+    next_scene_hooks: [chapter2_publication, echo_one_rooftop]
+
+  - id: one_sided_memory
+    label: 单方面记忆
+    description: 莱拉把两张照片都留下，阿拉什只带走大刚给他临时撕下的站位表
+    causal_seed_required:
+      - both_photos_with_one
+    next_scene_hooks: [chapter2_publication, echo_one_rooftop]
+
+  - id: misunderstood_gesture
+    label: 动作被误解
+    description: 阿拉什以为莱拉把照片给了别的同学，莱拉以为阿拉什不想拿
+    causal_seed_required:
+      - grip_then_release
+      - no_photo_handed_over
+    next_scene_hooks: [chapter2_publication, echo_one_rooftop]
+
+  - id: emotional_retreat
+    label: 情绪性退缩
+    description: 莱拉先走下楼梯回街上，照片留在了片盒旁
+    causal_seed_required:
+      - leave
+    next_scene_hooks: [chapter2_publication, echo_one_rooftop]
+
+  - id: promise_formed
+    label: 约定成形
+    description: 两人在照片背面写下一句没有日期的约定（"等一年 / 等再一年"）
+    causal_seed_required:
+      - date_written_on_back
+      - photo_in_pocket
+    next_scene_hooks: [chapter2_publication, echo_one_rooftop]
+
+# -----------------------------------------------------------------------------
+# 场景结束的下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - chapter2_publication（2009 春，宿舍小房间排版地下刊物）
+  - echo_one_rooftop（2008 夏末，屋顶分石榴、雨里共用一把伞）
+  - 必须有至少一个跨年代种子被触发：photo_in_pocket / photo_in_book / date_written_on_back 三选一
+
+# -----------------------------------------------------------------------------
+# 远期回响：本场景行为会影响哪些未来场景
+# -----------------------------------------------------------------------------
+far_echo_routes:
+  - scene_id: farewell_2011
+    max_echoes: 2
+    seed_ids:
+      - photo_in_pocket
+      - photo_in_book
+      - date_written_on_back
+      - grip_then_release
+      - bus_ticket_in_book
+      - poem_in_toolbox
+    required_seeds_for_full_echo:
+      - photo_in_pocket
+
+  - scene_id: reunion_2024
+    max_echoes: 2
+    seed_ids:
+      - photo_in_pocket
+      - photo_in_book
+      - date_written_on_back
+      - poem_in_toolbox
+      - first_kiss_revisited
+    required_seeds_for_full_echo:
+      - photo_in_pocket
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100          # 场景时间预算（节拍权重）
+  attention: 4       # 玩家注意力
+  echoes: 1          # 本场景可主动释放的回响条数
+  photo_handling_budget: 2   # 玩家对两张同版照片的可操作次数
+
+# -----------------------------------------------------------------------------
+# 验收（按经验教训"四项问题"自检）
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: true        # 决定了两张同版照片的归属与在场位置
+  - changes_character_knowledge: true # 阿拉什从此知道/不知道莱拉带走了哪张
+  - changes_available_actions: true   # 触发或关闭后续场景的 give / leave / promise 行为
+  - creates_future_echo: true         # 至少触发 1 个影响 2011 或 2024 的因果种子
+  - preserves_macro_endpoints: true   # 2008 端点不动，2011 / 2024 端点不动
+  - forbidden_reveals_strict: true    # 没有泄露莱拉婚姻、卡姆兰、十三年后重逢
+  - canonical_photo_consistent: true  # 两张照片来自同一 canonical asset
+  - artwork_reference: underground-projector-close.png
+  - character_anchor_leila: 21-22 岁，浅灰头巾，深橄榄外套，卷黑发
+  - character_anchor_arash: 22-23 岁，深海军蓝夹克，卷黑发，轻胡茬
+
+# -----------------------------------------------------------------------------
+# 章节与演示码挂钩
+# -----------------------------------------------------------------------------
+chapter: chapter1
+chapter_label: 第一章 · 革命街上的恋人
+reward_id: chapter1
+reward_code: G1N-DEMO-2008-01
+reward_source: photo_back（照片背面的冲印批次号）
+paid_dialogue_id: paid-photo-developing
+hidden_dialogue_unlock: "照片要冲两张吗？"
+
+# -----------------------------------------------------------------------------
+# 美术参考
+# -----------------------------------------------------------------------------
+art:
+  - /art-v4/underground-projector-close.png      # 主体
+  - /art-v5/graduation-photo-day.png             # 远景与人物参考
+  - /art-v5/canonical-graduation-photo.png       # canonical asset
+art_focus: table
+
+# -----------------------------------------------------------------------------
+# 备注：本场景不计入三轴得分（它是 choice-one 之后的延续，不是新的主选择）
+#       但玩家的具体动作必须通过近 / 远期回响被承认
+# -----------------------------------------------------------------------------
+notes:
+  - 玩家在 photo_lab_2008 的所有动作都应通过 photo_in_pocket / photo_in_book / date_written_on_back 三个种子影响 2011
+  - 至少一个种子影响 2024（最强种子为 photo_in_pocket + photo_in_book 配对）
+  - choice-one 的结果（poem / kiss / leave）影响本场景可用 investigate 对象
+  - 本场景为 chapter1 章节的尾声，必须挂载 G1N-DEMO-2008-01
+  - canonical 照片不得出现两张同画面叠加，避免与"两张同版"叙事冲突

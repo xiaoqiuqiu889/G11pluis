@@ -1,0 +1,57 @@
+{
+  "appId": "ai.g1.revolutionstreet.client",
+  "productName": "革命街没有尽头",
+  "copyright": "Copyright © 2026 G1 AI Native",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "../_legacy_v6/public/art-v5",
+      "to": "art-v5",
+      "filter": ["**/*.png"]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-${version}-setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false,
+    "deleteAppDataOnUninstall": true
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "category": "public.app-category.entertainment",
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Game",
+    "artifactName": "${productName}-${version}.${ext}"
+  },
+  "publish": null
+}

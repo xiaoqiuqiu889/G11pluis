@@ -1,0 +1,129 @@
+name: four-questions-guard
+
+# 《革命街没有尽头》· AI 原生重构 — 决策 6 落成
+# 4 项自检：任何对 content/**/scenes/* 的改动必须通过 4 项自检，
+# 否则阻断 PR。  同时跑全量单测，确保工具自身不被绕过。
+
+on:
+  pull_request:
+    paths:
+      - "content/**/scenes/**"
+      - "tools/four-questions-guard.py"
+      - "tools/four_questions_guard_lib.py"
+      - "tools/.github/workflows/four-questions.yml"
+      - "tests/adversarial/test_four_questions_guard.py"
+  push:
+    branches: [main]
+    paths:
+      - "content/**/scenes/**"
+      - "tools/four-questions-guard.py"
+      - "tools/four_questions_guard_lib.py"
+
+# Cancel in-flight runs of the same PR / branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: 4-questions self-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: install runtime deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: install test deps
+        run: |
+          pip install pytest coverage fastapi uvicorn httpx
+
+      - name: run the four-questions unit tests
+        # The tests cover all 9 checks + 7 required scenarios
+        # (100% line + branch coverage).
+        run: |
+          python -m pytest tests/adversarial/test_four_questions_guard.py \
+            --tb=short -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: detect changed scene files
+        id: changed
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # On PRs, github.base_ref and github.head_ref are populated.
+            git fetch --depth=1 origin "${{ github.base_ref }}" || true
+            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              -- 'content/**/scenes/*.yaml' 'content/**/scenes/*.yml' || true)
+          else
+            # On pushes, diff against the previous commit.
+            CHANGED=$(git diff --name-only HEAD~1 -- 'content/**/scenes/*.yaml' 'content/**/scenes/*.yml' || true)
+          fi
+          echo "changed<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: run four-questions-guard on changed scenes
+        if: steps.changed.outputs.changed != ''
+        run: |
+          echo "Running four-questions-guard on:"
+          echo "${{ steps.changed.outputs.changed }}"
+          # Build a shell array of files.  We use bash mapfile to keep
+          # the test fair against spaces / special characters.
+          mapfile -t FILES < <(echo "${{ steps.changed.outputs.changed }}")
+          if [ ${#FILES[@]} -eq 0 ] || [ -z "${FILES[0]}" ]; then
+            echo "no files to check"
+            exit 0
+          fi
+          set -x
+          python tools/four-questions-guard.py --human "${FILES[@]}"
+          rc=$?
+          set +x
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::four-questions-guard blocked the PR (exit=$rc)"
+            echo "::error::See the report above.  Run the tool locally to debug:"
+            echo "::error::    python tools/four-questions-guard.py <your-scene>.yaml"
+            exit "$rc"
+          fi
+
+      - name: run on the full scene corpus (push to main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -x
+          python tools/four-questions-guard.py content/**/scenes/*.yaml
+          rc=$?
+          set +x
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::four-questions-guard blocked the push to main (exit=$rc)"
+            exit "$rc"
+          fi
+
+  content_studio_smoke:
+    name: content-studio smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml fastapi uvicorn httpx
+      - name: run content-studio backend tests
+        run: |
+          PYTHONPATH=. python -m pytest tests/adversarial/test_content_studio.py -v

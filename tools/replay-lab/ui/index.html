@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>replay-lab · 《革命街没有尽头》</title>
+<style>
+  :root {
+    --bg: #1a1a1f; --bg-elev: #23232b; --bg-elev-2: #2c2c36;
+    --fg: #e4e4eb; --fg-dim: #9a9aa8; --accent: #6ee7b7; --accent-dim: #34d399;
+    --warn: #fbbf24; --error: #f87171; --border: #3a3a45;
+    --mono: "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--sans);
+         font-size:14px; min-height:100vh; display:flex; flex-direction:column; }
+  header { padding:14px 24px; background:var(--bg-elev); border-bottom:1px solid var(--border);
+           display:flex; align-items:center; gap:24px; }
+  header h1 { margin:0; font-size:18px; color:var(--accent); }
+  header .sub { color:var(--fg-dim); font-size:12px; }
+  header .spacer { flex:1; }
+  main { flex:1; display:grid; grid-template-columns: 1fr 1fr; min-height:0; }
+  .panel { overflow:auto; border-right:1px solid var(--border); }
+  .panel:last-child { border-right:none; }
+  .panel h2 { margin:0; padding:12px 16px; font-size:12px; text-transform:uppercase;
+              letter-spacing:0.08em; color:var(--fg-dim); background:var(--bg-elev-2);
+              border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1; }
+  textarea { width:100%; height:calc(100vh - 130px); border:none; outline:none; resize:none;
+             background:var(--bg); color:var(--fg); font-family:var(--mono); font-size:13px;
+             padding:16px 24px; tab-size:2; }
+  .toolbar { display:flex; gap:8px; padding:8px 16px; background:var(--bg-elev-2);
+             border-bottom:1px solid var(--border); position:sticky; top:42px; z-index:1; }
+  button { font-family:var(--sans); font-size:12px; padding:6px 14px; background:var(--bg-elev);
+           color:var(--fg); border:1px solid var(--border); border-radius:4px; cursor:pointer; }
+  button:hover { background:var(--bg); }
+  button.primary { background:var(--accent); color:#0a1f17; border-color:var(--accent);
+                   font-weight:600; }
+  button.primary:hover { background:var(--accent-dim); }
+  .trace-list { padding:12px 16px; font-family:var(--mono); font-size:12px; }
+  .trace-row { padding:6px 8px; margin-bottom:4px; background:var(--bg-elev-2);
+               border-left:3px solid var(--border); border-radius:0 4px 4px 0; }
+  .trace-row.applied { border-left-color:var(--accent); }
+  .trace-row.blocked { border-left-color:var(--error); }
+  .trace-row.skipped { border-left-color:var(--warn); opacity:0.7; }
+  .trace-row .seq { color:var(--accent); font-weight:600; margin-right:8px; }
+  .trace-row .label { color:var(--fg-dim); margin-right:8px; }
+  .trace-applied { color:var(--fg-dim); margin-top:4px; padding-left:8px; }
+  .trace-applied div { margin:1px 0; }
+  .trace-applied .ok { color:var(--accent); }
+  .trace-applied .bad { color:var(--error); }
+  .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+           padding:8px 16px; background:var(--bg-elev-2); border:1px solid var(--border);
+           border-radius:4px; color:var(--fg); font-size:12px; z-index:10; opacity:0;
+           transition:opacity 0.2s; pointer-events:none; }
+  .toast.show { opacity:1; }
+  .toast.error { border-color:var(--error); color:var(--error); }
+  .toast.success { border-color:var(--accent); color:var(--accent); }
+  pre { margin:0; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>replay-lab</h1>
+  <span class="sub">《革命街没有尽头》· 快照重放工具</span>
+  <span class="spacer"></span>
+  <span style="color:var(--fg-dim);font-family:var(--mono);font-size:12px;" id="api-status">API: …</span>
+</header>
+<main>
+  <section class="panel">
+    <h2>输入 (snapshot + events)</h2>
+    <div class="toolbar">
+      <button class="primary" id="btn-replay">运行重放</button>
+      <label style="color:var(--fg-dim);font-size:12px;display:flex;align-items:center;gap:4px;">
+        <input type="checkbox" id="chk-guard"> 启用 4 项自检
+      </label>
+      <label style="color:var(--fg-dim);font-size:12px;display:flex;align-items:center;gap:4px;">
+        stop_at: <input type="number" id="stop-at" style="width:60px;background:var(--bg);color:var(--fg);border:1px solid var(--border);padding:2px 4px;">
+      </label>
+      <span class="spacer" style="flex:1;"></span>
+      <button id="btn-sample">加载示例</button>
+    </div>
+    <textarea id="editor" spellcheck="false">{
+  "events": [
+    {
+      "eventSequence": 1,
+      "outcomeId": "00000000-0000-4000-8000-000000000001",
+      "timestamp": "2026-07-14T12:00:00Z",
+      "sceneId": "photo_lab_2008",
+      "actionType": "give",
+      "actorId": "leila",
+      "targetId": "arash",
+      "artifact_updates": [
+        {"artifactId": "photo_pair", "newOwnerId": "arash", "newState": "夹进诗集", "newLocation": "阿拉什夹克内袋"}
+      ],
+      "event_log": [
+        {"eventId": "evt_001", "description": "莱拉把同版照片给了阿拉什"}
+      ],
+      "belief_updates": [
+        {"characterId": "arash", "subject": "photo_pair_ownership", "belief_state": "certain", "confidence": 0.9}
+      ],
+      "causal_seeds": [
+        {"seedId": "photo_in_book", "planted": true, "intensity": 0.9}
+      ],
+      "turn_index": 1
+    }
+  ]
+}</textarea>
+  </section>
+
+  <section class="panel">
+    <h2>重放结果</h2>
+    <div class="trace-list" id="trace">
+      <p style="color:var(--fg-dim);text-align:center;padding:24px;">点击「运行重放」开始</p>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+const editor = $('editor');
+const trace = $('trace');
+const apiStatus = $('api-status');
+const toast = $('toast');
+const btnReplay = $('btn-replay');
+const btnSample = $('btn-sample');
+const chkGuard = $('chk-guard');
+const stopAt = $('stop-at');
+
+let toastTimer = null;
+function showToast(msg, kind='') {
+  toast.textContent = msg;
+  toast.className = 'toast show ' + kind;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+async function api(path, opts={}) {
+  const res = await fetch(path, {
+    headers: {'Content-Type': 'application/json'},
+    ...opts,
+  });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch(_) {}
+    throw new Error(`${res.status} ${detail}`);
+  }
+  return res.json();
+}
+
+async function runReplay() {
+  let payload;
+  try {
+    payload = JSON.parse(editor.value);
+  } catch (e) {
+    showToast('JSON 解析失败: ' + e.message, 'error');
+    return;
+  }
+  const reqBody = {
+    events: payload.events || [],
+    guard: chkGuard.checked,
+    stop_at: stopAt.value ? parseInt(stopAt.value) : null,
+  };
+  if (payload.snapshot) reqBody.snapshot = payload.snapshot;
+  if (payload.run_id) reqBody.run_id = payload.run_id;
+
+  btnReplay.disabled = true;
+  btnReplay.textContent = '运行中…';
+  try {
+    const result = await api('/api/replay', { method: 'POST', body: JSON.stringify(reqBody) });
+    renderTrace(result);
+    showToast(`✅ ${result.events_applied} applied, ${result.events_skipped} skipped`, 'success');
+  } catch (err) {
+    trace.innerHTML = `<p style="color:var(--error);padding:24px;">❌ ${err.message}</p>`;
+    showToast('运行失败: ' + err.message, 'error');
+  } finally {
+    btnReplay.disabled = false;
+    btnReplay.textContent = '运行重放';
+  }
+}
+
+function renderTrace(result) {
+  if (!result.trace || !result.trace.length) {
+    trace.innerHTML = '<p style="color:var(--fg-dim);text-align:center;padding:24px;">无 trace</p>';
+    return;
+  }
+  trace.innerHTML = result.trace.map((tr) => {
+    const hasError = (tr.skipped || []).length > 0;
+    const hasGuardBlock = (tr.applied || []).some(a => a.startsWith('guard:BLOCK'));
+    const cls = hasError || hasGuardBlock ? 'blocked' : 'applied';
+    const applied = (tr.applied || []).map(a => {
+      const isOk = !a.includes('BLOCK') && !a.includes('bad');
+      return `<div class="${isOk ? 'ok' : 'bad'}">✓ ${escape(a)}</div>`;
+    }).join('');
+    const skipped = (tr.skipped || []).map(s => `<div class="bad">✗ ${escape(s)}</div>`).join('');
+    return `<div class="trace-row ${cls}">
+      <span class="seq">[${tr.eventSequence}]</span>
+      <span class="label">${escape(tr.sceneId || '-')} / ${escape(tr.actionType || '-')}</span>
+      <div class="trace-applied">${applied}${skipped}</div>
+    </div>`;
+  }).join('');
+}
+
+function escape(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+btnReplay.addEventListener('click', runReplay);
+btnSample.addEventListener('click', () => {
+  showToast('已加载示例', 'success');
+});
+editor.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runReplay();
+  }
+});
+
+async function init() {
+  try {
+    await api('/api/health');
+    apiStatus.textContent = 'API: ok';
+    apiStatus.style.color = 'var(--accent)';
+  } catch (err) {
+    apiStatus.textContent = 'API: 离线';
+    apiStatus.style.color = 'var(--error)';
+    showToast('无法连接 replay-lab 后端: ' + err.message, 'error');
+  }
+}
+init();
+</script>
+</body>
+</html>

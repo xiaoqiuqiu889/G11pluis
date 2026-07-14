@@ -1,0 +1,359 @@
+/* =============================================================================
+   革命街没有尽头 · 动效与过渡
+   -----------------------------------------------------------------------------
+   - 时间跳转过渡（场景间）
+   - 打字机效果
+   - 状态变化（NPC 反应）
+   - 减动态 fallback
+   ========================================================================== */
+
+/* ==========================================================================
+   场景转换
+   ========================================================================== */
+
+.scene-transition {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scene-transition__year {
+  font-family: "EB Garamond", "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  letter-spacing: 0.12em;
+  color: var(--color-paper-100);
+  opacity: 0;
+  animation: sceneYear 2.4s ease-in-out forwards;
+}
+
+@keyframes sceneYear {
+  0% { opacity: 0; letter-spacing: 0.4em; filter: blur(8px); }
+  30% { opacity: 1; letter-spacing: 0.12em; filter: blur(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; letter-spacing: 0.08em; filter: blur(2px); }
+}
+
+/* 旧胶片烧灼 */
+.scene-burnout {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 0%, #000 80%);
+  z-index: 99;
+  pointer-events: none;
+  animation: burnout 1200ms ease-out forwards;
+}
+@keyframes burnout {
+  0% { opacity: 0; transform: scale(1.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   打字机
+   ========================================================================== */
+
+.typewriter {
+  display: inline;
+  position: relative;
+}
+.typewriter::after {
+  content: "▍";
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--color-amber-glow);
+  animation: caret 800ms steps(2) infinite;
+}
+@keyframes caret {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+/* ==========================================================================
+   NPC 反应（流式）
+   ========================================================================== */
+
+.npc-line {
+  position: relative;
+  padding: 0.6rem 1rem 0.6rem 1.4rem;
+  margin: 0.4rem 0;
+  border-left: 2px solid var(--color-amber-dim, #7a5a2a);
+  background: rgba(20, 20, 26, 0.6);
+  border-radius: 0 2px 2px 0;
+  animation: slideUp 500ms ease-out;
+}
+
+.npc-line[data-intent="reveal_truth"],
+.npc-line[data-intent="admit"] {
+  border-left-color: var(--color-amber-glow);
+}
+
+.npc-line[data-intent="deflect"],
+.npc-line[data-intent="conceal_truth"] {
+  border-left-color: var(--color-cool-steel);
+  opacity: 0.85;
+}
+
+.npc-line[data-intent="accuse"],
+.npc-line[data-intent="threaten"] {
+  border-left-color: var(--color-vermillion);
+}
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   调查对象（hover/focus 高亮）
+   ========================================================================== */
+
+.investigatable {
+  position: relative;
+  cursor: pointer;
+  transition: transform 240ms ease-out, filter 240ms ease-out;
+}
+
+.investigatable:hover,
+.investigatable:focus-visible {
+  transform: scale(1.02);
+  filter: brightness(1.18) drop-shadow(0 0 12px rgba(212, 161, 85, 0.3));
+}
+
+.investigatable[data-investigated="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-amber-glow);
+  color: var(--color-ink-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.investigatable[data-locked="true"] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.investigatable[data-locked="true"]:hover {
+  transform: none;
+  filter: none;
+}
+
+/* ==========================================================================
+   行为按钮（12 种）
+   ========================================================================== */
+
+.action-btn {
+  position: relative;
+  padding: 0.6rem 1rem;
+  font-family: "Source Han Serif SC", "Noto Serif SC", serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  background: transparent;
+  border: 1px solid rgba(241, 236, 223, 0.15);
+  color: var(--color-paper-100);
+  border-radius: 2px;
+  transition: all 200ms ease-out;
+  text-align: left;
+  min-height: 44px;
+}
+
+.action-btn:hover:not([disabled]) {
+  border-color: var(--color-amber-glow);
+  color: var(--color-amber-glow);
+  background: rgba(212, 161, 85, 0.06);
+}
+
+.action-btn[data-type="destroy"] {
+  border-color: rgba(168, 58, 42, 0.4);
+}
+.action-btn[data-type="destroy"]:hover:not([disabled]) {
+  border-color: var(--color-vermillion);
+  color: var(--color-vermillion);
+  background: rgba(168, 58, 42, 0.08);
+}
+
+.action-btn[data-type="give"],
+.action-btn[data-type="promise"] {
+  border-color: rgba(212, 161, 85, 0.3);
+}
+
+.action-btn[data-type="comfort"] {
+  border-color: rgba(155, 175, 188, 0.3);
+}
+.action-btn[data-type="comfort"]:hover:not([disabled]) {
+  border-color: var(--color-cool-steel);
+  color: var(--color-cool-steel);
+}
+
+.action-btn[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   降级指示器（4 级）
+   ========================================================================== */
+
+.degradation-badge {
+  position: fixed;
+  top: 36px;
+  right: 16px;
+  z-index: 40;
+  padding: 0.4rem 0.8rem;
+  font-family: "JetBrains Mono", "Menlo", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+.degradation-badge[data-level="L1"] { color: #d4a155; }
+.degradation-badge[data-level="L2"] { color: #b88a44; }
+.degradation-badge[data-level="L3"] { color: #c66a55; }
+.degradation-badge[data-level="L4"] { color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ==========================================================================
+   状态反馈（描述性，不显示数值）
+   ========================================================================== */
+
+.state-flux {
+  position: relative;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--color-paper-200);
+  font-style: italic;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.state-flux::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* ==========================================================================
+   卷宗 / 档案
+   ========================================================================== */
+
+.archive-section {
+  border-top: 1px solid rgba(241, 236, 223, 0.08);
+  padding: 1.5rem 0;
+}
+.archive-section:first-child { border-top: none; }
+
+.tab-pill {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(241, 236, 223, 0.15);
+  font-size: 0.85rem;
+  color: var(--color-paper-200);
+  transition: all 200ms;
+  white-space: nowrap;
+}
+.tab-pill[aria-current="true"] {
+  background: var(--color-amber-glow);
+  color: var(--color-ink-900);
+  border-color: var(--color-amber-glow);
+}
+
+/* ==========================================================================
+   付费墙
+   ========================================================================== */
+
+.paywall-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 10, 0.85);
+  backdrop-filter: blur(20px);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 400ms ease-out;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.product-card {
+  position: relative;
+  padding: 1.5rem;
+  border: 1px solid rgba(241, 236, 223, 0.12);
+  background: linear-gradient(180deg, rgba(28, 28, 36, 0.6) 0%, rgba(13, 13, 16, 0.8) 100%);
+  border-radius: 4px;
+  transition: all 240ms;
+}
+.product-card:hover,
+.product-card:focus-within {
+  border-color: var(--color-amber-glow);
+  transform: translateY(-2px);
+}
+.product-card[data-featured="true"] {
+  border-color: var(--color-amber-glow);
+  background: linear-gradient(180deg, rgba(212, 161, 85, 0.08) 0%, rgba(13, 13, 16, 0.8) 100%);
+}
+
+.price-tag {
+  font-family: "EB Garamond", "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--color-amber-glow);
+}
+.price-tag::before {
+  content: "¥";
+  margin-right: 2px;
+  font-size: 0.7em;
+  color: var(--color-paper-200);
+}
+
+/* ==========================================================================
+   Hint / Teaser（"莱拉的角度是另一个故事"）
+   ========================================================================== */
+
+.pov-hint {
+  position: relative;
+  padding: 0.8rem 1.2rem;
+  border: 1px dashed rgba(212, 161, 85, 0.3);
+  border-radius: 4px;
+  font-style: italic;
+  color: var(--color-amber-glow);
+  font-size: 0.9rem;
+  background: rgba(212, 161, 85, 0.04);
+}
+
+.pov-hint::before {
+  content: "✶";
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: var(--color-ink-900);
+  padding: 0 4px;
+  color: var(--color-amber-glow);
+  font-size: 0.9rem;
+}

@@ -1,0 +1,327 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/resolver_outcome.schema.json",
+  "title": "ResolverOutcome",
+  "description": "AUTHORITATIVE outcome schema. ONLY the Resolver may emit this object, and ONLY the Resolver writes to canonical state (write-domain-isolation). This schema is the single point of state mutation in 《革命街没有尽头》. It bundles: (1) the accepted NPC action, (2) all deltas to relationships / beliefs / artifacts, (3) new causal seeds, (4) the next beat, (5) explicit clamping audit, and (6) an idempotency key. All numeric fields are clamped to legal ranges to prevent overflow; any value that would have exceeded the range MUST appear in clampedValues with the original and the applied value.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "outcomeId",
+    "runId",
+    "eventSequence",
+    "idempotencyKey",
+    "acceptedNpcAction",
+    "nextBeat",
+    "timestamp",
+    "schemaVersion"
+  ],
+  "properties": {
+    "outcomeId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36,
+      "description": "Unique outcome identifier; used as the canonical event key in the event log."
+    },
+    "runId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "eventSequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Monotonic event sequence number. Resolver increments from the snapshot's current value."
+    },
+    "triggerPlayerActionId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "The PlayerAction.clientActionId that triggered this outcome, if any."
+    },
+    "triggerDirectorProposalId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "The DirectorBeat.proposalId that triggered this outcome, if any."
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "description": "Composite of (runId, eventSequence, triggerPlayerActionId, triggerDirectorProposalId) hashed. Replays of the same key are no-ops."
+    },
+    "acceptedNpcAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proposalId", "characterId", "proposedAction", "speechIntent"],
+      "properties": {
+        "proposalId": {
+          "type": "string",
+          "format": "uuid",
+          "minLength": 36,
+          "maxLength": 36,
+          "description": "The NpcProposal.proposalId that was accepted."
+        },
+        "characterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "proposedAction": {
+          "type": "string",
+          "enum": [
+            "investigate", "reveal", "conceal", "question", "confront",
+            "comfort", "give", "destroy", "promise", "wait", "leave", "silence"
+          ]
+        },
+        "speechIntent": {
+          "type": "string",
+          "enum": [
+            "seek_confirmation", "defend", "accuse", "comfort", "question",
+            "admit", "deflect", "threaten", "plead", "reassure", "taunt",
+            "reveal_truth", "conceal_truth", "remain_silent"
+          ]
+        },
+        "resolvedText": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 800,
+          "description": "Final canonical dialogue text after Resolver sanitization. Hard-capped to prevent LLM-injection into the event log."
+        }
+      }
+    },
+    "rejectedNpcActions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["proposalId", "reason"],
+        "properties": {
+          "proposalId": { "type": "string", "format": "uuid", "minLength": 36, "maxLength": 36 },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "violates_contract",
+              "forbidden_reveal",
+              "ungrounded_memory",
+              "contradicts_belief_state",
+              "illegal_target",
+              "duplicate_proposal",
+              "low_confidence_overridden"
+            ]
+          },
+          "detail": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "maxItems": 16,
+      "description": "NPC proposals the Resolver explicitly rejected this turn, with reason codes."
+    },
+    "relationshipDelta": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "trust", "intimacy", "unresolvedConflict"],
+        "properties": {
+          "from": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "to": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "trust": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "Signed change to trust. Clamped: |delta| <= 0.25 per turn to prevent runaway love/hate."
+          },
+          "intimacy": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "multipleOf": 0.01
+          },
+          "unresolvedConflict": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "Magnitude of unresolved conflict. Monotonic non-decrease is allowed; clamping prevents >1."
+          },
+          "respect": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "multipleOf": 0.01
+          },
+          "fear": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01
+          }
+        }
+      },
+      "maxItems": 64,
+      "description": "Per-pair relationship deltas for this turn. The Resolver applies these to canonicalState.relationshipState."
+    },
+    "beliefUpdates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["characterId", "subject", "newState", "confidence"],
+        "properties": {
+          "characterId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "subject": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "newState": {
+            "type": "string",
+            "enum": ["certain", "uncertain", "wrong", "denied", "reinforced"]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01
+          },
+          "evidenceMemoryId": { "type": ["string", "null"], "minLength": 1, "maxLength": 64 },
+          "previousState": {
+            "type": "string",
+            "enum": ["certain", "uncertain", "wrong", "denied", "reinforced", "unset"],
+            "description": "Snapshot of the prior state for audit. 'unset' for new beliefs."
+          }
+        }
+      },
+      "maxItems": 64,
+      "description": "Belief deltas the Resolver accepted (subset of NpcProposal.beliefUpdatesRequested, possibly filtered)."
+    },
+    "artifactUpdates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifactId", "operation"],
+        "properties": {
+          "artifactId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "operation": {
+            "type": "string",
+            "enum": ["create", "transfer", "destroy", "modify_state", "reveal", "conceal"]
+          },
+          "newOwnerId": { "type": ["string", "null"], "minLength": 1, "maxLength": 64 },
+          "newState": { "type": ["string", "null"], "minLength": 1, "maxLength": 256 },
+          "reasonCode": { "type": "string", "maxLength": 128 }
+        }
+      },
+      "maxItems": 32
+    },
+    "newCausalSeeds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "maxItems": 16,
+      "description": "CausalSeed IDs newly activated by this turn. The Resolver copies them from causal_seed.schema.json definitions."
+    },
+    "firedCausalSeeds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "maxItems": 16,
+      "description": "CausalSeed IDs whose trigger_condition matched this turn and which are now in active state."
+    },
+    "nextBeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sceneId", "beatId"],
+      "properties": {
+        "sceneId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "beatId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "transition": {
+          "type": "string",
+          "enum": ["continue", "advance_scene", "end_scene", "end_run"],
+          "description": "How this beat relates to scene lifecycle. 'end_run' requires a legal_ending in the contract."
+        },
+        "legalEndingId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "If transition='end_run', which of the contract's legal_endings fired. null otherwise."
+        }
+      }
+    },
+    "clampedValues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "original", "applied", "min", "max"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "JSONPath of the clamped value, e.g. 'relationshipDelta[0].trust'."
+          },
+          "original": { "type": "number" },
+          "applied": { "type": "number" },
+          "min": { "type": "number" },
+          "max": { "type": "number" }
+        }
+      },
+      "maxItems": 64,
+      "description": "Audit log of every value that was clamped to a legal range. Empty array means no clamping happened (rare)."
+    },
+    "auditTrail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["llmCalls", "deterministicDecisions"],
+      "properties": {
+        "llmCalls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["agent", "model", "inputTokens", "outputTokens", "latencyMs"],
+            "properties": {
+              "agent": {
+                "type": "string",
+                "enum": ["player_client", "npc_agent", "director_agent", "resolver", "memory_recall"]
+              },
+              "model": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "inputTokens": { "type": "integer", "minimum": 0, "maximum": 200000 },
+              "outputTokens": { "type": "integer", "minimum": 0, "maximum": 32000 },
+              "latencyMs": { "type": "integer", "minimum": 0, "maximum": 120000 }
+            }
+          },
+          "maxItems": 32
+        },
+        "deterministicDecisions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 32,
+          "description": "Human-readable list of deterministic choices the Resolver made (e.g. 'rejected proposal P-7: forbidden_reveal')."
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Authoritative server-side timestamp; the snapshot uses this to build its checksum."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  },
+  "allOf": [
+    {
+      "description": "If nextBeat.transition is 'end_run', nextBeat.legalEndingId MUST be a non-null string."
+    },
+    {
+      "description": "clampedValues MUST be empty if the resolver implementation is provably range-safe; in practice it usually contains at least one entry because LLMs frequently emit out-of-range numbers."
+    }
+  ]
+}

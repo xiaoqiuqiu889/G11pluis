@@ -1,0 +1,42 @@
+{
+  "name": "revolution-street-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "《革命街没有尽头》AI 原生重构版 · Electron 客户端（外部可分享版）",
+  "author": "G1 AI Native",
+  "license": "UNLICENSED",
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "tsc -p electron/tsconfig.json && electron .",
+    "dev:all": "concurrently -k -n VITE,ELECTRON -c blue,magenta \"vite\" \"npm:dev:electron\"",
+    "build": "tsc -p electron/tsconfig.json && vite build",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "preview": "vite preview",
+    "typecheck": "tsc -p . --noEmit && tsc -p electron/tsconfig.json --noEmit",
+    "lint": "echo 'lint placeholder'"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "electron": "^33.3.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  }
+}

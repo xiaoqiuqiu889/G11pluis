@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/npc_proposal.schema.json",
+  "title": "NpcProposal",
+  "description": "Schema for an NPC Agent's proposed reaction. NPCs NEVER write to the world state directly — they emit a Proposal that the Resolver validates and (possibly) merges. This enforces the write-domain-isolation rule from the 《崇祯》reference: only the Resolver touches canonical state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposalId",
+    "runId",
+    "characterId",
+    "proposedAction",
+    "speechIntent",
+    "reasonCodes",
+    "confidence"
+  ],
+  "properties": {
+    "proposalId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique proposal identifier. Resolver uses (runId, proposalId) for idempotency.",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "runId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36,
+      "description": "Run identifier; must match the run the agent is currently bound to."
+    },
+    "characterId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "NPC character ID that is reacting. Must be present in the world snapshot's beliefMatrices."
+    },
+    "triggerPlayerActionId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "The clientActionId that triggered this proposal, if any. null for ambient / director-driven proposals."
+    },
+    "proposedAction": {
+      "type": "string",
+      "enum": [
+        "investigate",
+        "reveal",
+        "conceal",
+        "question",
+        "confront",
+        "comfort",
+        "give",
+        "destroy",
+        "promise",
+        "wait",
+        "leave",
+        "silence"
+      ],
+      "description": "Atomic action the NPC wants to take. Same 12-value vocabulary as PlayerAction to keep action space uniform."
+    },
+    "targetId": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Character ID this proposal targets (often the player). null for self / environment."
+    },
+    "speechIntent": {
+      "type": "string",
+      "enum": [
+        "seek_confirmation",
+        "defend",
+        "accuse",
+        "comfort",
+        "question",
+        "admit",
+        "deflect",
+        "threaten",
+        "plead",
+        "reassure",
+        "taunt",
+        "reveal_truth",
+        "conceal_truth",
+        "remain_silent"
+      ],
+      "description": "The pragmatic intent behind the NPC's words. The Resolver maps this to a dialogue template + belief-update signature."
+    },
+    "referencedMemoryIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "maxItems": 8,
+      "uniqueItems": true,
+      "description": "Memory IDs the NPC is drawing on for this proposal. Resolver MUST verify each ID is in the current recall set; ungrounded memories are rejected (anti-hallucination)."
+    },
+    "beliefUpdatesRequested": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "newState", "confidence"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Character or concept the belief is about (e.g. 'player', 'father', '1937_photograph')."
+          },
+          "newState": {
+            "type": "string",
+            "enum": ["certain", "uncertain", "wrong", "denied", "reinforced"],
+            "description": "Target belief state for the subject. Resolver clamps transitions to the legal set."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.05,
+            "description": "How confident the NPC is in this belief shift. Clamped to [0,1]."
+          },
+          "evidenceMemoryId": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Memory that grounds the belief shift; null if purely emotional."
+          }
+        }
+      },
+      "description": "Belief deltas the NPC wants applied to either itself or a target."
+    },
+    "emotionalTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "intensity"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "enum": [
+            "calm", "tense", "angry", "afraid", "sad", "guilty",
+            "hopeful", "loving", "ashamed", "proud", "numb", "conflicted"
+          ],
+          "description": "NPC's prior emotion."
+        },
+        "to": {
+          "type": "string",
+          "enum": [
+            "calm", "tense", "angry", "afraid", "sad", "guilty",
+            "hopeful", "loving", "ashamed", "proud", "numb", "conflicted"
+          ],
+          "description": "NPC's proposed emotion after the turn. Must differ from 'from' to be non-trivial."
+        },
+        "intensity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.05,
+          "description": "Strength of the emotion. Resolver clamps to [0,1] and may dampen by character stability trait."
+        }
+      },
+      "description": "Affective transition; one of the four key components that drive believable NPC reactions."
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "player_disclosed_truth",
+          "player_lied",
+          "player_kept_promise",
+          "player_broke_promise",
+          "memory_resurfaced",
+          "belief_contradicted",
+          "belief_confirmed",
+          "witnessed_action",
+          "third_party_intervention",
+          "environmental_threat",
+          "deadline_approaching",
+          "secret_almost_revealed",
+          "traumatic_association",
+          "love_obligation",
+          "duty_obligation",
+          "self_preservation",
+          "guilt_compensation",
+          "ambition",
+          "spite",
+          "curiosity"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "description": "Typed reason codes that explain WHY the NPC proposed this action. The Resolver cross-checks reason codes against recent events to detect LLM fabrications."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "multipleOf": 0.05,
+      "description": "Agent's overall self-assessed confidence in the proposal. Low-confidence proposals are passed through but flagged in the resolver audit log."
+    },
+    "expectedContradictions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "maxItems": 8,
+      "description": "Belief IDs or character IDs whose current state would contradict this proposal. Honest agents populate this; dishonest ones won't, and that's a Resolver signal."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Agent clock timestamp; informational only."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  },
+  "allOf": [
+    {
+      "description": "If speechIntent is 'reveal_truth' or 'conceal_truth', the proposal MUST reference at least one memory to ground the claim.",
+      "if": {
+        "properties": {
+          "speechIntent": { "enum": ["reveal_truth", "conceal_truth"] }
+        },
+        "required": ["speechIntent"]
+      },
+      "then": {
+        "properties": {
+          "referencedMemoryIds": { "type": "array", "minItems": 1 }
+        }
+      }
+    },
+    {
+      "description": "emotionalTransition.to MUST differ from .from (no-op emotion updates are forbidden).",
+      "if": {
+        "required": ["emotionalTransition"]
+      },
+      "then": {
+        "properties": {
+          "emotionalTransition": {
+            "type": "object",
+            "properties": {
+              "from": true,
+              "to": true
+            }
+          }
+        }
+      }
+    }
+  ]
+}

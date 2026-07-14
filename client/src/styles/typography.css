@@ -1,0 +1,143 @@
+/* =============================================================================
+   革命街没有尽头 · 字体与排版
+   -----------------------------------------------------------------------------
+   中文衬线优先（小说感）；拉丁无衬线 fallback（现代信息感）。
+   ========================================================================== */
+
+/* ---- 衬线（中） */
+.font-zh {
+  font-family:
+    "Source Han Serif SC",
+    "Noto Serif SC",
+    "Songti SC",
+    "STSong",
+    "SimSun",
+    "宋体",
+    serif;
+  font-feature-settings: "palt" 1, "kern" 1;
+}
+
+/* ---- 衬线（拉丁 / 古典） */
+.font-en {
+  font-family:
+    "EB Garamond",
+    "Cormorant Garamond",
+    "Source Serif Pro",
+    "Georgia",
+    "Times New Roman",
+    serif;
+  font-feature-settings: "kern" 1, "liga" 1, "dlig" 1;
+  font-style: italic;
+}
+
+/* ---- 字幕（无衬线 fallback） */
+.font-sub {
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+}
+
+/* ---- 排印：标题 / 旁白 / 字幕 / 元数据 */
+.t-display {
+  font-family: "Source Han Serif SC", "Noto Serif SC", serif;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+}
+
+.t-narration {
+  font-family: "Source Han Serif SC", "Noto Serif SC", serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.85;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  color: var(--color-paper-200);
+}
+
+.t-italic {
+  font-family: "EB Garamond", "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.t-overline {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(241, 236, 223, 0.5);
+}
+
+.t-meta {
+  font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: rgba(241, 236, 223, 0.55);
+}
+
+.t-subtitle {
+  font-family: "Source Han Serif SC", "Noto Serif SC", serif;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+}
+
+.t-subtitle-en {
+  font-family: "EB Garamond", "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  line-height: 1.6;
+  color: var(--color-amber-glow);
+}
+
+/* ---- 旁白用的「你看到了 X」特殊排版 */
+.t-observer {
+  font-family: "Source Han Serif SC", "Noto Serif SC", serif;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.9;
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  color: var(--color-paper-100);
+}
+.t-observer em {
+  color: var(--color-amber-glow);
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* ---- 关键短语 highlight */
+.hl-amber {
+  color: var(--color-amber-glow);
+}
+.hl-vermillion {
+  color: #c66a55;
+}
+.hl-cool {
+  color: var(--color-cool-steel);
+}
+
+/* ---- 引文样式 */
+.quote-block {
+  border-left: 2px solid var(--color-amber-glow);
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  color: var(--color-paper-200);
+  font-style: italic;
+}
+
+/* ---- 段落节奏 */
+p + p {
+  text-indent: 2em;
+}
+
+/* 数字（运行编号、tick） */
+.t-num {
+  font-family: "JetBrains Mono", "Menlo", monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}

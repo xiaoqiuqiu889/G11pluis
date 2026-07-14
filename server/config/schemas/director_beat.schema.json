@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/director_beat.schema.json",
+  "title": "DirectorBeat",
+  "description": "Schema for a Director Agent's beat proposal. The Director chooses WHICH narrative beat to play next within the active scene contract. Beats are always picked from the contract's allowed_beats whitelist; everything else is rejected at validation time. The Director NEVER mutates canonical state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposalId",
+    "runId",
+    "sceneId",
+    "proposedBeat",
+    "allowedByContract",
+    "forbiddenRevealsChecked",
+    "transitionToNext",
+    "reasoning",
+    "pacingPressure"
+  ],
+  "properties": {
+    "proposalId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36,
+      "description": "Unique proposal ID; Resolver uses (runId, proposalId) for idempotency."
+    },
+    "runId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "sceneId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Scene this beat belongs to. Must match the active scene in the world snapshot."
+    },
+    "proposedBeat": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identifier of the proposed beat. Resolver MUST verify it appears in narrative_contract.allowed_beats; otherwise reject."
+    },
+    "allowedByContract": {
+      "type": "boolean",
+      "const": true,
+      "description": "Hard contract: must be true. The schema enforces this so that any beat where the agent forgot to check is rejected outright."
+    },
+    "forbiddenRevealsChecked": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "List of forbidden-reveal keys the Director actively re-checked before submitting. Length MUST equal narrative_contract.forbidden_reveals.length. Mismatch = reject."
+    },
+    "transitionToNext": {
+      "type": "boolean",
+      "description": "If true, Resolver will advance to the next scene after this beat is played (subject to contract.legal_endings). If false, the scene continues."
+    },
+    "suggestedTargetSceneId": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "When transitionToNext=true, the scene to advance into. Must be reachable from current scene in the era graph."
+    },
+    "reasoning": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000,
+      "description": "Natural-language rationale for the beat choice. Stored in audit log; not surfaced verbatim to the player."
+    },
+    "pacingPressure": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "multipleOf": 0.05,
+      "description": "How urgently the Director wants this beat to play. 0 = can wait, 1 = must play now (e.g. deadline beat, climax). Clamped to [0,1]."
+    },
+    "expectedTensionDelta": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1,
+      "multipleOf": 0.05,
+      "description": "Anticipated change in scene tension. Negative = release, positive = escalate. Clamped to [-1,1]."
+    },
+    "involvedCharacterIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "maxItems": 16,
+      "uniqueItems": true,
+      "description": "Character IDs the Director wants on stage for this beat."
+    },
+    "firedCausalSeeds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "maxItems": 8,
+      "description": "Causal seed IDs the Director believes should fire because of this beat. Resolver independently confirms."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  },
+  "allOf": [
+    {
+      "description": "If transitionToNext is true, suggestedTargetSceneId MUST be a non-null string."
+    },
+    {
+      "description": "pacingPressure must be at least 0.7 when the beat is tagged as a deadline / climax beat in the contract. Enforced at Resolver, not schema, to keep schema purely structural."
+    }
+  ]
+}

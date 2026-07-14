@@ -1,0 +1,641 @@
+# =============================================================================
+# 革命街没有尽头 · 第一案 · 第一案纵切片
+# 场景 3 / 3 ：reunion_2024（伊斯坦布尔·卡拉柯伊老咖啡馆与路口）
+# -----------------------------------------------------------------------------
+# 时代：2024 年秋，伊斯坦布尔
+# 锚点说明：这是 V5 / V6 设计契约中第五章（重逢）的纵切片，
+#           玩家在 chapter4（两个城市蒙太奇）+ chapter5（重逢视线 +
+#           诗集照片配对 + 路口分开）之后，13 年后的对视与最后两步。
+# 跨年代回响：必须显式引用 photo_lab_2008 与 farewell_2011 的具体行为；
+#           NPC 必须主动提起玩家在 2008 / 2011 的具体动作；
+#           远期回响在这里收束。
+# 写入规范：UTF-8；YAML 1.2；所有中文为正文。
+# =============================================================================
+
+scene_id: reunion_2024
+title: 伊斯坦布尔·卡拉柯伊老咖啡馆与路口
+era: "2024"
+location: 土耳其·伊斯坦布尔·卡拉柯伊·老咖啡馆 + 街口
+atmosphere:
+  - 雨后
+  - 木门推开声
+  - 老铜勺碰糖罐
+  - 银发与手背细纹
+  - 发黄开裂的书脊
+  - 模糊外语人声
+  - 倒过来的绿光
+  - 机场方向牌
+
+# -----------------------------------------------------------------------------
+# 固定锚点：策划硬性要求，AI 导演不得违反
+# -----------------------------------------------------------------------------
+required_anchors:
+  - 锚点 1：场景设定在伊斯坦布尔卡拉柯伊老咖啡馆，雨后，桌上有糖罐与一张照片
+  - 锚点 2：莱拉与阿拉什都已是 34—35 岁的中年版本（椭圆脸与卷发仍在，鬓边灰白、皱纹）
+  - 锚点 3：阿拉什推门而入时手抱诗集
+  - 锚点 4：莱拉手机里仍残留 2011 那条"我到了"短信
+  - 锚点 5：咖啡小票底部有纪念编码 G1N-DEMO-2024-05（第五章礼包源）
+  - 锚点 6：场景必须显式引用 photo_lab_2008 与 farewell_2011 至少各一项具体行为
+  - 锚点 7：NPC 必须主动提起玩家 2008 / 2011 的具体行为（不是玩家主动暴露）
+  - 锚点 8：场景结束于路口，绿灯亮起，两人走向不同方向
+  - 锚点 9：远期回响在这里收束（far_echo_routes 列表可以为空，但 convergence_summary 必填）
+  - 锚点 10：卡姆兰与玛丽亚姆在远程处存在（电话 / 短信 / 未接来电），不直接出场
+
+# -----------------------------------------------------------------------------
+# 核心冲突：场景要解决的具体张力
+# -----------------------------------------------------------------------------
+core_conflict:
+  - 冲突 1：13 年后第一眼落在何处（手与白发 / 诗集 / 时钟与机场方向）
+  - 冲突 2：是否把两张同版毕业照从包中与从诗集中取出，并在桌上对齐
+  - 冲突 3：是否在路口分开前，把"卡姆兰正在等我"说出口
+  - 冲突 4：是否承认 2011 那一夜/2011 机场那句没说完的话
+
+# -----------------------------------------------------------------------------
+# 行为白名单：AI 导演只能从这些节拍中选择
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - 试探
+  - 玩笑（带苦味也带暖意）
+  - 回避
+  - 表白未遂
+  - 共同秘密被承认
+  - 替对方保存的东西被认出
+  - 替自己保留的退路被让出
+  - 把"我到了"重新念一次
+  - 把名字留在街口
+  - 在意对方是否还记得 2008
+
+# -----------------------------------------------------------------------------
+# 禁止揭露：未达条件的秘密不能输出
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - 任何关于 2025 之后的具体时间感
+  - 莱拉 / 阿拉什任何一人在 2024 之后的健康 / 财务 / 家庭变动
+  - 玛兹雅在设拉子儿童图书馆之后的生活细节
+  - 卡姆兰冲洗的黑白停车场照片具体内容
+  - 玛丽亚姆记录的流星具体日期
+  - 莱拉姨妈是否仍在世
+  - 任何关于"下一案"的暗示
+  - 玩家在 photo_lab_2008 未触发的种子（不能被说"你曾经 X"——除非真的触发过）
+  - 玩家在 farewell_2011 未触发的种子（同上）
+
+# -----------------------------------------------------------------------------
+# AI 行为白名单：12 种结构化行为
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate   # 检查诗集、照片、咖啡小票、咖啡馆时钟、街口信号灯
+  - reveal        # 让 2008 / 2011 的具体行为被说出口
+  - conceal       # 把照片 / 公交票 / 诗重新收回
+  - question      # 询问对方 / 自己 / 收件箱
+  - confront      # 直面"13 年"这一事实
+  - comfort       # 安抚对方 / 安抚自己
+  - give          # 给出照片 / 诗集 / 一句话
+  - destroy       # 把咖啡小票 / 街口备忘撕掉
+  - promise       # 许下"等下一年"或"等再下一年"
+  - wait          # 站在路口等绿灯 / 站在桌边等对方先开口
+  - leave         # 走向机场 / 走向酒店
+  - silence       # 把已经成型的句子咽回去
+
+# -----------------------------------------------------------------------------
+# 行为预算：本场景玩家可执行次数限制
+# -----------------------------------------------------------------------------
+turn_budget:
+  total: 8
+  investigate: 3
+  reveal: 2
+  conceal: 1
+  question: 2
+  confront: 1
+  comfort: 1
+  give: 2
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 2
+
+# -----------------------------------------------------------------------------
+# 玩家从 photo_lab_2008 与 farewell_2011 继承的"携带物"
+# -----------------------------------------------------------------------------
+inherited_objects:
+  - id: photo_2008_in_pocket_2024
+    description: 莱拉把 2008 那张同版照片从 2011 带到了 2024
+    enabled_if_seed: photo_2008_inherited_to_2024
+    initial_location: 莱拉斜挎包内袋
+    visibility: 莱拉视角可见
+
+  - id: book_jalal_2008_with_photo_2024
+    description: 阿拉什的诗集里仍夹着 2008 那张同版照片
+    enabled_if_seed: book_2008_inherited_to_2024
+    initial_location: 阿拉什臂弯
+    visibility: 主角视角可见
+
+  - id: bus_ticket_pair_2024
+    description: 304 路公交票仍在诗集末页
+    enabled_if_seed: bus_ticket_pair_unused
+    initial_location: 诗集末页
+    visibility: 主角视角可见
+
+  - id: folded_poem_in_chest_2024
+    description: 2008 那张折诗仍在阿拉什胸口口袋
+    enabled_if_seed: folded_poem_still_in_pocket
+    initial_location: 阿拉什胸口口袋
+    visibility: 主角视角可见
+
+  - id: luggage_tag_carries_truth_2024
+    description: 2011 莱拉在行李牌背面写下的那行字
+    enabled_if_seed: luggage_tag_carries_truth
+    initial_location: 莱拉斜挎包侧袋
+    visibility: 莱拉视角可见
+
+  - id: i_arrived_text_2024
+    description: 2011 那条"我到了"短信仍躺在莱拉手机里
+    enabled_if_seed: i_arrived_text
+    initial_location: 莱拉手机
+    visibility: 莱拉视角可见
+
+  - id: kamran_name_spoken_or_concealed_2024
+    description: 2011 莱拉说没说卡姆兰的名字
+    enabled_if_seed:
+      - name_of_kamran_spoken
+      - name_of_kamran_concealed
+    initial_location: 莱拉记忆
+    visibility: 莱拉视角不可见（只能通过 reveal 出来）
+
+  - id: escape_asked_in_2011_2024
+    description: 2011 莱拉最后问过的那次共同的路
+    enabled_if_seed: escape_asked_in_2011
+    initial_location: 莱拉记忆
+    visibility: 莱拉视角不可见（只能通过 reveal 出来）
+
+# -----------------------------------------------------------------------------
+# 可调查对象：玩家在场景中可以 investigate 的物件
+# -----------------------------------------------------------------------------
+investigatable_objects:
+  - id: sugar_bowl_cafe
+    name: 桌上糖罐
+    description: 老铜糖罐，里面有方糖与小铜勺；旁边留出一个刚好够照片的位置
+    initial_location: 咖啡桌
+    visibility: 主角视角可见
+    keywords: [糖罐, 铜勺, 方糖, 位置]
+    requires: []
+    leads_to: [photo_placement, far_echo_2008]
+
+  - id: tea_glass
+    name: 红茶杯
+    description: 伊朗式红茶杯，杯沿有弧形缺口
+    initial_location: 咖啡桌
+    visibility: 主角视角可见
+    keywords: [红茶, 杯沿, 缺口]
+    requires: []
+    leads_to: [gaze_hands, near_echo_2011]
+
+  - id: poetry_book
+    name: 阿拉什的诗集
+    description: 贾拉鲁丁·鲁米诗集，书脊开裂，封面有 2008 留下的油渍
+    initial_location: 阿拉什臂弯
+    visibility: 主角视角可见
+    keywords: [诗集, 鲁米, 书脊, 油渍]
+    requires: []
+    leads_to: [gaze_book, photo_pairing]
+
+  - id: graduation_photo_leila
+    name: 莱拉的同版毕业照
+    description: 2008 冲印、2011 带过机场、2024 仍在包内袋
+    initial_location: 莱拉斜挎包内袋
+    visibility: 莱拉视角可见
+    keywords: [照片, 同版, 2008, 内袋]
+    requires: [photo_2008_in_pocket_2024]
+    leads_to: [photo_pairing, photo_placement]
+
+  - id: graduation_photo_arash
+    name: 阿拉什的同版毕业照
+    description: 2008 冲印、2011 仍在诗集、2024 仍在诗集
+    initial_location: 诗集书页间
+    visibility: 主角视角可见
+    keywords: [照片, 同版, 2008, 诗集]
+    requires: [book_jalal_2008_with_photo_2024]
+    leads_to: [photo_pairing, photo_placement]
+
+  - id: receipt
+    name: 咖啡小票
+    description: 底部印有纪念编码 G1N-DEMO-2024-05
+    initial_location: 咖啡桌
+    visibility: 主角视角可见
+    keywords: [小票, 编码, G1N-DEMO-2024-05]
+    requires: []
+    leads_to: [chapter_reward, destroy]
+
+  - id: leila_phone
+    name: 莱拉手机
+    description: 收件箱里仍存着 2011 那条"我到了"短信
+    initial_location: 莱拉手边
+    visibility: 莱拉视角可见
+    keywords: [手机, 短信, 我到了, 收件箱]
+    requires: [i_arrived_text_2024]
+    leads_to: [reveal_2011, reveal_i_arrived]
+
+  - id: arash_phone
+    name: 阿拉什手机
+    description: 未接来电来自玛丽亚姆
+    initial_location: 阿拉什裤袋
+    visibility: 主角视角可见
+    keywords: [手机, 玛丽亚姆, 未接来电]
+    requires: []
+    leads_to: [gaze_clock, far_echo_reality]
+
+  - id: hand_grey_hair
+    name: 阿拉什的手与鬓角
+    description: 端茶时拇指仍会摩挲杯沿；鬓角灰白
+    initial_location: 阿拉什
+    visibility: 主角视角可见
+    keywords: [手, 鬓角, 灰白, 杯沿]
+    requires: []
+    leads_to: [gaze_hands, grip_then_release_recall]
+
+  - id: cafe_clock
+    name: 咖啡馆老钟
+    description: 墙上挂钟，时针指向傍晚
+    initial_location: 咖啡馆墙
+    visibility: 主角视角可见
+    keywords: [钟, 时针, 傍晚]
+    requires: []
+    leads_to: [gaze_clock, wait]
+
+  - id: crossroad_sign
+    name: 机场方向牌
+    description: 路口的机场方向牌，箭头指向远处
+    initial_location: 街口
+    visibility: 主角视角可见
+    keywords: [路口, 方向牌, 机场]
+    requires: []
+    leads_to: [leave, crossroads_parting]
+
+  - id: traffic_light
+    name: 路口信号灯
+    description: 倒计时行人信号灯
+    initial_location: 街口
+    visibility: 主角视角可见
+    keywords: [信号灯, 倒计时, 街口]
+    requires: []
+    leads_to: [leave, crossroads_parting]
+
+  - id: coffee_table
+    name: 咖啡桌
+    description: 桌面上有水渍、咖啡渍与一张照片
+    initial_location: 咖啡馆
+    visibility: 主角视角可见
+    keywords: [桌面, 水渍, 照片]
+    requires: []
+    leads_to: [photo_placement, photo_pairing]
+
+  - id: sugar_packet
+    name: 桌上糖包
+    description: 棕黄糖包，纸面有旧书店同款字样
+    initial_location: 咖啡桌
+    visibility: 主角视角可见
+    keywords: [糖包, 旧书店, 字样]
+    requires: []
+    leads_to: [far_echo_2008, misread_gesture]
+
+  - id: window_rain
+    name: 雨后玻璃
+    description: 落地窗上有水珠，外面的加拉塔桥若隐若现
+    initial_location: 咖啡馆
+    visibility: 主角视角可见
+    keywords: [玻璃, 水珠, 加拉塔]
+    requires: []
+    leads_to: [reveal_reality, far_echo_2024]
+
+  - id: doorway_wood
+    name: 老木门
+    description: 推开时发出吱嘎声
+    initial_location: 咖啡馆入口
+    visibility: 主角视角可见
+    keywords: [门, 吱嘎, 推开]
+    requires: []
+    leads_to: [reveal_2011, far_echo_2011]
+
+  - id: bus_tickets_in_book_end
+    name: 诗集末页公交票
+    description: 两张 304 路旧公交票
+    initial_location: 诗集末页
+    visibility: 主角视角可见
+    keywords: [公交票, 304, 末页, 两张]
+    requires: [bus_ticket_pair_2024]
+    leads_to: [reveal_2011, crossroads_parting]
+
+  - id: folded_poem_in_chest
+    name: 阿拉什胸口折诗
+    description: 2008 沿折痕折了四次的诗
+    initial_location: 阿拉什胸口口袋
+    visibility: 主角视角可见
+    keywords: [折诗, 胸口, 折痕]
+    requires: [folded_poem_in_chest_2024]
+    leads_to: [reveal_2008, grip_then_release_recall]
+
+  - id: luggage_tag_2024
+    name: 莱拉的行李牌
+    description: 2011 那个行李牌，背面有她写下的一行字
+    initial_location: 莱拉斜挎包侧袋
+    visibility: 莱拉视角可见
+    keywords: [行李牌, 2011, 背面, 字]
+    requires: [luggage_tag_carries_truth_2024]
+    leads_to: [reveal_2011, crossroads_parting]
+
+# -----------------------------------------------------------------------------
+# 在场人物
+# -----------------------------------------------------------------------------
+characters_present:
+  - id: leila
+    name: 莱拉
+    initial_state: 试探
+    visibility: 主角视角可见
+    state_notes:
+      - 中年莱拉（约 34），椭圆脸不变，眼睛依旧
+      - 灰米色头巾，鬓边卷发，颧骨更明显
+      - 身上仍有深橄榄外套，斜挎小棕包
+
+  - id: arash
+    name: 阿拉什
+    initial_state: 紧张
+    visibility: 主角视角可见
+    state_notes:
+      - 中年阿拉什（约 35），卷发、瘦削轮廓仍在
+      - 鬓角灰白、轻胡茬、炭灰长外套
+      - 臂弯抱着一本开裂的诗集
+
+  - id: kamran_remote
+    name: 卡姆兰（远程）
+    initial_state: 旁线
+    visibility: 主角视角不可见（只能通过电话 / 短信感知）
+    state_notes:
+      - 在圣何塞，可能正在暗房冲洗黑白停车场照片
+      - 通过 1 通未接电话 + 1 条短信存在
+      - 短信内容与 2011 视频通话呼应："如果她先说卡姆兰正在等我，我就在停车场等她回来"
+
+  - id: maryam_remote
+    name: 玛丽亚姆（远程）
+    initial_state: 旁线
+    visibility: 主角视角不可见（只能通过阿拉什手机的未接来电感知）
+    state_notes:
+      - 在德黑兰，正与阿拉什通话被切掉
+      - 关心阿拉什今晚能不能回酒店看流星
+      - 与 2011 玛丽亚姆记录流星的事呼应
+
+  - id: cafe_owner
+    name: 咖啡馆老板（背景）
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 在吧台擦杯子，不主动与两人搭话
+      - 提供"雨停"与"加拉塔桥若隐若现"的背景
+
+# -----------------------------------------------------------------------------
+# NPC 必提的具体 2008 / 2011 行为（不是玩家主动暴露）
+# -----------------------------------------------------------------------------
+npc_recall_lines:
+  - id: npc_mention_photo_in_pocket
+    speaker: arash
+    line: "你把那张照片带了多少年？"
+    enabled_if_seed: photo_2008_in_pocket_2024
+    trigger: 玩家对 arash 或 graduation_photo_leila 执行 investigate
+
+  - id: npc_mention_poem_in_toolbox
+    speaker: arash
+    line: "我工具盒里那张诗的方向，我一直记得。"
+    enabled_if_seed: folded_poem_in_chest_2024
+    trigger: 玩家对 folded_poem_in_chest 执行 investigate
+
+  - id: npc_mention_kamran_spoken
+    speaker: leila
+    line: "2011 那个早晨，我先说卡姆兰的名字。你没有问。"
+    enabled_if_seed: name_of_kamran_spoken
+    trigger: 玩家对 kamran_name_spoken_or_concealed_2024 执行 reveal
+
+  - id: npc_mention_kamran_concealed
+    speaker: leila
+    line: "2011 那个早晨，我把他的名字留在了信封里。"
+    enabled_if_seed: name_of_kamran_concealed
+    trigger: 玩家对 kamran_name_spoken_or_concealed_2024 执行 reveal
+
+  - id: npc_mention_escape_2011
+    speaker: arash
+    line: "你最后那次问，我没接住。"
+    enabled_if_seed: escape_asked_in_2011_2024
+    trigger: 玩家对 arash 执行 confront
+
+  - id: npc_mention_bus_tickets
+    speaker: arash
+    line: "那两张 304 的票还在诗集末页。"
+    enabled_if_seed: bus_ticket_pair_2024
+    trigger: 玩家对 bus_tickets_in_book_end 执行 investigate
+
+  - id: npc_mention_i_arrived
+    speaker: arash
+    line: "13 年前我发过'我到了'。你当时没回。"
+    enabled_if_seed: i_arrived_text_2024
+    trigger: 玩家对 leila_phone 或 doorway_wood 执行 investigate
+
+  - id: npc_mention_luggage_tag
+    speaker: arash
+    line: "你 2011 在行李牌背面写的字，我今晚才看到。"
+    enabled_if_seed: luggage_tag_carries_truth_2024
+    trigger: 玩家对 luggage_tag_2024 执行 investigate
+
+# -----------------------------------------------------------------------------
+# 因果种子：本场景行为触发哪些（这里是收束种子，但仍有近端回响）
+# -----------------------------------------------------------------------------
+causal_seeds:
+  - id: photo_pairing_complete
+    description: 莱拉与阿拉什在咖啡桌上对齐两张同版毕业照
+    trigger: 玩家对 graduation_photo_leila + graduation_photo_arash + coffee_table 执行 give
+    effects:
+      - 锚点 1 桌面上出现两张照片，磨损边角不同
+      - 锚点 2 后续镜头停在照片的边角而非两个人的脸
+
+  - id: photo_placement_decision
+    description: 莱拉在糖罐旁把照片正面 / 反面 / 收回
+    trigger: 玩家对 graduation_photo_leila 执行 give_to_table / give_to_self
+    effects:
+      - 锚点 1 镜头语言根据放置方式而变化（呼应 photo 共鸣操作的 3 个选项）
+
+  - id: gaze_target_recalled
+    description: 莱拉第一眼的焦点（手与白发 / 诗集 / 时钟与机场方向）
+    trigger: 玩家对 hand_grey_hair / poetry_book / cafe_clock 执行 investigate
+    effects:
+      - 锚点 1 后续镜头语言由 gaze 选择决定
+      - 锚点 2 13 年先落在指节 / 书脊 / 秒针
+
+  - id: kamran_name_spoken_finally
+    description: 莱拉在路口把"卡姆兰正在等我"说出口
+    trigger: 玩家对 arash 或 crossroad_sign 执行 reveal
+    effects:
+      - 锚点 1 路口分开的语气由 seed 类型决定（truth 路线响亮 / conceal 路线压低）
+
+  - id: crossroads_parting
+    description: 绿灯亮起，两人走向不同方向，又在同一刻回头笑一下
+    trigger: 玩家对 traffic_light 执行 leave
+    effects:
+      - 锚点 1 触发电影尾声最后一句台词
+      - 锚点 2 卷宗状态收束：照片、邮件、视线三种记忆的并列
+
+  - id: grip_then_release_recall
+    description: 莱拉与阿拉什在桌边再次握—松（2011 机场握—松的 13 年后回响）
+    trigger: 玩家对 arash 或 poetry_book 执行 comfort + silence
+    effects:
+      - 锚点 1 桌面的两张照片之间留出新的位置
+
+  - id: reveal_reality_lives
+    description: 莱拉承认卡姆兰 / 阿拉什承认玛丽亚姆
+    trigger: 玩家对 kamran_remote / maryam_remote 执行 reveal
+    effects:
+      - 锚点 1 现实生活共同收束：莱拉过街后把航班时间发给卡姆兰；阿拉什回拨玛丽亚姆
+      - 锚点 2 旧事没有消失，眼前生活也没有暂停
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+# 选种依据：物质证据（照片）+ 对话证据（承认 2008/2011 行为）+ 身体证据（握—松）
+# 三者形成完整闭环。这是 AI 原生门槛 A 触达（NPC 主动提起玩家行为）的关键。
+mandatory_echoes:
+  - id: two_photos_takeout_compare
+    description: 莱拉从包中、阿拉什从诗集取出两张同版照片（两个物件都是 2008+2011 沉淀的产物）
+    trigger: 玩家对 reunion_photos 执行 investigate 或 give
+    target_scenes: [reunion_2024]   # 本场景闭环
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.photo_in_pocket, photo_lab_2008.seed.photo_in_book]
+    references_2011: [farewell_2011.inherited_objects.photo_2008_inherited_to_2024, farewell_2011.inherited_objects.book_2008_inherited_to_2024]
+
+  - id: first_words_admit_2008_2011
+    description: 莱拉第一眼选择后桌边开口承认 2008/2011 的具体行为（NPC 主动提起玩家行为）
+    trigger: gaze_target_recalled enabled AND 玩家对 reunion_scene 执行 reveal 或 question
+    target_scenes: [reunion_2024]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.*]
+    references_2011: [farewell_2011.seed.grip_then_release_2011, farewell_2011.seed.name_of_kamran_spoken, farewell_2011.seed.bus_ticket_pair_unused]
+    ai_director_constraint: "必须引用 player 在 photo_lab_2008 或 farewell_2011 的具体行为之一，不允许泛化叙述"
+
+  - id: grip_release_2024_echo
+    description: 莱拉与阿拉什在桌边再次握—松（2008→2011→2024 三跳链完整）
+    trigger: inherited_objects.grip_then_release_2011 enabled AND 玩家在告别时执行 comfort 或 give
+    target_scenes: [reunion_2024]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.grip_then_release]
+    references_2011: [farewell_2011.seed.grip_then_release_2011]
+
+# -----------------------------------------------------------------------------
+# 合法结局：本场景可能的结束状态
+# -----------------------------------------------------------------------------
+legal_endings:
+  - id: gazes_then_speaks
+    label: 先看再说话
+    description: 莱拉第一眼选择后，桌边开口承认 2008 / 2011 的具体行为
+    causal_seed_required:
+      - gaze_target_recalled
+      - npc_mention_photo_in_pocket
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: photo_pairing_complete_ending
+    label: 两张照片对齐
+    description: 莱拉从包中、阿拉什从诗集取出两张同版照片，磨损边角不同
+    causal_seed_required:
+      - photo_pairing_complete
+      - npc_mention_bus_tickets
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: crossroads_parting_ending
+    label: 路口分开
+    description: 绿灯亮起，两人走向不同方向
+    causal_seed_required:
+      - crossroads_parting
+      - kamran_name_spoken_finally
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: silence_kept_ending
+    label: 沉默带过
+    description: 莱拉与阿拉什没有把 2011 那一夜的真相说出口
+    causal_seed_required:
+      - silence
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+# -----------------------------------------------------------------------------
+# 场景结束的下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - chapter5_crossroads（终章·另一个故事）
+  - ending_cinematic（电影尾声，先于测评和卷宗出现）
+  - 卷宗回访入口（reveal_2011 / reveal_2008 全部写入后启用）
+
+# -----------------------------------------------------------------------------
+# 远期回响：本场景是收束，不再产生新的远期回响
+# -----------------------------------------------------------------------------
+far_echo_routes: []
+convergence_summary:
+  - 来自 photo_lab_2008 的种子在本场景通过 inherited_objects 全部显影
+  - 来自 farewell_2011 的种子在本场景通过 inherited_objects 全部显影
+  - NPC 必须主动提起至少 3 条 2008 / 2011 具体行为（npc_recall_lines 中的 enabled_if_seed 触发）
+  - 卷宗收束：照片、邮件、视线三种记忆并列，不允许"一种替另一种作证"
+  - 电影尾声组合：1 主导动作 + 1 次轴 + 1 件共鸣物件 + 现实生活共同收束
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 0   # 收束场景，不再释放新回响
+  photo_handling_budget: 2
+
+# -----------------------------------------------------------------------------
+# 验收（按经验教训"四项问题"自检）
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: true        # 两人在路口分开，13 年完成收束
+  - changes_character_knowledge: true # 阿拉什 / 莱拉彼此确认 2008 / 2011 的具体行为
+  - changes_available_actions: true   # 关闭"再等等"的退路，触发电影尾声
+  - creates_future_echo: true         # 收束不等于零回响：卷宗仍保存全部种子
+  - preserves_macro_endpoints: true   # 莱拉已婚、阿拉什已与玛丽亚姆共度、13 年后分开、路口又分开
+  - forbidden_reveals_strict: true    # 不泄露 2025 之后
+  - npc_actively_recalls: true        # NPC 必须主动提起 2008 / 2011 的具体行为
+  - references_2008_specifically: true # 必须显式引用 photo_lab_2008 至少一项具体行为
+  - references_2011_specifically: true # 必须显式引用 farewell_2011 至少一项具体行为
+  - canonical_photo_consistent: true  # 两张照片来自同一 canonical asset
+  - character_anchor_leila: 中年莱拉（约 34），椭圆脸 + 深色杏仁眼 + 灰米头巾
+  - character_anchor_arash: 中年阿拉什（约 35），卷发 + 瘦削 + 鬓角灰白
+  - kamran_and_maryam_present_remotely: true # 卡姆兰与玛丽亚姆在远程处存在
+
+# -----------------------------------------------------------------------------
+# 章节与演示码挂钩
+# -----------------------------------------------------------------------------
+chapter: chapter5
+chapter_label: 第五章 · 伊斯坦布尔重逢
+reward_id: chapter5
+reward_code: G1N-DEMO-2024-05
+reward_source: receipt（咖啡小票底部的纪念编码）
+paid_dialogue_id: paid-reunion-hypothesis
+hidden_dialogue_unlock: "如果我们现在都没有结婚呢？"
+
+# -----------------------------------------------------------------------------
+# 美术参考
+# -----------------------------------------------------------------------------
+art:
+  - /art-v5/istanbul-cafe-photo-close.png       # 主体（咖啡馆桌面 + 照片）
+  - /art-v5/istanbul-reunion-aged.png           # 重逢视线
+  - /art-v5/poetry-book-photo-close.png         # 诗集与照片连续性
+  - /art-v5/istanbul-crossroads-aged.png        # 路口
+  - /art-v5/canonical-graduation-photo.png      # canonical asset
+art_focus: table
+
+# -----------------------------------------------------------------------------
+# 备注：本场景是 reunion_2024 的"下游"——必须显式收束 photo_lab_2008 与 farewell_2011
+#       NPC 必须主动提起玩家的具体行为
+#       远期回响收束
+# -----------------------------------------------------------------------------
+notes:
+  - 玩家在 photo_lab_2008 与 farewell_2011 的所有动作都应通过 inherited_objects + npc_recall_lines 在 2024 显影
+  - gaze / photo / email 三种共鸣在本场景的 gaze 焦点 + photo 放置上发生最终重组
+  - 三种记忆并列，不允许"一种替另一种作证"
+  - 卷宗默认折叠，但 photo_lab_2008 → farewell_2011 → reunion_2024 的种子链在卷宗展开时必须可追溯
+  - 场景结束前必须挂载 G1N-DEMO-2024-05
+  - canonical 毕业照的两次不同磨损边角必须在咖啡桌上同时出现

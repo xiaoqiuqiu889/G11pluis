@@ -1,0 +1,225 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/narrative_contract.schema.json",
+  "title": "NarrativeContract",
+  "description": "Per-scene narrative contract. Defines the fixed anchors that the scene MUST touch, the core conflict that drives it, the whitelist of legal beats the Director may choose, the hard list of revelations that are FORBIDDEN, the turn / action budgets, the legal endings, and which causal seeds this scene can plant. This is the single most important LLM-guidance artifact: every Director proposal and every NPC proposal gets validated against the active contract before the Resolver considers it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sceneId",
+    "title",
+    "era",
+    "location",
+    "required_anchors",
+    "core_conflict",
+    "allowed_beats",
+    "forbidden_reveals",
+    "max_turns",
+    "total_action_budget",
+    "legal_endings",
+    "schemaVersion"
+  ],
+  "properties": {
+    "sceneId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Unique scene identifier, e.g. 'scene_1937_revolution_street_24'."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Display title for the scene; surfaced to the player when the scene starts."
+    },
+    "era": {
+      "type": "string",
+      "enum": [
+        "pre_1911_qing",
+        "1911_1927_republic",
+        "1927_1937_nanjing_decade",
+        "1937_1945_war",
+        "1945_1949_civil_war",
+        "1949_1965_socialist_build",
+        "1966_1976_cultural_revolution",
+        "1977_1989_reform_early",
+        "1989_2000_boom",
+        "2000_2012_globalization",
+        "2012_present_ai_age",
+        "present",
+        "epilogue"
+      ],
+      "description": "Historical era tag. Determines which cultural/linguistic register the LLM is allowed to use."
+    },
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "In-fiction location, e.g. '革命街24号·林九旧宅·二楼'."
+    },
+    "timeOfDay": {
+      "type": "string",
+      "enum": ["dawn", "morning", "noon", "afternoon", "evening", "night", "late_night", "unspecified"],
+      "description": "Optional time-of-day; affects lighting / tone prompts."
+    },
+    "weather": {
+      "type": "string",
+      "enum": ["clear", "cloudy", "rain", "storm", "snow", "fog", "heat", "cold", "unspecified"]
+    },
+    "cast": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["characterId", "role"],
+        "properties": {
+          "characterId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "role": {
+            "type": "string",
+            "enum": ["protagonist", "ally", "antagonist", "witness", "bystander", "off_stage"],
+            "description": "Narrative role in this scene."
+          },
+          "initialDisposition": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "multipleOf": 0.05,
+            "description": "Starting relationship disposition toward the protagonist."
+          }
+        }
+      },
+      "maxItems": 32,
+      "uniqueItems": false,
+      "description": "Cast list with narrative roles. Off-stage characters can be referenced but not directly addressed."
+    },
+    "required_anchors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["anchorId", "description"],
+        "properties": {
+          "anchorId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "mandatory": {
+            "type": "boolean",
+            "description": "If true, the scene cannot end without this anchor being hit."
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "description": "Fixed narrative beats the Director MUST traverse. Resolver rejects scene-end proposals that haven't covered all mandatory anchors."
+    },
+    "core_conflict": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000,
+      "description": "One-sentence (or short paragraph) statement of the central tension in this scene. Used as system-prompt anchor for NPC agents."
+    },
+    "allowed_beats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["beatId", "label", "tier"],
+        "properties": {
+          "beatId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "tier": {
+            "type": "string",
+            "enum": ["setup", "rising", "climax", "falling", "resolution"],
+            "description": "Narrative tier the beat belongs to. Director uses tier pressure to pace the scene."
+          },
+          "tensionDelta": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1,
+            "multipleOf": 0.05
+          },
+          "prerequisites": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "maxItems": 8,
+            "uniqueItems": true,
+            "description": "Other beatIds that must have fired before this one is selectable."
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "description": "Whitelist of beats the Director is allowed to choose. Anything outside this list is rejected."
+    },
+    "forbidden_reveals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revealKey", "reason"],
+        "properties": {
+          "revealKey": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "maxItems": 32,
+      "uniqueItems": true,
+      "description": "Information that MUST NOT be surfaced in this scene. Director.proposal.forbiddenRevealsChecked must list every entry here."
+    },
+    "max_turns": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "description": "Hard cap on player turns in this scene. Resolver forces a legal_ending if exceeded."
+    },
+    "total_action_budget": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Sum of (player + NPC + director) actions allowed in this scene."
+    },
+    "legal_endings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["endingId", "label", "conditions"],
+        "properties": {
+          "endingId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "conditions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 256 },
+            "minItems": 1,
+            "maxItems": 16,
+            "description": "Predicate strings the Resolver evaluates; all must be true to fire the ending."
+          },
+          "tone": {
+            "type": "string",
+            "enum": ["triumphant", "bittersweet", "tragic", "ambiguous", "open", "comic", "sober"]
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "description": "Whitelist of scene endings. Resolver refuses any 'end_run' transition that does not reference one of these IDs."
+    },
+    "causal_seeds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "maxItems": 32,
+      "description": "Causal seed IDs that this scene is allowed to plant. Resolver drops any newCausalSeeds not in this list."
+    },
+    "narratorVoice": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Optional style note for the LLM narrator (e.g. 'third-person limited, period-appropriate vernacular')."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  }
+}

@@ -1,0 +1,231 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/world_snapshot.schema.json",
+  "title": "WorldSnapshot",
+  "description": "The single canonical world state for a run. Persisted by the Resolver after every accepted outcome. All Agent reads (memory recall, NPC belief queries, Director pacing) come from a snapshot — NEVER from raw LLM output. The checksum is computed over the canonical fields; any tampering with the snapshot is detected at load time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runId",
+    "eventSequence",
+    "canonicalState",
+    "relationshipState",
+    "artifactState",
+    "directorState",
+    "beliefMatrices",
+    "memories",
+    "causalSeedsActive",
+    "timestamp",
+    "checksum",
+    "schemaVersion"
+  ],
+  "properties": {
+    "runId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "eventSequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000,
+      "description": "Highest event sequence number applied to this snapshot."
+    },
+    "canonicalState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currentSceneId", "era", "turnIndex", "phase"],
+      "properties": {
+        "currentSceneId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "era": {
+          "type": "string",
+          "enum": [
+            "pre_1911_qing", "1911_1927_republic", "1927_1937_nanjing_decade",
+            "1937_1945_war", "1945_1949_civil_war", "1949_1965_socialist_build",
+            "1966_1976_cultural_revolution", "1977_1989_reform_early",
+            "1989_2000_boom", "2000_2012_globalization", "2012_present_ai_age",
+            "present", "epilogue"
+          ]
+        },
+        "turnIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200,
+          "description": "Player turn count within the current scene."
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["setup", "rising", "climax", "falling", "resolution", "ended"],
+          "description": "Current scene phase."
+        },
+        "activeContractId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "activeBeatId": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+        "endingId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Set when phase='ended'."
+        },
+        "globalTension": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.01,
+          "description": "Aggregate tension across all active scenes. Clamped to [0,1]."
+        }
+      },
+      "description": "Top-level scene/era/phase metadata."
+    },
+    "relationshipState": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "trust", "intimacy", "unresolvedConflict"],
+        "properties": {
+          "from": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "to": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "trust": { "type": "number", "minimum": -1, "maximum": 1, "multipleOf": 0.01 },
+          "intimacy": { "type": "number", "minimum": -1, "maximum": 1, "multipleOf": 0.01 },
+          "unresolvedConflict": { "type": "number", "minimum": 0, "maximum": 1, "multipleOf": 0.01 },
+          "respect": { "type": "number", "minimum": -1, "maximum": 1, "multipleOf": 0.01 },
+          "fear": { "type": "number", "minimum": 0, "maximum": 1, "multipleOf": 0.01 },
+          "lastUpdatedAt": { "type": "integer", "minimum": 0, "maximum": 100000 }
+        }
+      },
+      "maxItems": 512,
+      "description": "Authoritative relationship matrix. Clamped to legal ranges; Resolver rejects outcomes that would overflow."
+    },
+    "artifactState": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifactId", "ownerId", "state", "isRevealed"],
+        "properties": {
+          "artifactId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "ownerId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "state": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "isRevealed": { "type": "boolean" },
+          "location": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 32 },
+            "maxItems": 16,
+            "uniqueItems": true
+          }
+        }
+      },
+      "maxItems": 256,
+      "description": "Object ownership and state."
+    },
+    "directorState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currentBeatId", "elapsedTurnsInScene", "actionsSpentInScene"],
+      "properties": {
+        "currentBeatId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "elapsedTurnsInScene": { "type": "integer", "minimum": 0, "maximum": 200 },
+        "actionsSpentInScene": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "firedBeats": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "hitAnchors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "forbiddenRevealsCheckedAt": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 100000 },
+          "maxItems": 32,
+          "description": "Event sequence numbers at which the Director's forbidden-reveals list was last fully re-checked."
+        }
+      },
+      "description": "Director-side bookkeeping: beats fired, anchors hit, budget consumption."
+    },
+    "beliefMatrices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "https://g1-ai-native.local/schemas/belief_matrix.schema.json"
+      },
+      "maxItems": 64,
+      "description": "All character belief matrices in the run. Resolver is the sole writer; NPCs read it via the recall service."
+    },
+    "memories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["memoryId", "ownerCharacterId", "summary", "recallWeight", "decayScore"],
+        "properties": {
+          "memoryId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "ownerCharacterId": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "summary": { "type": "string", "minLength": 1, "maxLength": 800 },
+          "recallWeight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "How likely the memory is to be in the recall set for an agent's turn."
+          },
+          "decayScore": { "type": "number", "minimum": 0, "maximum": 1, "multipleOf": 0.01 },
+          "lastRecalledAt": { "type": ["integer", "null"], "minimum": 0, "maximum": 100000 },
+          "embeddingHash": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128,
+            "description": "Hash of the embedding used for vector recall. Resolver validates this matches the stored vector."
+          }
+        }
+      },
+      "maxItems": 4096,
+      "description": "Currently-recalled memory set, scoped to the active scene context."
+    },
+    "causalSeedsActive": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "https://g1-ai-native.local/schemas/causal_seed.schema.json"
+      },
+      "maxItems": 128,
+      "description": "Causal seeds currently in dormant or active state for this run."
+    },
+    "recentOutcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["outcomeId", "eventSequence", "timestamp"],
+        "properties": {
+          "outcomeId": { "type": "string", "format": "uuid", "minLength": 36, "maxLength": 36 },
+          "eventSequence": { "type": "integer", "minimum": 0, "maximum": 100000 },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "maxItems": 64,
+      "description": "Ring buffer of recent ResolverOutcomes for replay / undo."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server-authoritative timestamp."
+    },
+    "checksum": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "SHA-256 hex digest of the canonical fields (everything except checksum and timestamp). Computed by the Resolver; validated on load."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/player_action.schema.json",
+  "title": "PlayerAction",
+  "description": "Schema for player input actions in 《革命街没有尽头》AI-native remake. Every player input MUST conform to this schema before reaching the Director or Resolver. Tight enums and numeric clamps prevent hallucination and overflow. This is the ONLY entry point for player agency; no LLM output is allowed to bypass it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runId",
+    "sceneId",
+    "actionType",
+    "actorId"
+  ],
+  "properties": {
+    "runId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Run (game session) identifier. Must reference an active run in the world snapshot.",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "sceneId": {
+      "type": "string",
+      "description": "Current scene identifier; must match an active sceneId in the world snapshot.",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "clientActionId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Client-side UUID for deduplication / idempotency on the player side.",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "expectedEventSequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000,
+      "description": "Client-observed event sequence number. Resolver MUST reject if mismatch > 1 to prevent replays / stale submissions."
+    },
+    "actionType": {
+      "type": "string",
+      "enum": [
+        "investigate",
+        "reveal",
+        "conceal",
+        "question",
+        "confront",
+        "comfort",
+        "give",
+        "destroy",
+        "promise",
+        "wait",
+        "leave",
+        "silence"
+      ],
+      "description": "Strict action vocabulary. Any free-form LLM-generated verb must be mapped to one of these 12 atomic actions. Adding a new action requires schema migration + contract whitelist update."
+    },
+    "actorId": {
+      "type": "string",
+      "description": "Character ID of the player-controlled protagonist.",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "targetId": {
+      "type": ["string", "null"],
+      "description": "Optional target character ID for actions that involve another NPC (question, give, confront, comfort, etc.). null for self-directed or environmental actions.",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "evidenceIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "maxItems": 16,
+      "uniqueItems": true,
+      "description": "Evidence / artifact IDs being referenced, produced, or destroyed by this action. Resolver MUST verify each ID exists in the artifactState."
+    },
+    "utterance": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 0,
+      "description": "Free-form natural-language input from the player. Hard-capped at 500 characters to prevent injection / DoS. LLM will paraphrase this into canonical NPC dialogue; raw text is NEVER persisted in the canonical state."
+    },
+    "tone": {
+      "type": "string",
+      "enum": [
+        "hesitant",
+        "firm",
+        "gentle",
+        "angry",
+        "sad",
+        "playful",
+        "neutral"
+      ],
+      "description": "Affective register of the utterance. Used by NPC and Director agents to modulate responses. Defaults to 'neutral' if client omits."
+    },
+    "disclosureLevel": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "multipleOf": 0.05,
+      "description": "How much information the player is intentionally disclosing in this turn. 0 = fully opaque, 1 = fully open. Used to compute belief-update magnitude on the listener's side. Clamped to [0,1] by Resolver."
+    },
+    "isDeceptive": {
+      "type": "boolean",
+      "description": "True iff the player is intentionally misleading the target. Combined with disclosureLevel this flags the Resolver to seed a deception belief in the target's belief_matrix."
+    },
+    "clientTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp from the client clock. Used only for analytics; never authoritative."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"],
+      "description": "Pinned schema version. Resolver must reject mismatched versions to prevent silent contract drift."
+    }
+  },
+  "allOf": [
+    {
+      "description": "If actionType requires a target (question, confront, give, comfort, reveal-to, conceal-from), targetId MUST be non-null.",
+      "if": {
+        "properties": {
+          "actionType": {
+            "enum": ["question", "confront", "give", "comfort"]
+          }
+        },
+        "required": ["actionType"]
+      },
+      "then": {
+        "properties": {
+          "targetId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    {
+      "description": "evidenceIds MUST be non-empty when actionType references an artifact (reveal, destroy, give).",
+      "if": {
+        "properties": {
+          "actionType": {
+            "enum": ["reveal", "destroy", "give"]
+          }
+        },
+        "required": ["actionType"]
+      },
+      "then": {
+        "properties": {
+          "evidenceIds": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

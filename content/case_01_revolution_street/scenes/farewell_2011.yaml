@@ -1,0 +1,552 @@
+# =============================================================================
+# 革命街没有尽头 · 第一案 · 第一案纵切片
+# 场景 2 / 3 ：farewell_2011（德黑兰国际机场·出发大厅）
+# -----------------------------------------------------------------------------
+# 时代：2011 年秋，德黑兰
+# 锚点说明：这是 V5 / V6 设计契约中 echo-three（机场送别）的纵切片，
+#           玩家在 chapter3 的最后一次主选择（truth / escape / conceal）
+#           之后，莱拉与阿拉什在国际出发大厅的最后几分钟。
+# 跨年代回响：必须引用 photo_lab_2008 的具体行为（玩家是否带照片、是否
+#           写了日期、是否握—松过手、诗是否在工具盒、公交票是否在诗集）
+#           并为 reunion_2024 准备至少 2 个因果种子。
+# 写入规范：UTF-8；YAML 1.2；所有中文为正文。
+# =============================================================================
+
+scene_id: farewell_2011
+title: 德黑兰国际机场·出发大厅
+era: "2011"
+location: 德黑兰伊玛目霍梅尼国际机场·国际出发大厅
+atmosphere:
+  - 玻璃与不锈钢
+  - 时钟秒针
+  - 模糊广播
+  - 行李箱滚轮
+  - 旧外套领口
+  - 早班机前的人群
+  - 烧过的咖啡味
+  - 远处登机口
+
+# -----------------------------------------------------------------------------
+# 固定锚点：策划硬性要求，AI 导演不得违反
+# -----------------------------------------------------------------------------
+required_anchors:
+  - 锚点 1：场景设定在德黑兰国际机场国际出发大厅，必须出现值机柜台、安检入口、抽象航班板与大时钟
+  - 锚点 2：阿拉什胸前仍挂着物理实验室门卡（注意：他可能已经毕业但仍保留门卡）
+  - 锚点 3：莱拉手中有一只深色行李箱，登机牌攥在右手
+  - 锚点 4：行李牌背面有非航空公司字符（演示码 G1N-DEMO-2011-03 显影点）
+  - 锚点 5：场景必须显式引用 photo_lab_2008 至少一项具体行为（玩家行为）
+  - 锚点 6：场景必须为 reunion_2024 准备至少 2 个因果种子
+  - 锚点 7：登机广播在场景结束前必须响起
+  - 锚点 8：场景结束于"分开"——两人走向不同方向，不被任何一种承诺改写
+
+# -----------------------------------------------------------------------------
+# 核心冲突：场景要解决的具体张力
+# -----------------------------------------------------------------------------
+core_conflict:
+  - 冲突 1：莱拉是否在最后几分钟里把卡姆兰、婚姻、机票三件事一起说完
+  - 冲突 2：阿拉什是否在最后几分钟里承认"我本来想叫住你"或"我也想留住你"
+  - 冲突 3：莱拉是否把 2008 那张同版照片从包里取出又放回（携带物的最后一次处置）
+  - 冲突 4：是否在行李牌背面写下某行字，让"卡姆兰的名字"在 13 年后被街上的人听到
+
+# -----------------------------------------------------------------------------
+# 行为白名单：AI 导演只能从这些节拍中选择
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - 试探
+  - 玩笑（带苦味）
+  - 回避
+  - 表白未遂
+  - 共同秘密形成
+  - 替对方做决定
+  - 替自己保留退路
+  - 把动作藏进行李牌
+  - 把名字留在信封里
+  - 在意对方是否在意
+  - 重新念出 2008 那句"别松手"
+
+# -----------------------------------------------------------------------------
+# 禁止揭露：未达条件的秘密不能输出
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - 莱拉 13 年后与阿拉什在伊斯坦布尔重逢
+  - 莱拉在圣何塞做的具体本地化工作
+  - 玛丽亚姆与流星观测表
+  - 阿拉什后来在德黑兰做的具体研究 / 维修铺继承
+  - 卡姆兰在圣何塞的具体摄影爱好
+  - 莱拉姨妈第一次介绍卡姆兰的电话细节
+  - 莱拉在圣何塞的具体住址 / 公寓
+  - 2009 学校刊物事件与处分通知的细节
+  - 任何关于"13 年后"的具体时间感
+  - 莱拉 / 阿拉什其中任何一人在 2011 之后的健康 / 财务细节
+  - 任何关于 reunion_2024 场景的镜头暗示
+
+# -----------------------------------------------------------------------------
+# AI 行为白名单：12 种结构化行为
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate   # 检查行李牌、登机牌、信封、时钟、航班板
+  - reveal        # 让卡姆兰的名字、婚姻、机票三件事从信封里出来
+  - conceal       # 把名字 / 字 / 照片收回
+  - question      # 询问阿拉什 / 自己 / 时钟
+  - confront      # 直面"我也要走了"这一事实
+  - comfort       # 安抚阿拉什 / 安抚自己
+  - give          # 给出 2008 照片 / 公交票 / 一句话
+  - destroy       # 把多余的登机牌副本撕掉 / 把没寄出的字条折进袋里
+  - promise       # 许下"等一年"或"等再一年"
+  - wait          # 站在时钟下面，让广播响过一次
+  - leave         # 把行李箱推向安检口，不再回头
+  - silence       # 把"我也想留下"咽回去
+
+# -----------------------------------------------------------------------------
+# 行为预算：本场景玩家可执行次数限制
+# -----------------------------------------------------------------------------
+turn_budget:
+  total: 8
+  investigate: 3
+  reveal: 2
+  conceal: 1
+  question: 2
+  confront: 1
+  comfort: 1
+  give: 2
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 2
+
+# -----------------------------------------------------------------------------
+# 玩家从 photo_lab_2008 继承的"携带物"（按种子是否触发来条件启用）
+# -----------------------------------------------------------------------------
+inherited_objects:
+  - id: photo_2008_in_pocket
+    description: 莱拉 2008 把同版照片放进斜挎包内袋
+    enabled_if_seed: photo_in_pocket
+    initial_location: 莱拉斜挎包内袋
+    visibility: 主角视角可见
+
+  - id: book_jalal_2008_with_photo
+    description: 阿拉什 2008 把同版照片夹进诗集
+    enabled_if_seed: photo_in_book
+    initial_location: 阿拉什夹克内袋
+    visibility: 主角视角可见
+
+  - id: book_jalal_2008_no_photo
+    description: 诗集里没有照片（如果玩家让莱拉把两张都收走）
+    enabled_if_seed: both_photos_with_one
+    initial_location: 阿拉什夹克内袋
+    visibility: 主角视角可见
+
+  - id: book_jalal_2008_no_tickets
+    description: 诗集里没有 304 公交票（如果 2008 已把公交票夹进去）
+    enabled_if_seed: bus_ticket_in_book
+    initial_location: 阿拉什夹克内袋
+    visibility: 主角视角可见
+
+  - id: folded_poem_2008
+    description: 阿拉什 2008 把折诗放进工具盒
+    enabled_if_seed: poem_in_toolbox
+    initial_location: 阿拉什胸前口袋
+    visibility: 主角视角可见
+
+  - id: back_written_date
+    description: 照片背面手写了"2008.6.21"或类似
+    enabled_if_seed: date_written_on_back
+    initial_location: 莱拉斜挎包内袋（与 photo_2008_in_pocket 同处）
+    visibility: 主角视角可见
+
+# -----------------------------------------------------------------------------
+# 可调查对象：玩家在场景中可以 investigate 的物件
+# -----------------------------------------------------------------------------
+investigatable_objects:
+  - id: luggage_tag
+    name: 行李牌
+    description: 旧版行李牌，挂在行李箱拉杆上，正面是目的地代码，背面有一行非航空公司字符
+    initial_location: 行李箱拉杆
+    visibility: 莱拉视角可见
+    keywords: [行李牌, 目的地, G1N-DEMO-2011-03, 背面]
+    requires: []
+    leads_to: [luggage_tag_carries_truth, secret_kept]
+
+  - id: envelope_kamran
+    name: 信封（卡姆兰名字所在）
+    description: 装着与卡姆兰的结婚手续与一封未寄出的家信
+    initial_location: 行李箱外侧文件袋
+    visibility: 莱拉视角可见
+    keywords: [信封, 卡姆兰, 手续, 家信]
+    requires: []
+    leads_to: [name_of_kamran_spoken, secret_kept]
+
+  - id: boarding_pass
+    name: 登机牌
+    description: 一张已打印的登机牌，目的地代码只显示 3 个字母
+    initial_location: 莱拉右手
+    visibility: 莱拉视角可见
+    keywords: [登机牌, 航班, 目的地]
+    requires: []
+    leads_to: [luggage_tag_carries_truth, leave]
+
+  - id: airport_clock
+    name: 大厅时钟
+    description: 国际出发大厅正中的站钟，秒针清晰
+    initial_location: 大厅中央
+    visibility: 主角视角可见
+    keywords: [时钟, 秒针, 大厅]
+    requires: []
+    leads_to: [wait, i_arrived_text]
+
+  - id: departure_board
+    name: 抽象航班板
+    description: 显示多个航班的液晶屏；玩家看不到具体航司名字
+    initial_location: 时钟上方
+    visibility: 主角视角可见
+    keywords: [航班板, 液晶, 抽象]
+    requires: []
+    leads_to: [leave, near_echo_2024]
+
+  - id: security_lane
+    name: 安检口
+    description: 国际出发安检入口，黄线已画
+    initial_location: 大厅尽头
+    visibility: 主角视角可见
+    keywords: [安检, 黄线, 入口]
+    requires: []
+    leads_to: [leave, far_echo_2024]
+
+  - id: cafe_booth
+    name: 候机咖啡吧
+    description: 候机区旁的小咖啡吧，卖伊朗红茶与简易三明治
+    initial_location: 候机区
+    visibility: 主角视角可见
+    keywords: [咖啡吧, 红茶, 三明治]
+    requires: []
+    leads_to: [comfort, give]
+
+  - id: arash_lab_card
+    name: 阿拉什实验门卡
+    description: 物理实验室门卡，塑料夹上有磨损
+    initial_location: 阿拉什胸前
+    visibility: 主角视角可见
+    keywords: [门卡, 实验, 物理]
+    requires: []
+    leads_to: [near_echo_2024, secret_kept]
+
+  - id: arash_old_jacket
+    name: 阿拉什旧外套
+    description: 那件 2008 在地下放映室穿过的深海军蓝夹克；内袋藏诗集或折诗
+    initial_location: 阿拉什身上
+    visibility: 主角视角可见
+    keywords: [外套, 旧, 内袋, 海军蓝]
+    requires: []
+    leads_to: [book_jalal_2008_with_photo, folded_poem_2008]
+
+  - id: leila_crossbody
+    name: 莱拉斜挎包
+    description: 小棕色斜挎包；内袋是 2008 那张同版照片的位置
+    initial_location: 莱拉左肩
+    visibility: 主角视角可见
+    keywords: [斜挎包, 棕色, 内袋]
+    requires: []
+    leads_to: [photo_2008_in_pocket, back_written_date]
+
+  - id: rolling_suitcase
+    name: 深色行李箱
+    description: 莱拉的深色行李箱，搭扣松过一次又被阿拉什扣上
+    initial_location: 莱拉脚边
+    visibility: 主角视角可见
+    keywords: [行李箱, 搭扣, 深色]
+    requires: []
+    leads_to: [grip_then_release_2011, near_echo_2024]
+
+  - id: bus_ticket_pair_2011
+    name: 两张 304 路旧公交票
+    description: 阿拉什 2008 多撕的那张 + 莱拉 2008 替他夹进诗集后又掉出来的那张（仅当 bus_ticket_in_book 未触发且 escape 主选择启用时）
+    initial_location: 阿拉什外套口袋
+    visibility: 主角视角可见
+    keywords: [公交票, 304, 两张, 旧]
+    requires: []
+    leads_to: [bus_ticket_pair_unused, far_echo_2024]
+
+  - id: announcement_speaker
+    name: 广播喇叭
+    description: 候机区上方的大喇叭，间歇念出登机口与航班号
+    initial_location: 候机区天花板
+    visibility: 主角视角可见
+    keywords: [广播, 喇叭, 登机口]
+    requires: []
+    leads_to: [wait, leave]
+
+  - id: cigarette_pack
+    name: 烟盒
+    description: 阿拉什手里捏着的烟盒，没点（呼应 2008 大刚没点的烟）
+    initial_location: 阿拉什右手
+    visibility: 主角视角可见
+    keywords: [烟, 没点, 烟盒]
+    requires: []
+    leads_to: [silence, give]
+
+  - id: goodbye_text
+    name: 「我到了」信息
+    description: 阿拉什迟到的那条短信
+    initial_location: 莱拉手机收件箱
+    visibility: 莱拉视角可见
+    keywords: [短信, 我到了, 迟到]
+    requires: []
+    leads_to: [i_arrived_text, far_echo_2024]
+
+# -----------------------------------------------------------------------------
+# 在场人物
+# -----------------------------------------------------------------------------
+characters_present:
+  - id: leila
+    name: 莱拉
+    initial_state: 紧张
+    visibility: 主角视角可见
+    state_notes:
+      - 头戴深橄榄外套，浅灰头巾
+      - 右手攥登机牌，左手放在斜挎包内袋边
+      - 心里清楚这是第几次抬头看时钟
+
+  - id: arash
+    name: 阿拉什
+    initial_state: 不舍
+    visibility: 主角视角可见
+    state_notes:
+      - 仍然穿那件 2008 深海军蓝旧夹克
+      - 胸前挂着物理实验室门卡
+      - 手里捏着没点的烟盒
+
+  - id: stranger_with_cart
+    name: 推车陌生人（背景）
+    initial_state: 旁观
+    visibility: 主角视角可见
+    state_notes:
+      - 推着堆满纸箱的小推车，从安检口方向过来
+      - 不与两人发生直接对话，但提供了"机场正在运转"的背景
+
+# -----------------------------------------------------------------------------
+# 因果种子：本场景行为会触发哪些远期回响
+# -----------------------------------------------------------------------------
+causal_seeds:
+  - id: name_of_kamran_spoken
+    description: 莱拉在机场把卡姆兰的名字、婚姻、机票三件事一次说完
+    trigger: 玩家对 envelope_kamran 执行 reveal + give（让名字从信封里出来）
+    effects:
+      - 锚点 1 2024 路口，莱拉会先说"卡姆兰正在等我"
+      - 锚点 2 2024 重逢，莱拉不再保留"我过得好"那种半句话
+      - 锚点 3 2024 阿拉什的诗集里那张照片旁边会多一张纸——莱拉 2011 留下的最后一句
+
+  - id: name_of_kamran_concealed
+    description: 莱拉只说航班已确定，把卡姆兰的名字留在信封里
+    trigger: 玩家对 envelope_kamran 执行 conceal + destroy（把信封滑回文件袋）
+    effects:
+      - 锚点 1 2024 路口，莱拉会先说"卡姆兰正在等我"——但声音比 truth 路线更轻
+      - 锚点 2 2024 重逢，莱拉会用"我过得好"那种半句话回答
+      - 锚点 3 2024 阿拉什合上诗集时会犹豫要不要问她还留着那张照片
+
+  - id: escape_asked_in_2011
+    description: 莱拉最后问了一次"我们能不能一起找另一条路"
+    trigger: 玩家对 arash 执行 question + confront + promise
+    effects:
+      - 锚点 1 2024 重逢，阿拉什会主动承认"我当时没有接住"
+      - 锚点 2 2024 路口，阿拉什先抽出外套口袋里的公交票又滑回去
+
+  - id: bus_ticket_pair_unused
+    description: 阿拉什仍带着 2008 那两张 304 公交票
+    trigger: bus_ticket_pair_2011 enabled + 玩家对 arash 执行 give（让公交票留在阿拉什手中）
+    effects:
+      - 锚点 1 2024 路口，阿拉什在绿灯前"把手从外套口袋里抽出来"
+      - 锚点 2 2024 重逢，公交票仍夹在诗集末页
+      - 锚点 3 2024 莱拉在路口先看见机场方向牌
+
+  - id: luggage_tag_carries_truth
+    description: 莱拉在行李牌背面写下一行不属于航空公司的字符
+    trigger: 玩家对 luggage_tag 执行 give（在背面写）
+    effects:
+      - 锚点 1 2024 莱拉在伊斯坦布尔会再次摸到行李牌的硬边
+      - 锚点 2 2024 咖啡馆桌上，莱拉会放下行李牌，让 2011 那行字对向灯光
+
+  - id: luggage_tag_silent
+    description: 莱拉不写任何字，只把行李牌翻到正面
+    trigger: 玩家对 luggage_tag 执行 wait
+    effects:
+      - 锚点 1 2024 莱拉不会主动摸行李牌
+      - 锚点 2 2024 桌面上不会出现行李牌
+
+  - id: grip_then_release_2011
+    description: 莱拉与阿拉什在最后握了一下手，又松开（2008 握—松的 13 年后回响）
+    trigger: 玩家对 rolling_suitcase 或 arash_old_jacket 执行 comfort + silence
+    effects:
+      - 锚点 1 2024 重逢，咖啡馆灯闪时两人没有再靠近
+      - 锚点 2 2024 阿拉什端茶时会用拇指摩挲杯沿
+
+  - id: i_arrived_text
+    description: 阿拉什在登机广播响起前发来那条"我到了"
+    trigger: 玩家对 airport_clock 或 announcement_speaker 执行 wait
+    effects:
+      - 锚点 1 2024 重逢，阿拉什会用同样的三个字代替"你好"
+      - 锚点 2 2024 莱拉手机在咖啡馆会亮起——只是一条 13 年前的旧短信的提醒
+
+  - id: photo_2008_inherited_to_2024
+    description: 莱拉把 2008 那张同版照片从斜挎包带到了 2024
+    trigger: inherited_objects.photo_2008_in_pocket enabled + 玩家对 leila_crossbody 执行 give_to_self
+    effects:
+      - 锚点 1 2024 咖啡馆，莱拉会主动从包中取出这张照片
+      - 锚点 2 2024 诗集与桌面那两张照片的磨损边角可以配对
+
+  - id: book_2008_inherited_to_2024
+    description: 阿拉什的诗集里仍夹着 2008 那张同版照片
+    trigger: inherited_objects.book_jalal_2008_with_photo enabled + 玩家对 arash_old_jacket 执行 give
+    effects:
+      - 锚点 1 2024 阿拉什推门时诗集就抱在臂弯里
+      - 锚点 2 2024 诗集里那张照片的磨损边角与莱拉那张配对
+
+  - id: folded_poem_still_in_pocket
+    description: 阿拉什胸口口袋里仍夹着 2008 那张折诗
+    trigger: inherited_objects.folded_poem_2008 enabled
+    effects:
+      - 锚点 1 2024 重逢，阿拉什在紧张时会下意识摸向胸口口袋
+      - 锚点 2 2024 莱拉会先认出他这个旧动作
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+# 选种依据：两个都是 2008 物质证据的身体级回响——
+# 握—松 是 2008 地下室停电那晚的身体记忆，304 公交票是 2008 阿拉什的物件证据。
+mandatory_echoes:
+  - id: grip_then_release_2011
+    description: 莱拉与阿拉什最后握—松（2008 地下室停电那晚握—松的 13 年后身体回响）
+    trigger: 玩家在最后握手时机执行 give(conceal) 或 comfort + 玩家在最后一步才松手
+    target_scenes: [reunion_2024]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.grip_then_release]
+
+  - id: bus_ticket_pair_unused
+    description: 阿拉什仍带着 2008 那两张 304 公交票（明确 2008 物件证据）
+    trigger: inherited_objects.bus_ticket_in_book enabled AND 玩家未在机场 use 该物品
+    target_scenes: [reunion_2024]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.bus_ticket_in_book]
+
+# -----------------------------------------------------------------------------
+# 合法结局：本场景可能的结束状态
+# -----------------------------------------------------------------------------
+legal_endings:
+  - id: shared_truth
+    label: 共同的真话
+    description: 莱拉把卡姆兰、婚姻、机票一次说完；阿拉什没有追问
+    causal_seed_required:
+      - name_of_kamran_spoken
+    next_scene_hooks: [chapter4_two_cities, echo_three_boarding]
+
+  - id: concealed_luggage
+    label: 留在行李牌背后
+    description: 莱拉只说航班确定，把卡姆兰的名字留在信封里
+    causal_seed_required:
+      - name_of_kamran_concealed
+    next_scene_hooks: [chapter4_two_cities, echo_three_boarding]
+
+  - id: last_attempt
+    label: 最后一次伸手
+    description: 莱拉最后问了一次共同的路；阿拉什的沉默就是回答
+    causal_seed_required:
+      - escape_asked_in_2011
+      - bus_ticket_pair_unused
+    next_scene_hooks: [chapter4_two_cities, echo_three_boarding]
+
+  - id: silent_holding
+    label: 沉默的握—松
+    description: 莱拉与阿拉什只握了一下手，没有说名字
+    causal_seed_required:
+      - grip_then_release_2011
+    next_scene_hooks: [chapter4_two_cities, echo_three_boarding]
+
+  - id: i_arrived_only
+    label: 只剩"我到了"
+    description: 阿拉什只发了"我到了"那条短信；莱拉没有回答
+    causal_seed_required:
+      - i_arrived_text
+    next_scene_hooks: [chapter4_two_cities, echo_three_boarding]
+
+# -----------------------------------------------------------------------------
+# 场景结束的下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - chapter4_two_cities（2011—2021 蒙太奇：圣何塞与德黑兰）
+  - echo_three_boarding（机场送别的尾声镜头）
+  - 必须有至少两个跨年代种子被触发，影响 reunion_2024
+
+# -----------------------------------------------------------------------------
+# 远期回响：本场景行为会影响哪些未来场景
+# -----------------------------------------------------------------------------
+far_echo_routes:
+  - scene_id: reunion_2024
+    max_echoes: 2
+    seed_ids:
+      - name_of_kamran_spoken
+      - name_of_kamran_concealed
+      - bus_ticket_pair_unused
+      - luggage_tag_carries_truth
+      - grip_then_release_2011
+      - i_arrived_text
+      - photo_2008_inherited_to_2024
+      - book_2008_inherited_to_2024
+      - folded_poem_still_in_pocket
+    required_seeds_for_full_echo:
+      - photo_2008_inherited_to_2024
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 1
+  luggage_tag_budget: 1   # 玩家只能在行李牌上写一次字
+
+# -----------------------------------------------------------------------------
+# 验收（按经验教训"四项问题"自检）
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: true        # 莱拉登上飞往圣何塞的飞机
+  - changes_character_knowledge: true # 阿拉什从此知道/不知道卡姆兰的名字
+  - changes_available_actions: true   # 关闭 2011 后续 6 个月的所有"还能挽回"动作
+  - creates_future_echo: true         # 至少触发 2 个影响 2024 的因果种子
+  - preserves_macro_endpoints: true   # 莱拉结婚、十三年后重逢、路口分开不被改写
+  - forbidden_reveals_strict: true    # 不泄露 2024 重逢、玛丽亚姆、流星观测表
+  - airport_setting_correct: true     # 国际出发大厅，无铁路元素
+  - character_anchor_leila: 中年莱拉（约 24-25），浅灰头巾，深橄榄外套
+  - character_anchor_arash: 中年阿拉什（约 25-26），旧夹克，鬓角仍黑
+  - references_2008_specifically: true # 必须显式引用 photo_lab_2008 至少一项具体行为
+
+# -----------------------------------------------------------------------------
+# 章节与演示码挂钩
+# -----------------------------------------------------------------------------
+chapter: chapter3
+chapter_label: 第三章 · 只有一个人能够离开
+reward_id: chapter3
+reward_code: G1N-DEMO-2011-03
+reward_source: luggage_tag（单程行李牌背面的字符）
+paid_dialogue_id: paid-marriage-truth
+hidden_dialogue_unlock: "我知道你心里一直还有另一个人。"
+
+# -----------------------------------------------------------------------------
+# 美术参考
+# -----------------------------------------------------------------------------
+art:
+  - /art-v4/airport-clock-goodbye.png     # 主体
+  - /art-v4/final-rooftop-night.png       # 上一幕参考
+  - /art-v4/video-call-kamran.png         # 卡姆兰现实参考
+art_focus: airport
+
+# -----------------------------------------------------------------------------
+# 备注：本场景是 chapter3 的尾声，必须挂载 G1N-DEMO-2011-03
+#       本场景的所有"携带物"必须显式引用 photo_lab_2008 的具体种子
+#       至少两个因果种子会影响 reunion_2024
+# -----------------------------------------------------------------------------
+notes:
+  - 玩家在 photo_lab_2008 的所有动作都应通过 inherited_objects 与因果种子在 2011 显影
+  - choice-three 的结果（truth / escape / conceal）影响本场景可用 investigate 对象
+  - 本场景是 reunion_2024 的"上游"——不显式引用的玩家行为在 2024 不会被承认
+  - 行李牌背面字符是 G1N-DEMO-2011-03 的载体，必须在场景结束前被玩家 inspect 或 write
+  - canonical 毕业照此时仍在某一人手中，必须被引出

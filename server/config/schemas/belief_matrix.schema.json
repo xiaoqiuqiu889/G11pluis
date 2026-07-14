@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://g1-ai-native.local/schemas/belief_matrix.schema.json",
+  "title": "BeliefMatrix",
+  "description": "Per-character four-layer belief model. Layer 1 is the ground truth (objective facts). Layer 2 is what the character THINKS is true (including their own misperceptions). Layer 3 is autobiographical memory with emotional weight and distortion. Layer 4 is hidden secrets the character holds but other characters (and the player) may not know about. The Resolver is the only writer; NPCs and the Director read it via the memory-recall service which filters by scene context.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "characterId",
+    "objective_facts",
+    "character_knowledge",
+    "character_memories",
+    "hidden_secrets",
+    "schemaVersion"
+  ],
+  "properties": {
+    "characterId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Character this belief matrix belongs to. One matrix per character per run."
+    },
+    "runId": {
+      "type": "string",
+      "format": "uuid",
+      "minLength": 36,
+      "maxLength": 36,
+      "description": "Run this snapshot is bound to. Optional because the schema is also used as a template."
+    },
+    "objective_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["factId", "description", "establishedAt", "isContested"],
+        "properties": {
+          "factId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Stable identifier, e.g. 'fact_linjiu_arrest_1937_03_12'."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Plain prose statement of the objective fact. Authoritative — written by Resolver only."
+          },
+          "establishedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "Event sequence number at which the fact was canonized."
+          },
+          "establishedBy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Resolver policy ID or narrative-contract beat that canonized the fact."
+          },
+          "isContested": {
+            "type": "boolean",
+            "description": "True iff at least one character holds a different belief_state for this fact."
+          }
+        }
+      },
+      "maxItems": 512,
+      "description": "Layer 1: ground truth, shared across all characters."
+    },
+    "character_knowledge": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "belief_state", "confidence", "lastUpdatedAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Fact-ID or character-ID or concept this belief is about."
+          },
+          "belief_state": {
+            "type": "string",
+            "enum": ["certain", "uncertain", "wrong", "denied", "reinforced"],
+            "description": "How the character relates to the subject. 'wrong' = believes the opposite or a falsehood; 'denied' = actively refuses to accept; 'reinforced' = freshly re-confirmed this turn."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "Subjective confidence. Clamped to [0,1]; 'wrong' or 'denied' usually correlates with high confidence in the wrong answer."
+          },
+          "reasoning": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "In-character explanation for why the character holds this belief."
+          },
+          "evidenceMemoryIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+            "maxItems": 16,
+            "uniqueItems": true,
+            "description": "Memory IDs the character uses to justify this belief."
+          },
+          "lastUpdatedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          }
+        }
+      },
+      "maxItems": 512,
+      "description": "Layer 2: per-character cognitive map. May diverge from objective_facts (this is the source of drama)."
+    },
+    "character_memories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["memoryId", "summary", "emotional_weight", "distortion_type", "formedAt"],
+        "properties": {
+          "memoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 800
+          },
+          "emotional_weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "How strongly this memory is charged. High-weight memories are vivid and likely to fire."
+          },
+          "distortion_type": {
+            "type": "string",
+            "enum": [
+              "none",
+              "traumatic_exaggeration",
+              "traumatic_suppression",
+              "rosy_retrospection",
+              "self_serving_bias",
+              "confabulation",
+              "misattribution",
+              "moral_reframing",
+              "time_compression",
+              "time_expansion"
+            ],
+            "description": "How the memory has been bent by the character. 'confabulation' = LLM-fabricated detail to fill gaps; Resolver will likely demote these."
+          },
+          "formedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "involvedCharacterIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "recallCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "description": "How many times this memory has been recalled. Used for memory decay."
+          },
+          "decayScore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "1.0 = fresh, 0.0 = forgotten. Decay accelerates for low-emotional-weight memories."
+          }
+        }
+      },
+      "maxItems": 1024,
+      "description": "Layer 3: autobiographical memory. Emotional weight + distortion type drive the memory-recall agent."
+    },
+    "hidden_secrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["secretId", "content", "isSecret", "knownByCharacterIds"],
+        "properties": {
+          "secretId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "What the secret actually is. May or may not be objectively true (some secrets are delusions)."
+          },
+          "isSecret": {
+            "type": "boolean",
+            "description": "If true, the player does NOT know this. If false, the secret has been revealed and exists in the public event log."
+          },
+          "knownByCharacterIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+            "maxItems": 64,
+            "uniqueItems": true,
+            "description": "Character IDs aware of the secret. Resolver uses this to prevent leaks to non-aware characters."
+          },
+          "leakageRisk": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "Probability the secret is accidentally surfaced this turn. Clamped to [0,1]."
+          },
+          "createdAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          }
+        }
+      },
+      "maxItems": 64,
+      "description": "Layer 4: hidden information. Player and Resolver-only; NPCs cannot read each other's secrets."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    }
+  }
+}

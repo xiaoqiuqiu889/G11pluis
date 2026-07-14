@@ -1,0 +1,97 @@
+# ========================================
+# G11plus / 革命街 AI 原生重构 - .gitignore
+# ========================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+.eggs/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pyright_cache/
+venv/
+.venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# --- Node / Electron / TypeScript ---
+node_modules/
+dist/
+build/
+out/
+*.tsbuildinfo
+.npm/
+.yarn/
+.yarn-cache/
+.pnp.*
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+
+# --- Electron specific ---
+*.asar
+*.exe
+*.dll
+*.node
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# --- Secrets / Env ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# --- Logs / Runtime ---
+*.log
+logs/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# --- Test / Coverage artifacts ---
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+
+# --- Misc build / generated ---
+*.min.js
+*.min.css
+*.map
+.cache/
+.tmp/
+tmp/
+
+# --- Project-specific noise ---
+_dbg.py
+*.bak
+*.tmp
+*.orig
