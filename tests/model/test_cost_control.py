@@ -374,15 +374,22 @@ class GatewayIntegrationTests(unittest.TestCase):
     """The cost controller's budget checks are invoked by the gateway."""
 
     def test_gateway_calls_run_budget_check(self) -> None:
-        from model import MockProvider, ModelGateway, build_default_router
+        from model import MockProvider, ModelGateway, TaskRouter, TaskType, ModelRoute, TaskConfig
         from model.schema_compliance import SchemaValidator
         from model.fallback_loader import FallbackContentLoader
 
         mock = MockProvider()
         cc = CostController(hard_run_call_budget=2)
+        # Build a router that only knows about the mock provider.
+        mock_router = TaskRouter({
+            TaskType.NPC_PROPOSER: TaskConfig(
+                task_type=TaskType.NPC_PROPOSER,
+                routes=[ModelRoute(provider="mock", model="mock")],
+            ),
+        })
         gw = ModelGateway(
             providers={"mock": mock},
-            router=build_default_router(),
+            router=mock_router,
             cost_controller=cc,
             validator=SchemaValidator(),
             fallback_loader=FallbackContentLoader(),
@@ -390,7 +397,7 @@ class GatewayIntegrationTests(unittest.TestCase):
         run_id = "run-budget-test"
         gw.start_run(run_id=run_id, scene_id="photo_lab_2008")
         # First call: push a valid proposal
-        from model.models import ProviderResult, ModelRequest, TaskType, Message, MessageRole
+        from model.models import ProviderResult, ModelRequest, Message, MessageRole
         import json, uuid
         valid = {
             "proposalId": str(uuid.uuid4()),

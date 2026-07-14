@@ -200,6 +200,15 @@ class NpcAgent:
                 raw.setdefault("triggerPlayerActionId", user_payload["triggerPlayerActionId"])
                 raw.setdefault("schemaVersion", "1.0.0")
                 raw.setdefault("timestamp", datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"))
+                # Schema enforces multipleOf=0.05 on confidence /
+                # emotionalTransition.intensity.  Snap defensively to
+                # dodge the LLM's float precision issues.
+                _snap_to_quantum(raw, "confidence", 0.05)
+                for bu in raw.get("beliefUpdatesRequested") or []:
+                    _snap_to_quantum(bu, "confidence", 0.05)
+                et = raw.get("emotionalTransition")
+                if isinstance(et, dict):
+                    _snap_to_quantum(et, "intensity", 0.05)
                 # Validate schema
                 jsonschema.validate(raw, self._schema)
                 # 4. Four-questions self-check
@@ -285,6 +294,35 @@ class NpcAgent:
         if scene_contract.get("title"):
             bits.append(str(scene_contract["title"]))
         return " | ".join(bits)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _snap_to_quantum(target: dict[str, Any], field: str, quantum: float) -> None:
+    """Snap ``target[field]`` to the nearest multiple of ``quantum``.
+
+    The NPC / Director schemas declare ``multipleOf=0.05`` on
+    confidence / intensity fields; the LLM occasionally emits
+    values like 0.6 whose float representation is slightly off
+    (0.5999999...) and which then fail schema validation.  This
+    helper rounds via :class:`decimal.Decimal` to dodge the
+    precision trap.  Only snaps when the field is present and
+    numeric; leaves the dict unchanged otherwise.
+    """
+
+    if field not in target:
+        return
+    value = target[field]
+    if not isinstance(value, (int, float)):
+        return
+    from decimal import Decimal, ROUND_HALF_UP
+    d_value = Decimal(str(value))
+    d_q = Decimal(str(quantum))
+    snapped = (d_value / d_q).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    target[field] = float(snapped * d_q)
 
     @staticmethod
     def _load_schema(schema_path: str | None) -> dict[str, Any]:

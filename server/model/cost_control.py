@@ -172,7 +172,7 @@ class CostController:
         self._alert_sink = alert_sink
         self._pricing = pricing if pricing is not None else dict(PRICING)
 
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         # Per-run state
         self._run_records: dict[str, list[CostRecord]] = {}
         self._run_call_count: dict[str, int] = {}
@@ -180,6 +180,9 @@ class CostController:
         self._turn_call_count: dict[tuple[str, int], int] = {}  # (run_id, turn_idx)
         # P0 alert state — last N run ids (most recent at right)
         self._recent_run_ids: deque[str] = deque(maxlen=p0_consecutive_l3_threshold)
+        # Run ids that have already been part of a fired alert;
+        # used to dedupe across long L3 streaks.
+        self._alerted_run_ids: set[str] = set()
         # P0 alert audit
         self._alerts: list[P0Alert] = []
 
@@ -310,6 +313,11 @@ class CostController:
         ``p0_consecutive_l3_threshold``) all triggered L3
         degradation.  The L3 flag is set on the run by
         :meth:`record` when any call in the run escalated to L3.
+
+        The alert is fired at most once per L3 streak: if the
+        last N runs are all L3 *and none of them have been part
+        of a previous alert*, fire.  When a non-L3 run breaks
+        the streak, the alerted-run-id set is cleared.
         """
 
         fired: list[P0Alert] = []
@@ -318,12 +326,14 @@ class CostController:
             if had_l3:
                 self._recent_run_ids.append(run_id)
             else:
-                # Non-L3 run breaks the consecutive chain
+                # Non-L3 run breaks the consecutive chain AND
+                # resets the alerted-set, so the next L3 streak
+                # can fire a fresh alert.
                 self._recent_run_ids.clear()
+                self._alerted_run_ids.clear()
             if len(self._recent_run_ids) >= self._p0_consecutive_l3_threshold:
-                # Already fired for this run streak?  Avoid alert
-                # spam: only fire once per streak.
-                if not self._recent_run_ids_already_alerted():
+                # Has every recent run already been alerted?
+                if not set(self._recent_run_ids).issubset(self._alerted_run_ids):
                     run_ids = list(self._recent_run_ids)
                     alert = P0Alert(
                         reason=(
@@ -343,6 +353,7 @@ class CostController:
                     )
                     self._alerts.append(alert)
                     fired.append(alert)
+                    self._alerted_run_ids.update(run_ids)
                     if self._alert_sink is not None:
                         try:
                             self._alert_sink(alert)
@@ -354,10 +365,9 @@ class CostController:
         return fired
 
     def _recent_run_ids_already_alerted(self) -> bool:
-        return any(
-            set(self._recent_run_ids).issubset(set(a.run_ids))
-            for a in self._alerts
-        )
+        """Kept for backward compatibility — uses the new set-based check."""
+
+        return set(self._recent_run_ids).issubset(self._alerted_run_ids)
 
     # ------------------------------------------------------------------
     # Accessors for tests
@@ -378,6 +388,7 @@ class CostController:
             self._run_l3_flag.clear()
             self._turn_call_count.clear()
             self._recent_run_ids.clear()
+            self._alerted_run_ids.clear()
             self._alerts.clear()
 
 

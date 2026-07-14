@@ -33,9 +33,20 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 
 
 def _load_workflow(name: str) -> dict:
+    """Load a workflow file with PyYAML.
+
+    GitHub Actions uses ``on:`` as the trigger key, which
+    PyYAML's SafeLoader (YAML 1.1) treats as the boolean
+    ``True``.  We normalise this so the rest of the tests
+    can use ``wf["on"]`` regardless of the YAML version.
+    """
+
     path = WORKFLOWS / name
     with open(path, "r", encoding="utf-8") as fp:
-        return yaml.safe_load(fp)
+        wf = yaml.safe_load(fp)
+    if isinstance(wf, dict) and True in wf and "on" not in wf:
+        wf["on"] = wf.pop(True)
+    return wf
 
 
 # ---------------------------------------------------------------------------
@@ -58,12 +69,9 @@ class WorkflowFileTests(unittest.TestCase):
 
     def test_workflow_uses_pull_request_trigger(self) -> None:
         wf = _load_workflow("four-questions.yml")
-        # ``on`` may parse to True (when bare) or to a dict
         on = wf["on"]
-        self.assertTrue(
-            "pull_request" in on or on is True,
-            f"workflow must trigger on pull_request; got {on}",
-        )
+        self.assertIsInstance(on, dict)
+        self.assertIn("pull_request", on, f"workflow must trigger on pull_request; got {on}")
 
 
 # ---------------------------------------------------------------------------
@@ -201,24 +209,31 @@ class CostRedLineJobTests(unittest.TestCase):
         self.assertIn("cost_monitor", steps_text)
 
     def test_simulates_a_run(self) -> None:
-        # The job creates a synthetic model_calls.json and feeds
-        # it to evaluate_from_file.
+        # The job builds a synthetic run (a list of ModelCall)
+        # and feeds it through ``evaluate``.  Either an inline
+        # ``python <<'PY'`` block (preferred) or a JSON file
+        # via ``evaluate_from_file`` is acceptable.
         steps_text = json.dumps(self.job["steps"])
-        self.assertIn("model_calls", steps_text)
+        self.assertTrue(
+            "ModelCall" in steps_text or "model_calls" in steps_text,
+            "cost-red-line job should construct ModelCall entries",
+        )
+        # The job must call the orchestrator
+        self.assertIn("evaluate(", steps_text)
 
     def test_blocks_on_red_line_breach(self) -> None:
-        # The job must exit non-zero on a red-line breach
-        # (which is the default pytest / python exit code).
+        # The job must explicitly test that a 21-call run is
+        # blocked (R1 red line breach).  Look for the count
+        # "21" in the steps.
         steps_text = json.dumps(self.job["steps"])
-        # The synthetic run simulates a single, well-formed run
-        # with 20 calls; a 21st call test should be present in
-        # the safety tests, not in the CI workflow, so we just
-        # check the workflow runs python -c "..." with the
-        # expected number of calls.
-        self.assertTrue(
-            "20" in steps_text or "main_call_count" in steps_text,
-            "cost-red-line job should simulate 20 main calls",
-        )
+        self.assertIn("21", steps_text, "cost-red-line should test a 21-call breach scenario")
+        # The exit-code assertion must reference BLOCK
+        self.assertIn("BLOCK", steps_text, "cost-red-line should assert BLOCK exit code")
+
+    def test_p0_alert_step(self) -> None:
+        # The job must verify the P0 报警 fires after 3 L3 runs
+        steps_text = json.dumps(self.job["steps"])
+        self.assertIn("p0_alert", steps_text, "cost-red-line should test P0 alert")
 
 
 # ---------------------------------------------------------------------------
