@@ -244,7 +244,9 @@ class RecordingTests(unittest.TestCase):
         self.assertEqual(summary.total_calls, 5)
         self.assertEqual(summary.total_input_tokens, 1000)
         self.assertEqual(summary.total_output_tokens, 500)
-        self.assertAlmostEqual(summary.total_cost_cny, 5 * 0.001, places=6)
+        # deepseek-chat: in 0.001/1K, out 0.002/1K
+        # per call: 0.0002 + 0.0002 = 0.0004 → 5 calls = 0.002
+        self.assertAlmostEqual(summary.total_cost_cny, 0.002, places=6)
 
     def test_soft_target_tags_record(self) -> None:
         cc = CostController()

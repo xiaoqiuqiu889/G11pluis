@@ -259,7 +259,7 @@ def clamp_to_range(
 
     snapped = _snap_to_quantum(value, quantum)
     if snapped < lo:
-        if audit is not None and snapped != value:
+        if audit is not None:
             audit.record(ClampEvent(
                 path=path,
                 original=value,
@@ -270,7 +270,7 @@ def clamp_to_range(
             ))
         return lo
     if snapped > hi:
-        if audit is not None and snapped != value:
+        if audit is not None:
             audit.record(ClampEvent(
                 path=path,
                 original=value,
