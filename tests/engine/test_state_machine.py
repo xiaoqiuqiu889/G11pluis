@@ -591,5 +591,134 @@ class DispatchTests(unittest.TestCase):
         self.assertEqual(len(REDUCERS), 12)
 
 
+# ---------------------------------------------------------------------------
+# P0-7: Era enum + CASE_ERAS dict
+# ---------------------------------------------------------------------------
+
+
+class CaseEraValidationTests(unittest.TestCase):
+    """P0-7: case-scoped era values must validate without breaking the
+    canonical 13-value Era enum (ADR 0007).
+
+    The first shipped case ``case_01_revolution_street`` uses four
+    short era strings (``"2008"``, ``"2011"``, ``"2024"``,
+    ``"EPILOGUE"``) that the team uses everywhere in scene YAML
+    and contracts.  These are declared in ``types.CASE_ERAS`` and
+    are accepted by ``WorldSnapshot`` construction in addition to
+    the 13 canonical :class:`Era` values.
+    """
+
+    def test_case_01_eras_accepted(self) -> None:
+        from engine import (
+            CanonicalState,
+            WorldSnapshot,
+            is_valid_era_for_case,
+        )
+
+        # 4 case-scoped values
+        for scene_id, era in [
+            ("2008_photo_lab", "2008"),
+            ("2011_farewell", "2011"),
+            ("2024_reunion", "2024"),
+            ("epilogue", "EPILOGUE"),
+        ]:
+            self.assertTrue(
+                is_valid_era_for_case(era, "case_01_revolution_street"),
+                f"{era!r} should be valid for case_01_revolution_street",
+            )
+            snap = WorldSnapshot.empty(str(uuid.uuid4()), scene_id, era)
+            self.assertEqual(snap.canonicalState.era, era)
+            cs = CanonicalState(
+                currentSceneId=scene_id,
+                era=era,
+                turnIndex=0,
+                phase="setup",
+            )
+            self.assertEqual(cs.era, era)
+
+    def test_canonical_era_still_accepted(self) -> None:
+        """Backward compatibility: a snapshot whose era is one of the
+        13 canonical Era values must still build cleanly.
+        """
+
+        from engine import WorldSnapshot
+
+        for era in [
+            "pre_1911_qing",
+            "1911_1927_republic",
+            "1937_1945_war",
+            "2012_present_ai_age",
+            "epilogue",
+        ]:
+            snap = WorldSnapshot.empty(str(uuid.uuid4()), "any_scene", era)
+            self.assertEqual(snap.canonicalState.era, era)
+
+    def test_unknown_era_rejected(self) -> None:
+        """An era that is neither canonical nor case-scoped is rejected
+        at construction time.  This is the **P0-7** invariant.
+        """
+
+        from engine import CanonicalState, WorldSnapshot, is_valid_era_for_case
+
+        with self.assertRaises(ValueError) as ctx:
+            WorldSnapshot.empty(str(uuid.uuid4()), "any_scene", "bogus_era_9999")
+        self.assertIn("invalid era", str(ctx.exception))
+
+        with self.assertRaises(ValueError):
+            CanonicalState(
+                currentSceneId="any_scene",
+                era="bogus_era_9999",
+                turnIndex=0,
+                phase="setup",
+            )
+
+        self.assertFalse(
+            is_valid_era_for_case("bogus_era_9999", "case_01_revolution_street")
+        )
+        self.assertFalse(
+            is_valid_era_for_case("bogus_era_9999", "case_99_never_built")
+        )
+
+    def test_era_helper_rejects_unknown_case(self) -> None:
+        """``is_valid_era_for_case`` returns False (not raise) when the
+        case slug is unknown AND the era isn't a canonical Era value.
+        """
+
+        from engine import is_valid_era_for_case
+
+        self.assertFalse(is_valid_era_for_case("2008", "case_99_never_built"))
+        # But "2008" is still a *canonical Era?* value? No — it isn't,
+        # so the case_99 lookup must also return False.
+        self.assertFalse(
+            is_valid_era_for_case("2008", "case_99_never_built"),
+            "case-scoped value must not leak across case boundaries",
+        )
+
+    def test_legal_eras_for_case_unions_canonical_and_case_scoped(self) -> None:
+        """``legal_eras_for_case`` returns the union of canonical Era
+        values + case-scoped shorthands.
+        """
+
+        from engine import legal_eras_for_case, Era
+
+        legal = legal_eras_for_case("case_01_revolution_street")
+        # 13 canonical + 4 case-scoped
+        self.assertGreaterEqual(len(legal), 13 + 4)
+        for canonical in Era:
+            self.assertIn(canonical.value, legal)
+        for shorthand in ["2008", "2011", "2024", "EPILOGUE"]:
+            self.assertIn(shorthand, legal)
+
+    def test_unknown_case_returns_only_canonical_eras(self) -> None:
+        """A case slug with no overrides returns just the 13 canonical
+        Era values.
+        """
+
+        from engine import legal_eras_for_case, Era
+
+        legal = legal_eras_for_case("case_99_never_built")
+        self.assertEqual(legal, {e.value for e in Era})
+
+
 if __name__ == "__main__":
     unittest.main()

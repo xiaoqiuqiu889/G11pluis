@@ -1,0 +1,124 @@
+# 《革命街没有尽头》· AI 原生重构 — 决策 6 落成
+#
+# GitLab CI equivalent of .github/workflows/four-questions.yml.
+# Triggers on any change to content/**/scenes/*, runs the four-questions
+# guard, and blocks the pipeline if any scene fails.  Also runs the
+# project-wide v6 residual scan and the full engine unit test suite.
+#
+# The brief is GitHub-first, but this file is here for projects that
+# live on GitLab (e.g. for the parallel integration lane).  Both
+# pipelines are equivalent.
+
+stages:
+  - guard
+  - test
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PYTHONUNBUFFERED: "1"
+  # Make ``engine`` importable as a top-level package for the
+  # engine unit tests.  (See conftest.py / pytest.ini for the
+  # GitHub-side equivalent.)
+  PYTHONPATH: "$CI_PROJECT_DIR/server"
+
+cache:
+  key:
+    files:
+      - tools/four_questions_guard_lib.py
+      - tools/v6_residual_scan.py
+  paths:
+    - .cache/pip
+
+default:
+  image: python:3.12-slim
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install pyyaml pytest coverage fastapi uvicorn httpx
+    - echo "PYTHONPATH=$CI_PROJECT_DIR/server" >> .env.ci
+
+# ---------------------------------------------------------------------------
+# The four-questions guard.  Triggered by changes to scene files.
+# ---------------------------------------------------------------------------
+
+four-questions-guard:
+  stage: guard
+  rules:
+    - changes:
+        - content/**/scenes/*
+        - tools/four-questions-guard.py
+        - tools/four_questions_guard_lib.py
+        - tools/v6_residual_scan.py
+        - tests/adversarial/test_four_questions_guard.py
+        - tests/adversarial/test_v6_residual_scan.py
+  script:
+    # 1) Run the unit tests for the guard (catches tool regressions
+    #    before they ever hit a PR).
+    - python -m pytest tests/adversarial/test_four_questions_guard.py --tb=short
+    # 2) Find every scene YAML under content/ and run the guard.
+    - |
+      set -e
+      SCENES=$(find content -path '*/scenes/*' \( -name '*.yaml' -o -name '*.yml' \) -print)
+      if [ -z "$SCENES" ]; then
+        echo "no scene files found"
+        exit 0
+      fi
+      set -x
+      python tools/four-questions-guard.py --human $SCENES
+
+# ---------------------------------------------------------------------------
+# The v6 residual scan.  Project-wide sweep — no diff, just hits.
+# ---------------------------------------------------------------------------
+
+v6-residual-scan:
+  stage: guard
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    # 1) Unit tests for the scanner.
+    - python -m pytest tests/adversarial/test_v6_residual_scan.py --tb=short
+    # 2) Run the actual scan against the full tree.
+    - |
+      set -e
+      set -x
+      python tools/v6_residual_scan.py --human
+  allow_failure: false
+
+# ---------------------------------------------------------------------------
+# The engine unit test suite.  Mirrors the W2-A 81-test baseline +
+# 9 P0-3/P0-7 tests = 90 total.
+# ---------------------------------------------------------------------------
+
+engine-unit-tests:
+  stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - python -m pytest tests/engine/ --tb=short -v
+  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+)%/'
+  artifacts:
+    when: always
+    paths:
+      - .coverage
+      - htmlcov/
+    expire_in: 7 days
+
+# ---------------------------------------------------------------------------
+# The full adversarial test suite.  Always runs.
+# ---------------------------------------------------------------------------
+
+adversarial-tests:
+  stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - python -m pytest tests/adversarial/ --tb=short -v
+  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+)%/'
+  artifacts:
+    when: always
+    paths:
+      - .coverage
+      - htmlcov/
+    expire_in: 7 days

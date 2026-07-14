@@ -119,6 +119,7 @@ from .types import (
     ActionType,
     BELIEF_STATES,
     BeliefState,
+    CASE_ERAS,
     DISTORTION_TYPES,
     DistortionType,
     Era,
@@ -133,6 +134,8 @@ from .types import (
     clamp_relationship,
     clamp_relationship_delta,
     clamp_unit,
+    is_valid_era_for_case,
+    legal_eras_for_case,
 )
 from .world_snapshot import (
     ArtifactState,
@@ -154,6 +157,9 @@ __all__ = [
     "TriggerType",
     "ScenePhase",
     "Era",
+    "CASE_ERAS",
+    "is_valid_era_for_case",
+    "legal_eras_for_case",
     "SCHEMA_VERSION",
     "MAX_RELATIONSHIP",
     "MIN_RELATIONSHIP",

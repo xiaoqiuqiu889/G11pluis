@@ -34,6 +34,7 @@ from .types import (
     SCHEMA_VERSION,
     ScenePhase,
     Era,
+    CASE_ERAS,
     clamp_unit,
     clamp_relationship,
 )
@@ -60,8 +61,21 @@ class CanonicalState:
     def __post_init__(self) -> None:
         if self.phase not in {p.value for p in ScenePhase}:
             raise ValueError(f"invalid phase: {self.phase!r}")
-        if self.era not in {e.value for e in Era}:
-            raise ValueError(f"invalid era: {self.era!r}")
+        # Era validation: accept either one of the 13 canonical
+        # :class:`Era` values or a case-scoped shorthand declared
+        # in :data:`types.CASE_ERAS` (ADR 0007, P0-7).  We union
+        # the values across every case so a snapshot can be
+        # constructed without knowing the case slug at this point;
+        # the case-aware check is done at the contract / resolver
+        # boundary.
+        legal_eras = {e.value for e in Era}
+        for case_map in CASE_ERAS.values():
+            legal_eras.update(case_map.values())
+        if self.era not in legal_eras:
+            raise ValueError(
+                f"invalid era: {self.era!r} "
+                f"(not in Era enum or any case-scoped override in CASE_ERAS)"
+            )
         self.globalTension = clamp_unit(self.globalTension)
         if self.turnIndex < 0:
             raise ValueError("turnIndex must be >= 0")
