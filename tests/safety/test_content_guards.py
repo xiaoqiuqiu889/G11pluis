@@ -309,8 +309,8 @@ class ContentGuardOrchestratorTests(unittest.TestCase):
 
     def test_dirty_payload_fails(self) -> None:
         payload = {
-            "resolvedText": "Leila will marry Kamran in San Jose.",
-            "narrative": "She will also fly to Istanbul one day.",
+            "resolvedText": "leila_future_marriage istanbul_reunion happens here.",
+            "narrative": "future_secrets",
         }
         inp = ContentGuardInput(
             payload=payload,

@@ -364,18 +364,18 @@ def check_no_forbidden_secret_leak(
         # recentOutcomes only stores outcomeId / eventSequence /
         # timestamp per the schema; if a future extension adds
         # text we audit it.
-        for k, v in ev.items():
-            if isinstance(v, str) and k != "timestamp":
-                suspicious.append((f"recentOutcomes[{i}].{k}", v))
+        for field_name, field_value in ev.items():
+            if isinstance(field_value, str) and field_name != "timestamp":
+                suspicious.append((f"recentOutcomes[{i}].{field_name}", field_value))
     # Also walk the events the caller has provided
-    for k, v in keys:
+    for forbidden_key in keys:
         for path, text in suspicious:
-            if k in text:
+            if forbidden_key in text:
                 out.append(InvariantViolation(
                     invariant_id="I6",
                     rule="snapshot does not surface forbidden-reveal keys",
                     path=path,
-                    detail=f"forbidden key {k!r} appeared in snapshot text",
+                    detail=f"forbidden key {forbidden_key!r} appeared in snapshot text",
                     offending_value=text,
                 ))
     return out
