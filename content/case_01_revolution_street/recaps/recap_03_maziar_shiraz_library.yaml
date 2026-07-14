@@ -1,0 +1,368 @@
+# =============================================================================
+# 革命街没有尽头 · 周度短案 3 / 3
+# 玛兹雅 1989-2000 在设拉子儿童图书馆
+# -----------------------------------------------------------------------------
+# 任务：W7 周度短案
+# 时长：7 幕 ≤ 5 分钟（每幕 ≤ 45 秒，节奏快）
+# 锚点说明：这条短案是 reunion_2024 闭合后最有"远端回响"的一段——玛兹雅
+#           在设拉子儿童图书馆 11 年的事，跟革命街主线不在同一时间线，
+#           但她给莱拉 2009 寄的那本"被撕去一页的诗集"是 reunion_2024
+#           桌上那两件共鸣物件之一。
+# 必触发回响：本短案触发 1 个新回响到 reunion_2024 桌面（决策 3）。
+# 复用：0 改动 state_machine / agents / model / safety — 全部走 W3 / W4。
+# 写入规范：UTF-8；YAML 1.2；所有中文为正文。
+# =============================================================================
+
+scene_id: recap_03_maziar_shiraz_library
+title: 玛兹雅 1989-2000 · 设拉子儿童图书馆
+era: "EPILOGUE"
+location: 伊朗·设拉子·儿童图书馆·二楼借阅柜台
+atmosphere:
+  - 旧木地板
+  - 借阅登记本
+  - 哈菲兹诗集
+  - 借阅卡上手写日期
+  - 玛兹雅的圆框眼镜
+  - 角落的绿色台灯
+  - 早晨的光
+  - 偶尔的钟声
+  - 雨后泥土味
+
+# -----------------------------------------------------------------------------
+# 短案元信息
+# -----------------------------------------------------------------------------
+recap_meta:
+  duration_seconds: 285                # 7 幕 × 40-45 秒 = ≤ 5 分钟
+  max_main_llm_calls: 5
+  single_call_output_tokens: 200
+  scene_count: 7
+  cost_budget_note: |
+    本短案所有 7 幕共享 ≤ 5 次主调用。LLM 在客户端触发
+    recap_started 后调用一次（聚合生成）。客户端 montage
+    期间 0 LLM 调用。
+  player_invitation: |
+    本短案只在 reunion_2024 路口分开后出现；玩家点 × 后 7 天
+    内不再主动推送。
+
+# -----------------------------------------------------------------------------
+# 固定锚点
+# -----------------------------------------------------------------------------
+required_anchors:
+  - 锚点 1：玛兹雅 1989 第一次走进设拉子儿童图书馆
+  - 锚点 2：她的借阅登记本记了 11 年的手写日期
+  - 锚点 3：哈菲兹诗集是借阅次数最多的书（被撕去一页的那本）
+  - 锚点 4：她 2000 年最后一次走进图书馆，把撕去的那一页夹在借阅登记本里
+  - 锚点 5：撕去的那一页后来在 2009 年随一封信寄给莱拉
+  - 锚点 6：reunion_2024 桌面上"两件共鸣物件"之一就是这封信
+  - 锚点 7：7 幕必须按年份顺序（1989 / 1991 / 1993 / 1995 / 1997 / 1999 / 2000）
+
+# -----------------------------------------------------------------------------
+# 核心冲突
+# -----------------------------------------------------------------------------
+core_conflict:
+  - 冲突 1：玛兹雅为何在 2000 撕下那一页寄给莱拉——她认识莱拉吗？
+  - 冲突 2：她撕下那页后是否知道"13 年后那封信会出现在伊斯坦布尔"
+  - 冲突 3：图书馆的 11 年与革命街主线的 13 年（1995-2008）是平行轨道
+            还是同一条
+
+# -----------------------------------------------------------------------------
+# 行为白名单
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - 第一次走进图书馆
+  - 把名字写进借阅登记本
+  - 把哈菲兹诗集翻开
+  - 把借阅卡塞进书页
+  - 撕下一页
+  - 把撕下的页夹进信封
+  - 把信封寄出
+  - 把借阅登记本合上
+
+# -----------------------------------------------------------------------------
+# 禁止揭露
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - 莱拉 2008 / 2011 / 2024 的具体行为
+  - 阿拉什 2008 / 2011 / 2024 的具体行为
+  - 玛兹雅与莱拉的相识经过
+  - 玛兹雅 2009 之后的生活
+  - 玛兹雅与阿拉什 / 玛丽亚姆的任何关系
+  - 撕下那一页的具体内容（"什么诗"必须留白）
+  - 撕下那封信的具体邮寄路径
+  - reunion_2024 的具体场景细节（除"那封信在桌上"外）
+  - 玩家在 reunion_2024 触发的具体 mandatory_echo
+  - 任何"13 年后她读到这页"的因果叙述
+
+# -----------------------------------------------------------------------------
+# AI 行为白名单
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate
+  - reveal
+  - conceal
+  - question
+  - confront
+  - comfort
+  - give
+  - destroy
+  - promise
+  - wait
+  - leave
+  - silence
+
+# -----------------------------------------------------------------------------
+# 行为预算
+# -----------------------------------------------------------------------------
+turn_budget:
+  total: 7
+  investigate: 3
+  reveal: 1
+  conceal: 1
+  question: 1
+  confront: 1
+  comfort: 1
+  give: 1
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 1
+
+# -----------------------------------------------------------------------------
+# 7 幕（每幕 ≤ 45 秒）
+# -----------------------------------------------------------------------------
+acts:
+  - act_id: act_01_1989
+    order: 1
+    title: "1989 · 第一次登记"
+    duration_seconds: 40
+    location: 设拉子儿童图书馆·借阅柜台
+    visual_anchors:
+      - 借阅登记本翻开第一页
+      - 玛兹雅圆框眼镜
+    beat: "第一次走进图书馆，名字写进借阅登记本"
+    forbid_callout:
+      - 不得说"我认识莱拉"
+      - 不得说"2008 我会给她写信"
+    cross_references:
+      - reunion_2024.leila_phone: old_handwriting     # 同款手写日期但不是同一本登记本
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        1989。她把名字写进借阅登记本第一页。
+        字很小。
+    cost: 0
+
+  - act_id: act_02_1991
+    order: 2
+    title: "1991 · 哈菲兹"
+    duration_seconds: 40
+    location: 同上·书架
+    visual_anchors:
+      - 哈菲兹诗集翻开
+      - 借阅卡塞进书页
+    beat: "哈菲兹诗集是借阅次数最多的书"
+    forbid_callout:
+      - 不得说"我后来会撕下一页"
+      - 不得说"莱拉会读这一页"
+    cross_references:
+      - reunion_2024.poetry_book: 2008_oil_stain     # 同款书脊气但不是这本
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        哈菲兹诗集被借了 41 次。借阅卡塞进书页。
+    cost: 0
+
+  - act_id: act_03_1993
+    order: 3
+    title: "1993 · 早晨的光"
+    duration_seconds: 40
+    location: 同上·角落绿色台灯
+    visual_anchors:
+      - 角落绿色台灯
+      - 早晨的光
+    beat: "她在角落绿色台灯下登记"
+    forbid_callout:
+      - 不得说"我会记得 13 年后"
+    cross_references:
+      - reunion_2024.sugar_bowl_cafe: table_lamp     # 同款台灯但不是咖啡馆
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        角落绿色台灯亮着。早晨的光从窗口斜进来。
+    cost: 0
+
+  - act_id: act_04_1995
+    order: 4
+    title: "1995 · 借阅登记本第 7 页"
+    duration_seconds: 40
+    location: 同上
+    visual_anchors:
+      - 借阅登记本翻到第 7 页
+      - 手写日期
+    beat: "她把借阅日期写到第 7 页"
+    forbid_callout:
+      - 不得说"莱拉那年 21 岁在德黑兰"
+      - 不得说"我同年听说一个文学系学生在革命街"
+    cross_references:
+      - reunion_2024.cafe_clock: evening     # 同款时间感但 1995 是早晨
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        第 7 页。手写的日期。
+    cost: 0
+
+  - act_id: act_05_1997
+    order: 5
+    title: "1997 · 撕下那一页"
+    duration_seconds: 45
+    location: 同上·借阅柜台
+    visual_anchors:
+      - 撕下的哈菲兹一页
+      - 玛兹雅的手
+    beat: "她撕下哈菲兹诗集的一页"
+    forbid_callout:
+      - 不得说"我后来会把它寄出去"
+      - 不得说"那封信 2024 在伊斯坦布尔桌上"
+    cross_references:
+      - reunion_2024.cafe_table: an_object     # 同款"桌上有物"但不是同一张桌
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        她撕下哈菲兹诗集的一页。
+        没有给谁。
+    cost: 0
+
+  - act_id: act_06_1999
+    order: 6
+    title: "1999 · 信封"
+    duration_seconds: 40
+    location: 设拉子·玛兹雅家
+    visual_anchors:
+      - 信封
+      - 撕下的那页夹在信封里
+    beat: "她把撕下的那页夹进信封"
+    forbid_callout:
+      - 不得说"信封 2009 才寄"
+      - 不得说"寄给谁"
+    cross_references:
+      - reunion_2024.receipt: an_envelope_or_paper     # 同款"信封"但不是这封
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        信封。撕下的那页夹在信封里。
+        信封没贴邮票。
+    cost: 0
+
+  - act_id: act_07_2000
+    order: 7
+    title: "2000 · 借阅登记本合上"
+    duration_seconds: 40
+    location: 设拉子儿童图书馆·借阅柜台
+    visual_anchors:
+      - 借阅登记本合上
+      - 角落绿色台灯
+    beat: "2000 年最后一次走进图书馆，借阅登记本合上"
+    forbid_callout:
+      - 不得说"再没回来"
+      - 不得说"莱拉 9 年后收到那封信"
+    cross_references:
+      - reunion_2024.crossroads_parting: an_ending     # 同款"结束"但不是同一条路
+    dialogue_template:
+      speaker: maziar
+      beat_in_words: |
+        2000。最后一次走进图书馆。
+        借阅登记本合上。
+    cost: 0
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记）
+# -----------------------------------------------------------------------------
+mandatory_echoes:
+  - id: recap_03_torn_page_letter
+    description: 玛兹雅 1997 撕下哈菲兹一页 → 1999 夹进信封 → 2009 寄给莱拉 → 2024 reunion 桌上有
+    trigger: 玩家点开 act_05_1997 或 act_06_1999
+    target_scenes: [recap_03_maziar_shiraz_library, reunion_2024]
+    ai_director_must_invoke: true
+    references_2024: [reunion_2024.cafe_table]   # reunion_2024 桌面的两件共鸣物件之一
+    ai_director_constraint: |
+      玛兹雅 1997 撕页时不知道这页会寄给谁，也不知道 2024 它会在
+      伊斯坦布尔桌上。导演只允许"她撕下，没给谁"与"信封没贴邮票"
+      在场；不得加任何"13 年后她读到"式叙述。
+
+  - id: recap_03_register_closed
+    description: 玛兹雅 2000 合上借阅登记本 → reunion_2024 路口合上诗集
+    trigger: 玩家点开 act_07_2000
+    target_scenes: [recap_03_maziar_shiraz_library, reunion_2024]
+    ai_director_must_invoke: true
+    references_2024: [reunion_2024.seed.crossroads_parting]
+    ai_director_constraint: |
+      玛兹雅合上借阅登记本的动作是"她关上了她的工作"，与 reunion_2024
+      阿拉什合上诗集是同款视觉语言但不是同一双手。导演不得做类比。
+
+# -----------------------------------------------------------------------------
+# 合法结局
+# -----------------------------------------------------------------------------
+legal_endings:
+  - id: register_closed_forever
+    label: 借阅登记本合上
+    description: 玛兹雅 2000 把借阅登记本合上，再没回来
+    causal_seed_required:
+      - recap_03_register_closed
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: envelope_unposted
+    label: 信封没贴邮票
+    description: 信封在玛兹雅家某一处，未贴邮票
+    causal_seed_required:
+      - recap_03_torn_page_letter
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 0
+  total_main_llm_calls: 5
+  per_call_output_tokens: 200
+
+# -----------------------------------------------------------------------------
+# 验收
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: false
+  - changes_character_knowledge: true
+  - changes_available_actions: false
+  - creates_future_echo: false
+  - preserves_macro_endpoints: true
+  - forbidden_reveals_strict: true
+  - cross_references_safe: true
+  - duration_under_5_minutes: true
+  - 0_state_machine_changes: true
+  - 0_agents_changes: true
+  - 0_model_changes: true
+  - 0_safety_changes: true
+  - reuses_W3_W4_only: true
+
+# -----------------------------------------------------------------------------
+# 章节与推送入口挂钩
+# -----------------------------------------------------------------------------
+chapter: recap_chapter
+chapter_label: 周度短案 3 · 玛兹雅的 11 年
+reward_id: recap_03
+reward_source: 在 reunion_2024 路口分开后客户端触发
+paid_dialogue_id: paid-recap-maziar
+hidden_dialogue_unlock: "那封信 13 年后出现在另一张桌上。"
+delivery_window: "reunion_2024 路口镜头后 ≤ 7 天"
+delivery_constraint: "用户主动开启；非骚扰；不基于模板"
+
+# -----------------------------------------------------------------------------
+# 美术参考
+# -----------------------------------------------------------------------------
+art:
+  - /recap/shiraz-library-desk.png
+  - /recap/shiraz-hafez-book-torn-page.png
+  - /recap/shiraz-register-pen.png
+art_focus: library

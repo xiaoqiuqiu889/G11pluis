@@ -1,0 +1,297 @@
+# =============================================================================
+# 革命街没有尽头 · 周度短案 2 / 3
+# 阿拉什到德黑兰后修好望远镜那一夜
+# -----------------------------------------------------------------------------
+# 任务：W7 周度短案
+# 时长：3 幕 ≤ 5 分钟
+# 锚点说明：这条短案在 reunion_2024 之后、玩家 13 年视觉链已经闭合时推送。
+#           它以阿拉什的视角，回看 2008 地下放映室之前那个没被写出来的
+#           夜晚——他修好望远镜（玛丽亚姆送他的那台 8 寸反射）的那一夜。
+# 必触发回响：本短案不触发新回响，但读取 farewell_2011 的 i_arrived_text
+#           + reunion_2024 的 i_arrived_text_2024_resonance（决策 3）。
+# 复用：0 改动 state_machine / agents / model / safety — 全部走 W3 / W4。
+# 写入规范：UTF-8；YAML 1.2；所有中文为正文。
+# =============================================================================
+
+scene_id: recap_02_arash_telescope_tehran
+title: 阿拉什修好望远镜那一夜
+era: "EPILOGUE"
+location: 伊朗·德黑兰·阿拉什家阳台 + 工具桌
+atmosphere:
+  - 阳台的旧垫子
+  - 8 寸反射望远镜
+  - 螺丝刀与备用齿轮
+  - 阿拉什父亲的旧账本
+  - 凌晨 1 点
+  - 玛丽亚姆的电话未接
+  - 实验记录本翻开
+  - 远处的清真寺报时
+
+# -----------------------------------------------------------------------------
+# 短案元信息
+# -----------------------------------------------------------------------------
+recap_meta:
+  duration_seconds: 270                # 3 幕 × 90 秒 = ≤ 5 分钟
+  max_main_llm_calls: 5
+  single_call_output_tokens: 200
+  scene_count: 3
+  cost_budget_note: |
+    本短案所有 3 幕共享 ≤ 5 次主调用。LLM 只在客户端触发
+    recap_started 后被调用一次（聚合生成）。客户端 montage
+    期间 0 LLM 调用（决策 5）。
+  player_invitation: |
+    本短案只在 reunion_2024 路口分开后出现；玩家点 × 后 7 天
+    内不再主动推送。
+
+# -----------------------------------------------------------------------------
+# 固定锚点：策划硬性要求
+# -----------------------------------------------------------------------------
+required_anchors:
+  - 锚点 1：8 寸反射望远镜的跟踪架齿轮在晚上 11 点坏了
+  - 锚点 2：阿拉什父亲中风后维修铺的旧账本摊在工具桌上
+  - 锚点 3：玛丽亚姆的流星观测表折在实验记录本里
+  - 锚点 4：阿拉什凌晨 1 点用废弃齿轮 + 螺丝刀修好跟踪架
+  - 锚点 5：修好后他没有观测，因为云层遮住
+  - 锚点 6：但他给玛丽亚姆发短信："齿轮换好了。云的活我不修。"
+  - 锚点 7：3 幕必须按时间顺序（晚上 11 点 → 凌晨 1 点 → 凌晨 3 点）
+
+# -----------------------------------------------------------------------------
+# 核心冲突
+# -----------------------------------------------------------------------------
+core_conflict:
+  - 冲突 1：阿拉什是否会因修好望远镜而意识到"我能修东西但我留不住时间"
+  - 冲突 2：他给玛丽亚姆的短信是不是 2011 机场"我到了"的预演
+  - 冲突 3：维修铺的旧账本与诗集是同一种"留不住"——他在那一刻选哪个
+
+# -----------------------------------------------------------------------------
+# 行为白名单
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - 螺丝刀在齿轮里
+  - 父亲的旧账本被翻到某一页
+  - 流星观测表折在实验记录本
+  - 凌晨 1 点修好的齿轮发出"咔哒"声
+  - 阳台清真寺报时
+  - 给玛丽亚姆的短信
+  - 没有观测
+  - 工具盒里那张诗的方向
+
+# -----------------------------------------------------------------------------
+# 禁止揭露
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - 阿拉什 2008 毕业照 / 莱拉 / 地下放映室
+  - 阿拉什 2011 机场 / 莱拉 / 行李牌
+  - 阿拉什 2024 伊斯坦布尔 / 咖啡馆 / 诗集
+  - 玛丽亚姆与阿拉什的相识经过
+  - 玛丽亚姆在 2011 / 2024 的具体细节
+  - 阿拉什父亲具体中风日期
+  - 8 寸反射望远镜的具体型号
+  - 流星观测表的具体经纬度
+  - 玩家在 reunion_2024 的具体 mandatory_echoes 触发情况
+  - 玛丽亚姆与阿拉什的"是否同居"
+
+# -----------------------------------------------------------------------------
+# AI 行为白名单
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate
+  - reveal
+  - conceal
+  - question
+  - confront
+  - comfort
+  - give
+  - destroy
+  - promise
+  - wait
+  - leave
+  - silence
+
+# -----------------------------------------------------------------------------
+# 行为预算
+# -----------------------------------------------------------------------------
+turn_budget:
+  total: 3
+  investigate: 2
+  reveal: 1
+  conceal: 1
+  question: 1
+  confront: 1
+  comfort: 1
+  give: 1
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 1
+
+# -----------------------------------------------------------------------------
+# 3 幕（每幕 ≤ 90 秒）
+# -----------------------------------------------------------------------------
+acts:
+  - act_id: act_01_23_clock
+    order: 1
+    title: "23 点 · 齿轮坏了"
+    duration_seconds: 80
+    location: 阿拉什家阳台
+    visual_anchors:
+      - 望远镜跟踪架倾斜
+      - 螺丝刀摆开
+      - 父亲的旧账本摊在工具桌
+    beat: "望远镜跟踪架齿轮在晚上 11 点坏了"
+    forbid_callout:
+      - 不得说"我知道 2011 莱拉要走"
+      - 不得说"2024 我会抱着诗集去伊斯坦布尔"
+    cross_references:
+      - reunion_2024.poetry_book: book_spine_cracked     # 同款书脊气但这不是诗集
+      - reunion_2024.hand_grey_hair: thumb_on_cup_rim     # 同款手指动作但修齿轮时是拇指摸螺丝刀
+    dialogue_template:
+      speaker: arash
+      beat_in_words: |
+        晚上 11 点。齿轮坏了。
+        父亲的旧账本摊在工具桌，他在找一把合适的螺丝刀。
+    cost: 0
+
+  - act_id: act_02_01_clock
+    order: 2
+    title: "01 点 · 修好"
+    duration_seconds: 90
+    location: 同上
+    visual_anchors:
+      - 齿轮咬合"咔哒"声
+      - 实验记录本翻开
+      - 流星观测表从记录本中露出
+    beat: "凌晨 1 点用废弃齿轮 + 螺丝刀修好跟踪架，发出'咔哒'声"
+    forbid_callout:
+      - 不得说"玛丽亚姆就是未来的家人"
+      - 不得说"我后来叫她'你 13 年后再回这条短信'"
+    cross_references:
+      - reunion_2024.cafe_clock: evening     # 同款时间感但不是同一晚
+      - reunion_2024.folded_poem_in_chest: 2008_four_folds     # 同款四折动作但修齿轮不是诗
+    dialogue_template:
+      speaker: arash
+      beat_in_words: |
+        凌晨 1 点。齿轮咬合发出"咔哒"声。
+        流星观测表从实验记录本里露出一角。
+        他没翻开它。
+    cost: 0
+
+  - act_id: act_03_03_clock
+    order: 3
+    title: "03 点 · 短信"
+    duration_seconds: 100
+    location: 同上
+    visual_anchors:
+      - 阳台清真寺报时
+      - 手机屏幕亮
+      - 云遮住
+    beat: "修好后他没有观测，因为云层遮住；给玛丽亚姆发短信"
+    forbid_callout:
+      - 不得说"2011 我会发'我到了'那条短信"
+      - 不得说"2024 我会把这台望远镜和诗集一起抱去伊斯坦布尔"
+    cross_references:
+      - farewell_2011.i_arrived_text: short_sms     # 同款短短信
+      - reunion_2024.i_arrived_text_2024: 13_years_of_delay     # 同款延迟
+    dialogue_template:
+      speaker: arash
+      beat_in_words: |
+        凌晨 3 点。云遮住。
+        他给玛丽亚姆发短信："齿轮换好了。云的活我不修。"
+        手机屏幕在阳台上亮了一下。
+    cost: 0
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记）
+# -----------------------------------------------------------------------------
+mandatory_echoes:
+  - id: recap_02_i_arrived_text_origin
+    description: 阿拉什给玛丽亚姆的"齿轮换好了"短信 → 2011 机场"我到了"短信 → 2024 莱拉读"我到了"
+    trigger: 玩家点开 act_03_03_clock
+    target_scenes: [recap_02_arash_telescope_tehran]
+    ai_director_must_invoke: true
+    references_2011: [farewell_2011.seed.i_arrived_text]
+    references_2024: [reunion_2024.seed.i_arrived_text_2024_resonance]
+    ai_director_constraint: |
+      阿拉什不知道 2011 莱拉会听到"我到了"，也不知道 2024 莱拉会
+      在伊斯坦布尔读这条短信。导演只允许"齿轮换好了。云的活我不修"
+      这句本身在场；不得加任何"13 年后她听到"式叙述。
+
+  - id: recap_02_thumb_on_screwdriver
+    description: 修齿轮时拇指摸螺丝刀 → 2011 机场握—松 → 2024 端茶时拇指摩挲杯沿
+    trigger: 玩家点开 act_02_01_clock
+    target_scenes: [recap_02_arash_telescope_tehran]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.grip_then_release]
+    references_2011: [farewell_2011.seed.grip_then_release_2011]
+    references_2024: [reunion_2024.seed.grip_release_2024_echo]
+    ai_director_constraint: |
+      修齿轮时拇指是摸螺丝刀，不是握人手指。导演不得把它和"握—松"
+      直接做类比；只允许"拇指在金属上的同款接触"作为视觉动作。
+
+# -----------------------------------------------------------------------------
+# 合法结局
+# -----------------------------------------------------------------------------
+legal_endings:
+  - id: clouds_dont_get_fixed
+    label: 云的活我不修
+    description: 短信发出；云不修；阿拉什合上手机
+    causal_seed_required:
+      - recap_02_i_arrived_text_origin
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: gear_clicks_once
+    label: 齿轮咔哒一次
+    description: 修好的齿轮咬合一次；阿拉什没再调试
+    causal_seed_required:
+      - recap_02_thumb_on_screwdriver
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 0
+  total_main_llm_calls: 5
+  per_call_output_tokens: 200
+
+# -----------------------------------------------------------------------------
+# 验收
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: false
+  - changes_character_knowledge: true
+  - changes_available_actions: false
+  - creates_future_echo: false
+  - preserves_macro_endpoints: true
+  - forbidden_reveals_strict: true
+  - cross_references_safe: true
+  - duration_under_5_minutes: true
+  - 0_state_machine_changes: true
+  - 0_agents_changes: true
+  - 0_model_changes: true
+  - 0_safety_changes: true
+  - reuses_W3_W4_only: true
+
+# -----------------------------------------------------------------------------
+# 章节与推送入口挂钩
+# -----------------------------------------------------------------------------
+chapter: recap_chapter
+chapter_label: 周度短案 2 · 阿拉什修好望远镜
+reward_id: recap_02
+reward_source: 在 reunion_2024 路口分开后客户端触发
+paid_dialogue_id: paid-recap-telescope
+hidden_dialogue_unlock: "齿轮换好了。云的活我不修。"
+delivery_window: "reunion_2024 路口镜头后 ≤ 7 天"
+delivery_constraint: "用户主动开启；非骚扰；不基于模板"
+
+# -----------------------------------------------------------------------------
+# 美术参考
+# -----------------------------------------------------------------------------
+art:
+  - /recap/tehran-balcony-telescope.png
+  - /recap/tehran-tool-table-ledger.png
+  - /recap/tehran-phone-screen-3am.png
+art_focus: balcony

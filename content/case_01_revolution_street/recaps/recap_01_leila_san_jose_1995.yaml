@@ -1,0 +1,376 @@
+# =============================================================================
+# 革命街没有尽头 · 周度短案 1 / 3
+# 1995 视角 — 莱拉到圣何塞第一年
+# -----------------------------------------------------------------------------
+# 任务：W7 周度短案
+# 时长：5 幕 ≤ 5 分钟
+# 锚点说明：这条短案在 reunion_2024 之后、玩家 13 年视觉链已经闭合时推送。
+#           它借 1995 的视角，重看 2008 / 2011 / 2024 的具体物件，把已经
+#           触发的回响与未触发的回响并置。
+# 必触发回响：本短案本身没有 mandatory_echoes 触发，但它读取 2008 / 2011 /
+#           2024 的 mandatory_echoes（决策 3 不允许 AI 导演自由发挥）。
+# 复用：0 改动 state_machine / agents / model / safety — 全部走 W3 / W4。
+# 写入规范：UTF-8；YAML 1.2；所有中文为正文。
+# =============================================================================
+
+scene_id: recap_01_leila_san_jose_1995
+title: 1995 视角 · 莱拉到圣何塞第一年
+era: "EPILOGUE"
+location: 美国·圣何塞·伯克利大道公寓·二楼小房间
+atmosphere:
+  - 陌生门牌号
+  - 电视天气预报
+  - 单身公寓的窗
+  - 邻居晒衣绳
+  - 时差
+  - 三个时区之间的凌晨
+  - 旧波斯语书垫着台灯
+  - 巴哈拉姆的旧地铁票
+
+# -----------------------------------------------------------------------------
+# 短案元信息 — 与 narrative_contract 同构（scene_loader 复用其 YAML 解析）
+# -----------------------------------------------------------------------------
+recap_meta:
+  duration_seconds: 300              # ≤ 5 分钟
+  max_main_llm_calls: 5              # 决策 5 硬红线（决策 5 子约束）
+  single_call_output_tokens: 200     # 决策 5 子约束
+  scene_count: 5
+  cost_budget_note: |
+    本短案所有 5 幕共享 ≤ 5 次主调用。LLM 只在客户端触发 recap_started
+    后被调用一次（聚合生成），不再按幕切分调用。客户端 montage 期间
+    0 LLM 调用（决策 5 + reunion_2024 蒙太奇对齐）。
+  player_invitation: |
+    本短案只在 reunion_2024 路口分开后出现；玩家点 × 后 7 天内不再主动
+    推送（决策 4 UX 约束 + 决策 2 默认旁观者）。
+
+# -----------------------------------------------------------------------------
+# 固定锚点：策划硬性要求，AI 导演不得违反
+# -----------------------------------------------------------------------------
+required_anchors:
+  - 锚点 1：1995 莱拉在圣何塞伯克利大道公寓的二楼小房间
+  - 锚点 2：莱拉独自看窗外时区差的雨
+  - 锚点 3：桌上有一本旧波斯语书（费尔多西《列王纪》）和台灯
+  - 锚点 4：靠墙挂着一张伊朗航空的行李牌（她在 1995 那次还没用上）
+  - 锚点 5：短案必须显式引用 reunion_2024 已经触发的 mandatory_echo
+            至少 1 项（photo_pairing_complete / first_words_admit_2008_2011）
+  - 锚点 6：1995 莱拉不知道 2008 / 2011 / 2024，但她看见"窗外的雨"
+            这个意象是 reunion_2024 同款
+  - 锚点 7：5 幕必须按时间顺序（1 月 → 4 月 → 7 月 → 10 月 → 12 月）
+
+# -----------------------------------------------------------------------------
+# 核心冲突：短案要解决的具体张力
+# -----------------------------------------------------------------------------
+core_conflict:
+  - 冲突 1：1995 的莱拉是否已经知道"某天我会用这张行李牌"
+  - 冲突 2：她与卡姆兰的圣何塞客厅（暗房）尚未成型，但她已经预定了一张
+            底片的位置
+  - 冲突 3：她在 1995 还没去过的 2008 / 2011 / 2024，但短案需要把这
+            13 年的物件（照片、诗集、公交票、行李牌）变成她"已经认识
+            但还没有用过"的状态
+
+# -----------------------------------------------------------------------------
+# 行为白名单：AI 导演只能从这些节拍中选择
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - 在陌生时区醒来
+  - 把行李牌挂到墙上的钉子
+  - 第一次冲印一张照片（不是毕业照，是 1995 的某天）
+  - 把波斯语书翻到《列王纪》某一页
+  - 在加州看雨（不在雨季）
+  - 写一封不会寄出的家信
+  - 把巴哈拉姆的地铁票放进抽屉最深处
+  - 凌晨 3 点读《列王纪》
+
+# -----------------------------------------------------------------------------
+# 禁止揭露：未达条件的秘密不能输出
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - 莱拉 2008 阿拉什 / 毕业照 / 地下放映室
+  - 莱拉 2011 机场 / 行李牌背面那行字
+  - 莱拉 2024 伊斯坦布尔 / 卡拉柯伊咖啡馆
+  - 莱拉 2008 之前的具体童年细节
+  - 莱拉 1995 之后到 2008 之间的具体生活
+  - 卡姆兰与莱拉的相识细节（"我们在伯克利的一次 party 上"）
+  - 卡姆兰在圣何塞的具体职业
+  - 莱拉 1995 之前的所有历史
+  - 莱拉 1995 之后的"我曾记得 2024"叙事（不能反向因果）
+  - 玩家在 reunion_2024 触发的具体 recall_type / 召回正文
+
+# -----------------------------------------------------------------------------
+# AI 行为白名单：12 种结构化行为（短案客户端可由玩家触发）
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate   # 检查行李牌 / 波斯语书 / 抽屉里的旧票
+  - reveal        # 让 1995 的莱拉说"还没人听过我的一句话"
+  - conceal       # 把家信塞回抽屉
+  - question      # 向窗外 / 向台灯 / 向自己发问
+  - confront      # 直面"我是谁在 1995 还在陌生时区"
+  - comfort       # 把雨声当作一种陪伴
+  - give          # 给出那张 1995 冲印的照片
+  - destroy       # 把家信撕掉 / 把旧票扔进纸篓
+  - promise       # 许下"等某年我会用这张行李牌"
+  - wait          # 站在窗边等天亮
+  - leave         # 离开小房间去楼下买咖啡
+  - silence       # 把已经成型的句子咽回去
+
+# -----------------------------------------------------------------------------
+# 行为预算：单幕 1 个动作上限（避免"看"一整天）
+# -----------------------------------------------------------------------------
+turn_budget:
+  total: 5
+  investigate: 2
+  reveal: 1
+  conceal: 1
+  question: 1
+  confront: 1
+  comfort: 1
+  give: 1
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 1
+
+# -----------------------------------------------------------------------------
+# 5 幕（每幕 ≤ 60 秒）
+# -----------------------------------------------------------------------------
+acts:
+  - act_id: act_01_january
+    order: 1
+    title: "一月 · 时差"
+    duration_seconds: 50
+    location: 圣何塞·伯克利大道公寓·二楼小房间
+    visual_anchors:
+      - 墙上钉子空着
+      - 桌上台灯亮着
+      - 窗外雨
+    beat: "凌晨醒来不知道几点；台灯亮着，灯下有一本旧的波斯语书"
+    forbid_callout:
+      - 不得说"这是我 2008 用的那张行李牌"
+      - 不得说"我知道自己 2024 会去伊斯坦布尔"
+    cross_references:
+      - reunion_2024.weather: rain_just_stopped      # 同款雨意
+      - reunion_2024.lighting: table_lamp            # 同款台灯
+    dialogue_template:
+      speaker: leila_1995
+      beat_in_words: |
+        她醒来时不知道几点。台灯还亮着。
+        窗外的雨不是雨季的雨，但她没问加州为什么下雨。
+    cost: 0                            # montage 期间 0 LLM 调用
+
+  - act_id: act_02_april
+    order: 2
+    title: "四月 · 行李牌"
+    duration_seconds: 55
+    location: 同上
+    visual_anchors:
+      - 行李牌挂到墙上钉子
+      - 钉子发出吱嘎声
+    beat: "她把行李牌挂到墙上钉子；钉子发出吱嘎声"
+    forbid_callout:
+      - 不得说"我知道 2011 会用这张"
+      - 不得说"2024 我会把它带回伊斯坦布尔"
+    cross_references:
+      - farewell_2011.luggage_tag: non_airline_chars_on_back     # 同款物件但 1995 还没写字
+      - reunion_2024.luggage_tag_2024: 2011_word_visible     # 同款物件 13 年后被看到
+    dialogue_template:
+      speaker: leila_1995
+      beat_in_words: |
+        她买了张行李牌。没有目的地代码。
+        钉子发出吱嘎声，行李牌在墙上晃了两下。
+    cost: 0
+
+  - act_id: act_03_july
+    order: 3
+    title: "七月 · 波斯语书"
+    duration_seconds: 60
+    location: 同上
+    visual_anchors:
+      - 《列王纪》翻开某一页
+      - 台灯下一行旧波斯语
+    beat: "她把《列王纪》翻到某一页，凌晨 3 点读"
+    forbid_callout:
+      - 不得说"鲁米的诗集"
+      - 不得说"阿拉什的诗集"
+    cross_references:
+      - reunion_2024.poetry_book: 2008_oil_stain_on_cover     # 同款旧书脊气但 1995 还没有
+    dialogue_template:
+      speaker: leila_1995
+      beat_in_words: |
+        费尔多西写下某一行。她没读懂，但她记得这行。
+        凌晨 3 点，她把书合上，台灯关了。
+    cost: 0
+
+  - act_id: act_04_october
+    order: 4
+    title: "十月 · 第一次冲印"
+    duration_seconds: 60
+    location: 公寓楼下 photo lab
+    visual_anchors:
+      - 冲印件
+      - 不写日期的背面
+    beat: "她第一次冲印一张照片，背面不写日期"
+    forbid_callout:
+      - 不得说"2011 我会摸到这张照片"
+      - 不得说"reunion_2024 桌上有两张"
+    cross_references:
+      - photo_lab_2008.photo_back: G1N-DEMO-2008-01     # 同款冲印动作但不是毕业照
+    dialogue_template:
+      speaker: leila_1995
+      beat_in_words: |
+        她第一次冲印照片。背面什么都没写。
+        不是毕业照，不是合照。
+    cost: 0
+
+  - act_id: act_05_december
+    order: 5
+    title: "十二月 · 雨又在"
+    duration_seconds: 75
+    location: 同上
+    visual_anchors:
+      - 雨又下
+      - 行李牌在墙上
+      - 波斯语书在桌上
+      - 抽屉里的旧地铁票
+    beat: "雨又在，行李牌在墙上，她把巴哈拉姆的旧地铁票放进抽屉最深处"
+    forbid_callout:
+      - 不得说"我答应过你 2008 的事"
+      - 不得说"13 年后我才知道"
+    cross_references:
+      - photo_lab_2008.bus_ticket_pair: 304 bus tickets     # 同款 1995 不是 304，是巴哈拉姆的另条线
+      - reunion_2024.i_arrived_text_2024: 13_years_of_silence     # 同款延迟
+    dialogue_template:
+      speaker: leila_1995
+      beat_in_words: |
+        雨又在。行李牌在墙上。
+        波斯语书合着。抽屉最深处有一张旧地铁票——不是 304，
+        是巴哈拉姆那年的另一条线。
+        她没打开那张票。
+    cost: 0
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+# 选种依据：跨年代物理物件（行李牌、波斯语书、冲印件、地铁票）—— 都是
+# reunion_2024 已经显影的物质证据的"更早版本"。本短案不是新回响，是
+# 既有回响的反向回溯。
+mandatory_echoes:
+  - id: recap_01_luggage_tag_lookback
+    description: 1995 莱拉把行李牌挂上墙 → 2011 莱拉在背面写字 → 2024 莱拉在伊斯坦布尔再摸到
+    trigger: 玩家点开 act_02_april
+    target_scenes: [recap_01_leila_san_jose_1995]   # 本短案内部闭环
+    ai_director_must_invoke: true
+    references_2011: [farewell_2011.seed.luggage_tag_carries_truth]
+    references_2024: [reunion_2024.inherited_objects.luggage_tag_carries_truth_2024]
+    ai_director_constraint: |
+      1995 的莱拉不知道 2011 / 2024 发生了什么；导演只允许以物件在场
+      的方式呈现（"墙上挂着一张行李牌"），不得说"我在 2011 会用这张"
+      或"2024 我看到背面那行字"。
+
+  - id: recap_01_photo_lookback
+    description: 1995 莱拉第一次冲印 → 2008 莱拉把毕业照放进口袋 → 2024 莱拉从包中取出
+    trigger: 玩家点开 act_04_october
+    target_scenes: [recap_01_leila_san_jose_1995]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.seed.photo_in_pocket]
+    references_2024: [reunion_2024.inherited_objects.photo_2008_in_pocket_2024]
+    ai_director_constraint: |
+      1995 莱拉不知道 2008 的毕业照；她只冲印"1995 某天"的照片。
+      导演不得以"我知道自己 2008 也会这么干"的方式叙述。
+
+  - id: recap_01_persian_book_lookback
+    description: 1995 莱拉读费尔多西《列王纪》→ 2008 阿拉什读鲁米诗集 → 2024 诗集抱在臂弯
+    trigger: 玩家点开 act_03_july
+    target_scenes: [recap_01_leila_san_jose_1995]
+    ai_director_must_invoke: true
+    references_2008: [photo_lab_2008.investigatable_objects.book_jalal]
+    references_2024: [reunion_2024.inherited_objects.book_jalal_2008_with_photo_2024]
+    ai_director_constraint: |
+      1995 莱拉读的不是鲁米诗集，是费尔多西。导演不得让 1995 莱拉
+      知道"鲁米"或"阿拉什的诗集"；只允许 2024 客户端镜头切换时
+      出现"鲁米诗集"的视觉重叠。
+
+# -----------------------------------------------------------------------------
+# 合法结局：本短案可能的结束状态
+# -----------------------------------------------------------------------------
+legal_endings:
+  - id: rain_still_falls
+    label: 雨还在下
+    description: 5 幕走完，1995 莱拉在窗边看雨，行李牌在墙上
+    causal_seed_required:
+      - recap_01_luggage_tag_lookback
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: book_closed
+    label: 书合上
+    description: 1995 莱拉合上《列王纪》，台灯关闭
+    causal_seed_required:
+      - recap_01_persian_book_lookback
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+  - id: photo_in_drawer
+    label: 照片进抽屉
+    description: 1995 莱拉把第一次冲印的照片放进抽屉（不是相框）
+    causal_seed_required:
+      - recap_01_photo_lookback
+    next_scene_hooks: [chapter5_crossroads, ending_cinematic]
+
+# -----------------------------------------------------------------------------
+# 短案结束的下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - chapter5_crossroads（reunion_2024 已结束的反思镜头）
+  - ending_cinematic（电影尾声）
+  - 玩家关闭（×）后 7 天不再主动推送（决策 4 UX 约束）
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 0
+  total_main_llm_calls: 5            # ≤ 5 次主调用（决策 5 硬红线）
+  per_call_output_tokens: 200        # ≤ 200 token 输出（决策 5 子约束）
+
+# -----------------------------------------------------------------------------
+# 验收（按经验教训"四项问题"自检）
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: false       # 1995 是过去时，不改本局世界状态
+  - changes_character_knowledge: true # 玩家看到 1995 莱拉的状态后，对 reunion_2024 物件产生新理解
+  - changes_available_actions: false  # 短案只读，不改可用行为
+  - creates_future_echo: false        # 短案是反向回溯，不产生新回响
+  - preserves_macro_endpoints: true   # 2008 / 2011 / 2024 端点不动
+  - forbidden_reveals_strict: true    # 不泄露 2008 / 2011 / 2024 具体行为
+  - cross_references_safe: true       # 必触发回响只用 "物件在场" 方式呈现
+  - duration_under_5_minutes: true    # 5 幕 × 60 秒 ≤ 5 分钟
+  - 0_state_machine_changes: true     # 不改 state_machine
+  - 0_agents_changes: true            # 不改 agents
+  - 0_model_changes: true             # 不改 model
+  - 0_safety_changes: true            # 不改 safety
+  - reuses_W3_W4_only: true           # 只走 W3 / W4 已交付能力
+
+# -----------------------------------------------------------------------------
+# 章节与推送入口挂钩
+# -----------------------------------------------------------------------------
+chapter: recap_chapter
+chapter_label: 周度短案 1 · 1995 视角
+reward_id: recap_01
+reward_source: 在 reunion_2024 路口分开后客户端触发
+paid_dialogue_id: paid-recap-1995-leila
+hidden_dialogue_unlock: "我在 1995 还没去过任何人的诗集。"
+delivery_window: "reunion_2024 路口镜头后 ≤ 7 天"
+delivery_constraint: "用户主动开启；非骚扰；不基于模板"
+
+# -----------------------------------------------------------------------------
+# 美术参考
+# -----------------------------------------------------------------------------
+art:
+  - /recap/1995-san-jose-room.png         # 主体（莱拉 1995 房间）
+  - /recap/1995-rainy-window.png          # 雨窗
+  - /recap/1995-luggage-tag-nail.png      # 行李牌 + 钉子
+  - /recap/1995-persian-book-lamp.png     # 波斯语书 + 台灯
+  - /recap/1995-photo-lab-drawer.png      # 冲印件 + 抽屉
+
+art_focus: room

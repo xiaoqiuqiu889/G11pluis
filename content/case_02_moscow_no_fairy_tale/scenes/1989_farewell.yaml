@@ -1,0 +1,664 @@
+# =============================================================================
+# 第二案 · 《莫斯科没有童话》 · 场景 2 / 3
+# 1989_farewell（莫斯科谢列梅捷沃机场 · SVO-2 国际线出境大厅）
+# -----------------------------------------------------------------------------
+# 时代：1989 年 4 月 8 日清晨，苏联解体前 2 年
+# 锚点说明：这是 anchors.yaml 锚点 3（1989 离别）的纵切片
+# 母题对位（与第一案 farewell_2011 同结构）：
+#   第一案"单程行李牌"   ->   第二案"Aeroflot 托运标签 SU-355"
+#   第一案"我到了"短信    ->   第二案"5:55 莉莎电话里'第三小节是给你的'"
+#   第一案"2008 照片"     ->   第二案"2008 红色笔记本第 7 页 Aeroflot 标签"
+# 跨年代回响：必须引用 1985_meeting 的具体行为（玩家是否揭页、是否给总谱、是否让笔记本记笔记）
+#           并为 2008_重逢 准备至少 2 个因果种子
+# 写入规范：UTF-8；YAML 1.2；不修改 schemas
+# =============================================================================
+
+# === schema 必填字段（narrative_contract.schema.json）====================
+sceneId: scene_1989_farewell
+title: 莫斯科谢列梅捷沃机场 · 出境大厅与第三小节
+era: "1989"
+location: 莫斯科谢列梅捷沃机场 · SVO-2 国际线出境大厅
+timeOfDay: dawn
+weather: cold
+narratorVoice: |
+  双视角交叉：5:30 娜塔莎在塔甘卡剧院衣帽间 / 5:55 莉莎在 SVO-2 电话亭 / 6:15 伊利亚在登机口。
+  句式以行李传送带的物理意象为主。
+  不使用 1989 之后才出现的词（如"苏联解体"已发生的语境、"独联体"）。
+
+# -----------------------------------------------------------------------------
+# schema 必填：required_anchors
+# -----------------------------------------------------------------------------
+required_anchors:
+  - anchorId: svo2_departure_lounge
+    description: 场景设定在 SVO-2 国际线出境大厅，必须出现值机柜台、行李传送带、抽象航班板
+    mandatory: true
+  - anchorId: ilya_lisa_1986_west_berlin
+    description: 莉莎 1986 年在西柏林认识伊利亚——她是"中介者"
+    mandatory: true
+  - anchorId: natasha_not_at_airport
+    description: 娜塔莎没去机场是出于自我保护（处分仍在 3 年观察期内）
+    mandatory: true
+  - anchorId: sasha_at_taganka_with_natasha
+    description: 萨沙 1988 年底明确劝过娜塔莎"别去"；4 月 8 日清晨陪她在衣帽间到 5:30
+    mandatory: true
+  - anchorId: lisa_calls_at_5_55
+    description: 5:55 莉莎打电话给娜塔莎传话"第三小节是给你的"
+    mandatory: true
+  - anchorId: su355_takeoff_6_15
+    description: SU-355 班机 6:15 起飞，经布拉格转机飞往维也纳
+    mandatory: true
+  - anchorId: aeroflot_tag_visible
+    description: Aeroflot 托运标签"SU-355 / 1989-04-08 / SVO-PRG-VIE"在行李上
+    mandatory: true
+  - anchorId: scene_must_reference_1985
+    description: 场景必须显式引用 1985_meeting 至少一项具体行为（玩家行为）
+    mandatory: true
+  - anchorId: scene_must_prepare_2008
+    description: 场景必须为 2008_reunion 准备至少 2 个因果种子
+    mandatory: true
+  - anchorId: announcement_before_end
+    description: 6:15 登机广播在场景结束前必须响起（替代第一案"机场登机广播"）
+    mandatory: true
+  - anchorId: parting_endpoint_locked
+    description: 场景结束于"分别"——伊利亚和莉莎登机，娜塔莎在塔甘卡衣帽间，不被任何承诺改写
+    mandatory: true
+
+# -----------------------------------------------------------------------------
+# schema 必填：core_conflict
+# -----------------------------------------------------------------------------
+core_conflict: |
+  莫斯科谢列梅捷沃机场 5:30—6:15 这 45 分钟里，
+  萨沙陪娜塔莎在塔甘卡剧院衣帽间坐到 5:30；
+  莉莎在 SVO-2 帮伊利亚托运行李；
+  5:55 莉莎打电话给娜塔莎传话"第三小节是给你的"——娜塔莎在 4 秒后接起；
+  6:15 SU-355 起飞。
+  核心张力是：四个人分处两个地点，**通过一个 4 秒延迟的电话"同时在场"**。
+  玩家决定的是：
+  1) 伊利亚在海关柜台前看红色笔记本时翻到哪一页（1985 第 1 页 / 1987 第 7 页 / 不翻）；
+  2) 莉莎打电话时是否多说一句（只传话 / 问"你爱他吗" / 不打）；
+  3) 娜塔莎在 4 秒后接电话时是否先说话（沉默 4 秒 / 让莉莎先说 / 自己先说）。
+
+# -----------------------------------------------------------------------------
+# schema 必填：allowed_beats
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - beatId: opening_taganka_wardrobe
+    label: 开场 5:30 塔甘卡剧院衣帽间（娜塔莎+萨沙）
+    tier: setup
+  - beatId: sasha_hand_on_shoulder
+    label: 萨沙 5:30 把手放在娜塔莎肩上没说话
+    tier: setup
+  - beatId: opening_svo2_lisa
+    label: 5:35 SVO-2 莉莎帮伊利亚托运行李
+    tier: setup
+  - beatId: ilya_glance_at_notebook
+    label: 伊利亚在海关柜台前看红色笔记本（翻或不翻）
+    tier: rising
+  - beatId: 5_55_phone_rings
+    label: 5:55 莉莎打电话给娜塔莎
+    tier: climax
+  - beatId: 4_second_pickup
+    label: 娜塔莎在 4 秒后接起电话
+    tier: climax
+  - beatId: third_bar_oral_message
+    label: '第三小节是给你的 口信'
+    tier: falling
+  - beatId: 6_15_announcement
+    label: 6:15 登机广播响起
+    tier: falling
+  - beatId: su355_takeoff
+    label: SU-355 起飞
+    tier: resolution
+
+# -----------------------------------------------------------------------------
+# schema 必填：forbidden_reveals
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - revealKey: 1992_lisa_ilya_marriage
+    reason: 1992 维也纳登记结婚属锚点 4 之后
+  - revealKey: 1993_sasha_natasha_marriage
+    reason: 1993 莫斯科登记结婚属锚点 4 之后
+  - revealKey: anya_1994_birth
+    reason: 阿尼娅 1994 出生属锚点 4
+  - revealKey: matthias_1995_birth
+    reason: 马蒂亚斯 1995 出生属锚点 4
+  - revealKey: 1991_dissolution
+    reason: 1991-12-25 苏联解体属锚点 4 背景
+  - revealKey: 2008_berlin_reunion
+    reason: 2008 柏林重逢属锚点 5
+  - revealKey: natasha_1988_warning
+    reason: 1988 处分是锚点 2 的事；锚点 3 只引用"处分观察期"作为不去机场的理由
+  - revealKey: matthias_choir_2008
+    reason: 2008 马蒂亚斯合唱团属锚点 5
+  - revealKey: anya_exam_2008
+    reason: 2008 阿尼娅音乐学院附中入学考试属锚点 5
+
+# -----------------------------------------------------------------------------
+# schema 必填：max_turns + total_action_budget
+# -----------------------------------------------------------------------------
+max_turns: 14
+total_action_budget: 32
+
+# -----------------------------------------------------------------------------
+# schema 必填：legal_endings
+# -----------------------------------------------------------------------------
+legal_endings:
+  - endingId: ending_third_bar_spoken
+    label: '第三小节 被说出'
+    description: 莉莎在 5:55 电话里转达 第三小节是给你的 —— 伊利亚通过她承认
+    conditions:
+      - player_action.reveal.completed == true
+      - causal_seed.lisa_relays_third_bar.fired == true
+    tone: bittersweet
+  - endingId: ending_lisa_silent
+    label: 莉莎不问
+    description: 莉莎在 5:55 只传话，不问"你爱他吗"——她保持中介者身份
+    conditions:
+      - player_action.conceal.completed == true
+      - causal_seed.lisa_keeps_silence.fired == true
+    tone: sober
+  - endingId: ending_ilya_notebook_page_1
+    label: 伊利亚翻到第 1 页
+    description: 伊利亚在海关柜台前翻红色笔记本到 1985 第 1 页"И. Б."圈注
+    conditions:
+      - player_action.investigate.completed == true
+      - causal_seed.ilya_glances_page_1.fired == true
+    tone: bittersweet
+  - endingId: ending_ilya_notebook_page_7
+    label: 伊利亚翻到第 7 页
+    description: 伊利亚翻到 1987 大纲 3 页中的第 7 页
+    conditions:
+      - player_action.investigate.completed == true
+      - causal_seed.ilya_glances_page_7.fired == true
+    tone: ambiguous
+  - endingId: ending_natasha_silent_4_seconds
+    label: 娜塔莎 4 秒沉默后接起
+    description: 娜塔莎在 4 秒后接电话，让莉莎先说"第三小节是给你的"
+    conditions:
+      - player_action.wait.completed == true
+      - causal_seed.natasha_4_second_silence.fired == true
+    tone: open
+  - endingId: ending_su355_takeoff
+    label: SU-355 起飞
+    description: 6:15 登机广播响起，SU-355 起飞
+    conditions:
+      - beat.su355_takeoff.fired == true
+    tone: open
+
+# -----------------------------------------------------------------------------
+# schema 可选：causal_seeds（白名单）
+# -----------------------------------------------------------------------------
+causal_seeds:
+  - seed_lisa_relays_third_bar
+  - seed_lisa_keeps_silence
+  - seed_ilya_glances_page_1
+  - seed_ilya_glances_page_7
+  - seed_natasha_4_second_silence
+  - seed_aeroflot_tag_in_page_7
+  - seed_walkman_tape_in_1989_luggage
+  - seed_chocolate_tin_paper_lisa_keeps
+
+# -----------------------------------------------------------------------------
+# 第一案同结构扩展字段（策划侧，schema 之外）
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate
+  - reveal
+  - conceal
+  - question
+  - confront
+  - comfort
+  - give
+  - destroy
+  - promise
+  - wait
+  - leave
+  - silence
+
+turn_budget:
+  total: 8
+  investigate: 3
+  reveal: 2
+  conceal: 1
+  question: 2
+  confront: 1
+  comfort: 1
+  give: 2
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 1
+
+# -----------------------------------------------------------------------------
+# 在场人物（cast 字段已与 schema 对齐；扩展人物名以满足 schema 强约束）
+# -----------------------------------------------------------------------------
+cast:
+  - characterId: natasha_roschina
+    role: protagonist
+    initialDisposition: 0
+  - characterId: ilya_berman
+    role: protagonist
+    initialDisposition: 0
+  - characterId: sasha_kuzmin
+    role: ally
+    initialDisposition: 0
+    note: 5:30 陪娜塔莎在塔甘卡衣帽间
+  - characterId: lisa_hoffmann
+    role: ally
+    initialDisposition: 0
+    note: 5:35 在 SVO-2 帮伊利亚托运行李；5:55 打电话给娜塔莎
+  - characterId: svo2_baggage_handler
+    role: bystander
+    initialDisposition: 0
+    note: 6:10 把伊利亚的行李送上 Aeroflot 传送带
+  - characterId: taganka_wardrobe_keeper
+    role: witness
+    initialDisposition: 0
+    note: 5:00 在衣帽间清点戏服，与娜塔莎无直接对话
+
+# -----------------------------------------------------------------------------
+# 玩家从 1985_meeting 继承的"携带物"（按种子是否触发来条件启用）
+# -----------------------------------------------------------------------------
+inherited_objects:
+  - id: manuscript_page_with_IB
+    description: 伊利亚在 1985 把"И. Б."圈注页撕下夹在红色笔记本
+    enabled_if_seed: seed_ilya_pencil_page_in_notebook
+    initial_location: 红色笔记本第 1 页
+    visibility: 主角视角可见
+
+  - id: manuscript_stays_in_305
+    description: 总谱留在 305 琴房
+    enabled_if_seed: seed_manuscript_stays_in_305
+    initial_location: 莫斯科音乐学院图书馆
+    visibility: 主角视角不可见（已在 305）
+
+  - id: natasha_keeps_manuscript
+    description: 娜塔莎持有 1985 总谱副本
+    enabled_if_seed: seed_natasha_keeps_manuscript
+    initial_location: 娜塔莎家书架第三格
+    visibility: 主角视角可见
+
+  - id: red_notebook_1985_first_page
+    description: 红色笔记本第 1 页有 1985 305 琴房合排笔记
+    enabled_if_seed: seed_red_notebook_first_entry_1985
+    initial_location: 红色笔记本第 1 页
+    visibility: 主角视角可见
+
+  - id: walkman_sony_wm_fx1
+    description: Sony WM-FX1 walkman（继承自 1984）
+    enabled_if_seed: seed_walkman_tape_in_1989_luggage
+    initial_location: 伊利亚行李箱
+    visibility: 主角视角可见
+
+# -----------------------------------------------------------------------------
+# 可调查对象
+# -----------------------------------------------------------------------------
+investigatable_objects:
+  - id: aeroflot_luggage_tag
+    name: Aeroflot 托运标签
+    description: SU-355 / 1989-04-08 / SVO-PRG-VIE；伊利亚的行李箱拉杆上
+    initial_location: 伊利亚行李箱
+    visibility: 主角视角可见
+    keywords: [Aeroflot, SU-355, 托运, 标签, 1989-04-08]
+    requires: []
+    leads_to: [seed_aeroflot_tag_in_page_7, far_echo_2008]
+
+  - id: red_notebook_ilya_1989
+    name: 伊利亚的红色笔记本（1989）
+    description: 1985 起；现在 1989 时已有 1985-1987 共 11 页
+    initial_location: 伊利亚夹克内袋
+    visibility: 主角视角可见
+    keywords: [笔记本, 红色, 1985, 1987, 大纲]
+    requires: []
+    leads_to: [seed_ilya_glances_page_1, seed_ilya_glances_page_7]
+
+  - id: walkman_sony
+    name: Sony WM-FX1 walkman
+    description: 1984 年产；内有莫斯科最后合奏磁带（B 面 23:14）
+    initial_location: 伊利亚行李箱
+    visibility: 主角视角可见
+    keywords: [walkman, Sony, WM-FX1, 1984, 磁带]
+    requires: []
+    leads_to: [seed_walkman_tape_in_1989_luggage, far_echo_2008]
+
+  - id: cassette_tape_moscow
+    name: 莫斯科最后合奏磁带
+    description: 1987-1988 间录制；B 面 23:14 处有娜塔莎的独奏长音
+    initial_location: walkman 内
+    visibility: 主角视角可见
+    keywords: [磁带, 1987, B面, 23:14, 长音]
+    requires: [walkman_sony]
+    leads_to: [seed_walkman_tape_in_1989_luggage, far_echo_2008]
+
+  - id: lisa_chocolate_tin_paper
+    name: 1986 西柏林巧克力的锡纸
+    description: 莉莎保留的 1986 西柏林室内乐节纪念锡纸
+    initial_location: 莉莎外套内袋
+    visibility: 主角视角可见
+    keywords: [锡纸, 1986, 西柏林, 巧克力]
+    requires: []
+    leads_to: [seed_chocolate_tin_paper_lisa_keeps, far_echo_1995]
+
+  - id: svo2_checkin_counter
+    name: SVO-2 值机柜台
+    description: 国际线值机柜台；6:00 开始办理 SU-355
+    initial_location: SVO-2 国际线
+    visibility: 主角视角可见
+    keywords: [值机柜台, 国际线, SU-355]
+    requires: []
+    leads_to: [aeroflot_luggage_tag, 6_15_announcement]
+
+  - id: airport_payphone
+    name: 机场付费电话亭
+    description: 莉莎打电话给娜塔莎的电话亭
+    initial_location: SVO-2 国际线候机区
+    visibility: 主角视角可见
+    keywords: [付费电话, 候机区, SVO-2]
+    requires: []
+    leads_to: [lisa_calls_at_5_55, 4_second_pickup]
+
+  - id: taganka_wardrobe_clock
+    name: 衣帽间挂钟
+    description: 5:30 显示；秒针清晰
+    initial_location: 塔甘卡剧院衣帽间
+    visibility: 主角视角可见
+    keywords: [挂钟, 5_30, 秒针]
+    requires: []
+    leads_to: [sasha_hand_on_shoulder, 5_55_phone_rings]
+
+  - id: natasha_home_phone
+    name: 娜塔莎家电话
+    description: 黑色拨盘电话；5:55 莉莎打入时响铃
+    initial_location: 娜塔莎在塔甘卡衣帽间
+    visibility: 主角视角可见
+    keywords: [拨盘电话, 5_55, 响铃]
+    requires: [taganka_wardrobe_clock]
+    leads_to: [4_second_pickup, third_bar_oral_message]
+
+  - id: sasha_hand_on_shoulder_obj
+    name: 萨沙放在娜塔莎肩上的手
+    description: 5:30 萨沙在衣帽间把手放在娜塔莎肩上
+    initial_location: 萨沙右手
+    visibility: 主角视角可见
+    keywords: [肩, 萨沙, 5_30, 沉默]
+    requires: [taganka_wardrobe_clock]
+    leads_to: [sasha_hand_on_shoulder, comfort]
+
+  - id: departure_board_svo
+    name: SVO-2 抽象航班板
+    description: 显示 SU-355 / PRG / VIE 的液晶屏
+    initial_location: SVO-2 国际线
+    visibility: 主角视角可见
+    keywords: [航班板, SU-355, PRG, VIE]
+    requires: []
+    leads_to: [6_15_announcement, su355_takeoff]
+
+  - id: announcement_speaker_svo
+    name: 登机广播喇叭
+    description: 6:15 SU-355 开始登机的广播
+    initial_location: SVO-2 国际线
+    visibility: 主角视角可见
+    keywords: [广播, SU-355, 6_15, 登机]
+    requires: []
+    leads_to: [6_15_announcement, su355_takeoff]
+
+# -----------------------------------------------------------------------------
+# 在场人物详细
+# -----------------------------------------------------------------------------
+characters_present:
+  - id: natasha_roschina
+    name: 娜塔莎·罗希娜
+    initial_state: 不舍
+    visibility: 主角视角可见
+    state_notes:
+      - 在塔甘卡剧院衣帽间
+      - 深绿色高领毛衣，浅灰头巾
+      - 右手放在 Petrof 大提琴琴盒上
+
+  - id: sasha_kuzmin
+    name: 萨沙·库兹明
+    initial_state: 沉稳
+    visibility: 主角视角可见
+    state_notes:
+      - 27 岁，鸭舌帽，深蓝衬衫
+      - 5:30 把手放在娜塔莎肩上没说话
+
+  - id: ilya_berman
+    name: 伊利亚·贝尔曼（远程可见）
+    initial_state: 紧张
+    visibility: 主角视角可见（通过机场广播 + 莉莎电话）
+    state_notes:
+      - 23 岁，黑色高领毛衣，圆框眼镜
+      - 在 SVO-2 海关柜台前看红色笔记本
+
+  - id: lisa_hoffmann
+    name: 莉莎·霍夫曼
+    initial_state: 紧张
+    visibility: 主角视角可见
+    state_notes:
+      - 22 岁，红金色长发
+      - 在 SVO-2 候机区电话亭
+      - 5:55 打电话给娜塔莎
+
+  - id: svo2_baggage_handler
+    name: SVO-2 行李员（背景）
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 6:10 把伊利亚的行李送上 Aeroflot 传送带
+
+  - id: taganka_wardrobe_keeper
+    name: 衣帽间看门人（背景）
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 5:00 在衣帽间清点戏服
+      - 不与两人发生直接对话
+
+# -----------------------------------------------------------------------------
+# 因果种子（策划扩展）
+# -----------------------------------------------------------------------------
+causal_seeds_extended:
+  - id: seed_lisa_relays_third_bar
+    description: 莉莎在 5:55 电话里转达"第三小节是给你的"
+    trigger: 玩家对 airport_payphone 或 natasha_home_phone 执行 reveal + give
+    effects:
+      - 锚点 5 2008 桌边：伊利亚承认他让莉莎替他传话
+      - 锚点 5 2008 桌边：娜塔莎承认她 4 秒后接电话
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_lisa_keeps_silence
+    description: 莉莎在 5:55 只传话，不问"你爱他吗"
+    trigger: 玩家对 airport_payphone 执行 conceal + wait
+    effects:
+      - 锚点 5 2008 桌边：伊利亚提到"莉莎从未问过她爱我什么"
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_ilya_glances_page_1
+    description: 伊利亚在海关柜台前翻到红色笔记本第 1 页（1985 "И. Б."圈注页）
+    trigger: 玩家对 red_notebook_ilya_1989 执行 investigate
+    effects:
+      - 锚点 5 2008 桌边：娜塔莎看到第 1 页时不会惊讶
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_ilya_glances_page_7
+    description: 伊利亚翻到红色笔记本第 7 页（1987 大纲 3 页中第 1 页）
+    trigger: 玩家对 red_notebook_ilya_1989 执行 investigate（带 page_7 限定）
+    effects:
+      - 锚点 5 2008 桌边：伊利亚在桌边把第 7 页翻到第 8 页（不让娜塔莎看到"如果她问起来我怎么说"）
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_natasha_4_second_silence
+    description: 娜塔莎在 4 秒后接电话（与 1995 维也纳对视 4 秒对称）
+    trigger: 玩家对 natasha_home_phone 执行 wait + silence
+    effects:
+      - 锚点 4 1995-11-17 维也纳对视 4 秒
+      - 锚点 5 2008 桌边：两人回头笑一下的对称时长
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_aeroflot_tag_in_page_7
+    description: 伊利亚在 1992 与莉莎登记时把 1989 Aeroflot 标签夹在第 7 页
+    trigger: 玩家对 aeroflot_luggage_tag 执行 give（伊利亚保留标签）
+    effects:
+      - 锚点 5 2008 桌边：第 7 页胶带痕迹里隐约可见 Aeroflot 标签边缘
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_walkman_tape_in_1989_luggage
+    description: 伊利亚把 Sony walkman + 磁带带去维也纳
+    trigger: 玩家对 walkman_sony 或 cassette_tape_moscow 执行 investigate
+    effects:
+      - 锚点 4 1995-11-17 维也纳：磁带 B 面 23:14 仍可被听到
+      - 锚点 5 2008 桌边：伊利亚提到"莉莎听过 6 次那一段"
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_chocolate_tin_paper_lisa_keeps
+    description: 莉莎保留 1986 巧克力锡纸
+    trigger: 玩家对 lisa_chocolate_tin_paper 执行 investigate
+    effects:
+      - 锚点 4 1995 维也纳：莉莎床头柜仍有锡纸
+    target_scenes: [scene_2008_reunion]
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+mandatory_echoes:
+  - id: third_bar_oral_message_1989
+    description: '第三小节是给你的 口信在 5:55 电话里被转达'
+    trigger: 玩家对 natasha_home_phone 或 airport_payphone 执行 reveal
+    target_scenes: [scene_1989_farewell, scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_case_02_anchors: [1985_meeting, 1989_departure, 2008_reunion]
+
+  - id: walkman_tape_carries_to_vienna
+    description: Sony walkman + 磁带 B 面 23:14 在 1989 行李里
+    trigger: 玩家对 walkman_sony 执行 investigate
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_case_02_anchors: [1985_meeting, 1989_departure, 2008_reunion]
+
+# -----------------------------------------------------------------------------
+# 合法结局（策划扩展）
+# -----------------------------------------------------------------------------
+legal_endings_extended:
+  - id: ending_third_bar_spoken
+    label: '第三小节 被说出'
+    description: 莉莎在 5:55 电话里转达"第三小节是给你的"——伊利亚通过她承认
+    causal_seed_required:
+      - seed_lisa_relays_third_bar
+    next_scene_hooks: [scene_1995_two_cities, scene_2008_reunion]
+
+  - id: ending_lisa_silent
+    label: 莉莎不问
+    description: 莉莎在 5:55 只传话，不问"你爱他吗"——她保持中介者身份
+    causal_seed_required:
+      - seed_lisa_keeps_silence
+    next_scene_hooks: [scene_1995_two_cities, scene_2008_reunion]
+
+  - id: ending_ilya_notebook_page_1
+    label: 伊利亚翻到第 1 页
+    description: 伊利亚在海关柜台前翻红色笔记本到 1985 第 1 页"И. Б."圈注
+    causal_seed_required:
+      - seed_ilya_glances_page_1
+    next_scene_hooks: [scene_1995_two_cities, scene_2008_reunion]
+
+  - id: ending_ilya_notebook_page_7
+    label: 伊利亚翻到第 7 页
+    description: 伊利亚翻到 1987 大纲 3 页中的第 7 页
+    causal_seed_required:
+      - seed_ilya_glances_page_7
+    next_scene_hooks: [scene_1995_two_cities, scene_2008_reunion]
+
+  - id: ending_natasha_silent_4_seconds
+    label: 娜塔莎 4 秒沉默后接起
+    description: 娜塔莎在 4 秒后接电话，让莉莎先说"第三小节是给你的"
+    causal_seed_required:
+      - seed_natasha_4_second_silence
+    next_scene_hooks: [scene_1995_two_cities, scene_2008_reunion]
+
+  - id: ending_su355_takeoff
+    label: SU-355 起飞
+    description: 6:15 登机广播响起，SU-355 起飞
+    causal_seed_required:
+      - beat.su355_takeoff
+    next_scene_hooks: [scene_1995_two_cities, scene_2008_reunion]
+
+# -----------------------------------------------------------------------------
+# 下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - scene_1995_two_cities（1992-1995 蒙太奇：莫斯科 / 维也纳）
+  - 至少有两个跨年代种子被触发，影响 2008_reunion
+
+# -----------------------------------------------------------------------------
+# 远期回响路由
+# -----------------------------------------------------------------------------
+far_echo_routes:
+  - scene_id: scene_2008_reunion
+    max_echoes: 3
+    seed_ids:
+      - seed_lisa_relays_third_bar
+      - seed_lisa_keeps_silence
+      - seed_ilya_glances_page_1
+      - seed_ilya_glances_page_7
+      - seed_natasha_4_second_silence
+      - seed_aeroflot_tag_in_page_7
+      - seed_walkman_tape_in_1989_luggage
+      - seed_chocolate_tin_paper_lisa_keeps
+    required_seeds_for_full_echo:
+      - seed_third_bar_oral_message_1989
+      - seed_walkman_tape_carries_to_vienna
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 1
+  luggage_tag_budget: 1   # 玩家只能在 Aeroflot 标签上"决定保留"一次
+
+# -----------------------------------------------------------------------------
+# 验收
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: true        # 伊利亚登上飞往维也纳的 SU-355
+  - changes_character_knowledge: true # 娜塔莎从此知道/不知道"第三小节是给你的"
+  - changes_available_actions: true   # 关闭 1989 后续 4 年的所有"还能挽回"动作
+  - creates_future_echo: true         # 至少触发 2 个影响 2008 的因果种子
+  - preserves_macro_endpoints: true   # 1989 端点不动，2008 端点不动
+  - forbidden_reveals_strict: true    # 不泄露 1991 解体、1992/1993 结婚、2008 柏林重逢
+  - airport_setting_correct: true     # SVO-2 国际线，无铁路元素
+  - character_anchor_natasha: 24 岁，浅灰头巾，深绿色高领毛衣
+  - character_anchor_ilya: 26 岁，黑色高领毛衣，圆框眼镜
+  - references_1985_specifically: true # 必须显式引用 1985_meeting 至少一项具体行为
+
+# -----------------------------------------------------------------------------
+# 章节与母题挂钩
+# -----------------------------------------------------------------------------
+chapter: chapter2_moscow_departure
+chapter_label: 第二章 · 1989 SVO-2 离别
+canonical_manuscript: canonical_aeroflot_tag_su355.png
+schemaVersion: "1.0.0"
+motif: aeroflot_luggage_tag
+sound_motif: aeroflot_chime
+
+# -----------------------------------------------------------------------------
+# 美术参考（占位）
+# -----------------------------------------------------------------------------
+art:
+  - /case_02/placeholder/svo2_departure_lounge.png
+  - /case_02/placeholder/taganka_wardrobe_530.png
+  - /case_02/placeholder/ilya_red_notebook_1989.png
+  - /case_02/placeholder/aeroflot_tag_su355.png
+art_focus: payphone
+
+# -----------------------------------------------------------------------------
+# 备注
+# -----------------------------------------------------------------------------
+notes:
+  - 玩家在 1985_meeting 的所有动作都应通过 inherited_objects 与因果种子在 1989 显影
+  - 时代锁定：1989 苏联解体前 2 年；不引入 1989 之后才出现的词（如"独立国家联合体"、"苏联解体"已发生）
+  - 双视角交叉：5:30 娜塔莎在塔甘卡衣帽间 / 5:35 莉莎在 SVO-2 / 5:55 电话 / 6:15 登机广播
+  - 至少两个因果种子会影响 2008_reunion
+  - canonical Aeroflot 标签此时在伊利亚行李里，必须被引出

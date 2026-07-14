@@ -1,0 +1,545 @@
+# =============================================================================
+# 第二案 · 《莫斯科没有童话》 · 场景 1 / 3
+# 1985_meeting（莫斯科音乐学院 · 老柴院 305 琴房）
+# -----------------------------------------------------------------------------
+# 时代：1985 年秋，戈尔巴乔夫上任 6 个月
+# 锚点说明：这是 anchors.yaml 锚点 1 的纵切片
+# 母题对位（与第一案 photo_lab_2008 同结构）：
+#   第一案"两张同版毕业照"  →  第二案"两份同版手抄谱"
+#   第一案"诗集"            →  第二案"红色笔记本"
+#   第一案"邮件"            →  第二案"未寄出的磁带"
+# 跨年代回响：必须影响 1989_离别（锚点 3）和 2008_重逢（锚点 5）两个场景
+# 写入规范：UTF-8；YAML 1.2；不修改 schemas
+# =============================================================================
+
+# === schema 必填字段（narrative_contract.schema.json）====================
+sceneId: scene_1985_meeting
+title: 莫斯科音乐学院 · 305 琴房与两份同版手抄谱
+era: "1985"
+location: 莫斯科音乐学院 · 老柴院（Bolshaya Nikitskaya 13）· 305 琴房
+timeOfDay: evening
+weather: unspecified
+narratorVoice: |
+  第三人称限制视角跟随娜塔莎；
+  句式以大提琴与立式钢琴的物理意象为主；
+  不使用 1985 之后才出现的词（如"克格勃"全名、"解体"）。
+
+# -----------------------------------------------------------------------------
+# schema 必填：required_anchors（每个 anchorId 必填 description）
+# -----------------------------------------------------------------------------
+required_anchors:
+  - anchorId: 305_room
+    description: 305 琴房确实存在，窗下摆 1978 年产 Yamaha U3 立式钢琴
+    mandatory: true
+  - anchorId: op38_a_minor
+    description: 排练曲目是肖斯塔科维奇 a 小调大提琴与钢琴奏鸣曲 Op.38（1934 首演）
+    mandatory: true
+  - anchorId: ilya_berman_pencil
+    description: 伊利亚在总谱上用铅笔圈三个小节并签"И. Б."（伊利亚·贝尔曼的姓名首字母）
+    mandatory: true
+  - anchorId: natasha_first_not_absent
+    description: '娜塔莎在第二乐章中段说"给一个不在场的人"——这是她第一次把"不在场"说出口'
+    mandatory: true
+  - anchorId: petroff_rosin_stain
+    description: Petrof 1962 大提琴的松香渍留在 Yamaha U3 中央 C 键上
+    mandatory: true
+  - anchorId: copy_offer_1985_11_07
+    description: 11 月 7 日十月革命节前夜伊利亚提出"抄一份给你"——这是锚点 3 行李物件的种子
+    mandatory: true
+  - anchorId: 1985_setting_lock
+    description: 时代 1985 锁定：苏联晚期、莫斯科音乐学院、文化部尚未注意到他们
+    mandatory: true
+  - anchorId: macro_endpoint_unmet
+    description: 锚点 1 不锁任何宏观端点；所有 5 个端点在锚点 2-5 才固定
+    mandatory: true
+  - anchorId: far_echo_preparation
+    description: 场景必须为 1989_离别 准备至少一种"可被远期回响捡到的物件/口信"
+    mandatory: true
+
+# -----------------------------------------------------------------------------
+# schema 必填：core_conflict
+# -----------------------------------------------------------------------------
+core_conflict: |
+  305 琴房里立式钢琴前只有两个人、一份总谱。
+  伊利亚用铅笔圈三个小节并签"И. Б."——他承认这是他问的；
+  娜塔莎答"给一个不在场的人"——她第一次把"不在场"说出口。
+  核心张力是：两个人用同一份总谱共处两周，
+  但总谱只能由一人带离琴房。
+  玩家决定的是：谁带总谱、另一份"抄"得怎么开始、谁先说"你留"。
+
+# -----------------------------------------------------------------------------
+# schema 必填：allowed_beats（每项必填 beatId, label, tier）
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - beatId: opening_first_measure
+    label: 开场第一小节（Y Yamaha U3 发出低音 110 Hz）
+    tier: setup
+  - beatId: petrof_schellack_stain
+    label: 娜塔莎的 Petrof 大提琴松香渍在中央 C 键
+    tier: setup
+  - beatId: ilya_pencil_circles
+    label: 伊利亚用铅笔圈三个小节并签"И. Б."
+    tier: rising
+  - beatId: natasha_first_not_absent
+    label: 娜塔莎说"给一个不在场的人"
+    tier: rising
+  - beatId: 21_40_door_knock
+    label: 21:40 琴房管理员敲门
+    tier: climax
+  - beatId: copy_offer_nov_7
+    label: 11 月 7 日前夜"抄一份给你"
+    tier: falling
+  - beatId: parting_at_door
+    label: 两人各自离开
+    tier: resolution
+
+# -----------------------------------------------------------------------------
+# schema 必填：forbidden_reveals（每项必填 revealKey, reason）
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - revealKey: ilya_1989_emigration
+    reason: 1989 移民属锚点 3 宏观端点，锚点 1 不能泄露
+  - revealKey: natasha_1988_warning
+    reason: 1988 处分属锚点 2 后果，锚点 1 不能泄露
+  - revealKey: sasha_natasha_marriage
+    reason: 萨沙与娜塔莎 1993 结婚属锚点 4，锚点 1 不能泄露
+  - revealKey: lisa_vienna
+    reason: 莉莎 1986 西柏林出场，锚点 1 不能泄露
+  - revealKey: anya_1994_birth
+    reason: 阿尼娅 1994 出生，锚点 1 不能泄露
+  - revealKey: reichenberg_op38_2008
+    reason: 2008 柏林爱乐重逢属锚点 5，锚点 1 不能泄露
+  - revealKey: here_is_no_fairy_tale
+    reason: 1987 创作《这里没有童话》属锚点 2，锚点 1 不能泄露
+  - revealKey: post_soviet_dissolution
+    reason: 苏联解体属锚点 4 背景，锚点 1 不能泄露
+
+# -----------------------------------------------------------------------------
+# schema 必填：max_turns + total_action_budget
+# -----------------------------------------------------------------------------
+max_turns: 12
+total_action_budget: 30
+
+# -----------------------------------------------------------------------------
+# schema 必填：legal_endings（每项必填 endingId, label, conditions；可选 tone）
+# -----------------------------------------------------------------------------
+legal_endings:
+  - endingId: ending_pencil_admit
+    label: 铅笔圈注承认
+    description: 伊利亚把"И. Б."圈注页撕下夹在红色笔记本里——他承认这是他问的
+    conditions:
+      - player_action.reveal.completed == true
+      - causal_seed.ilya_pencil_page_in_notebook.fired == true
+    tone: bittersweet
+  - endingId: ending_pencil_silent
+    label: 铅笔圈注沉默
+    description: 伊利亚不撕页，让总谱留在 305 琴房——他压制"我承认"
+    conditions:
+      - player_action.conceal.completed == true
+      - causal_seed.manuscript_stays_in_305.fired == true
+    tone: sober
+  - endingId: ending_copy_offer
+    label: "抄一份给你"
+    description: 伊利亚在 11 月 7 日前夜把总谱交给娜塔莎"你留"
+    conditions:
+      - player_action.give.completed == true
+      - causal_seed.natasha_keeps_manuscript.fired == true
+    tone: ambiguous
+  - endingId: ending_parting_at_door
+    label: 两人各自离开
+    description: 21:40 琴房管理员敲门后两人各自离开
+    conditions:
+      - beat.parting_at_door.fired == true
+    tone: open
+  - endingId: ending_first_not_absent
+    label: 第一次把"不在场"说出口
+    description: 娜塔莎在第二乐章中段说"给一个不在场的人"——场景在此收束
+    conditions:
+      - beat.natasha_first_not_absent.fired == true
+    tone: open
+
+# -----------------------------------------------------------------------------
+# schema 可选：causal_seeds（白名单）
+# -----------------------------------------------------------------------------
+causal_seeds:
+  - seed_ilya_pencil_page_in_notebook
+  - seed_manuscript_stays_in_305
+  - seed_natasha_keeps_manuscript
+  - seed_petroff_schellack_stain_in_2008_cafe
+  - seed_red_notebook_first_entry_1985
+  - seed_third_bar_oral_message_1989
+
+# -----------------------------------------------------------------------------
+# 第一案同结构扩展字段（策划侧，schema 之外）
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate
+  - reveal
+  - conceal
+  - question
+  - confront
+  - comfort
+  - give
+  - destroy
+  - promise
+  - wait
+  - leave
+  - silence
+
+turn_budget:
+  total: 8
+  investigate: 3
+  reveal: 2
+  conceal: 1
+  question: 2
+  confront: 1
+  comfort: 1
+  give: 2
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 1
+
+# -----------------------------------------------------------------------------
+# 在场人物（cast 字段已与 schema 对齐；扩展人物名以满足 schema 强约束）
+# -----------------------------------------------------------------------------
+cast:
+  - characterId: natasha_roschina
+    role: protagonist
+    initialDisposition: 0
+  - characterId: ilya_berman
+    role: protagonist
+    initialDisposition: 0
+  - characterId: room_administrator_305
+    role: witness
+    initialDisposition: 0
+    note: 21:40 敲门的 305 琴房管理员；仅出现一次敲门动作
+
+# -----------------------------------------------------------------------------
+# 可调查对象（策划扩展）
+# -----------------------------------------------------------------------------
+investigatable_objects:
+  - id: piano_yamaha_u3
+    name: Yamaha U3 立式钢琴
+    description: 1978 年产，窗下摆放；中央 C 键有 Petrof 大提琴松香渍
+    initial_location: 305 琴房窗下
+    visibility: 主角视角可见
+    keywords: [立式钢琴, Yamaha, 中央C, 松香]
+    requires: []
+    leads_to: [petrof_schellack_stain, first_measure]
+
+  - id: manuscript_op38
+    name: 肖斯塔科维奇 Op.38 总谱
+    description: 音乐学院图书馆借出，1985-09 标注；伊利亚在第二乐章中段用铅笔圈三个小节并签"И. Б."
+    initial_location: 钢琴谱架
+    visibility: 主角视角可见
+    keywords: [总谱, Op38, 圈注, И. Б., 铅笔]
+    requires: []
+    leads_to: [ilya_pencil_circles, copy_offer]
+
+  - id: cello_petroff_1962
+    name: Petrof 1962 大提琴
+    description: 娜塔莎继承自祖母的捷克产大提琴；松香渍在中央 C 键
+    initial_location: 娜塔莎椅子旁
+    visibility: 主角视角可见
+    keywords: [大提琴, Petrof, 1962, 松香, 祖母]
+    requires: []
+    leads_to: [petroff_schellack_stain, far_echo_2008]
+
+  - id: red_notebook_ilya
+    name: 伊利亚的红色笔记本
+    description: 1985 年第一本；封面磨损；伊利亚用来写大纲
+    initial_location: 伊利亚夹克内袋
+    visibility: 主角视角可见
+    keywords: [笔记本, 红色, 大纲, 1985]
+    requires: []
+    leads_to: [red_notebook_first_entry, far_echo_2008]
+
+  - id: bow_horsehair
+    name: 大提琴弓马尾
+    description: 1985 年换过一次马尾；松香粉沾在弓根
+    initial_location: 大提琴琴盒
+    visibility: 主角视角可见
+    keywords: [弓, 马尾, 松香, 琴盒]
+    requires: [cello_petroff_1962]
+    leads_to: [petroff_schellack_stain]
+
+  - id: pencil_ilya
+    name: 伊利亚的铅笔
+    description: 列宁格勒学生牌铅笔；1985-10-15 在总谱上圈注
+    initial_location: 伊利亚谱架旁
+    visibility: 主角视角可见
+    keywords: [铅笔, 列宁格勒, 圈注]
+    requires: [manuscript_op38]
+    leads_to: [ilya_pencil_circles]
+
+  - id: music_library_card
+    name: 音乐学院图书馆借书卡
+    description: 1985-09-15 借出；归还日期 1985-12-15
+    initial_location: 谱架侧袋
+    visibility: 主角视角可见
+    keywords: [借书卡, 图书馆, 归还]
+    requires: [manuscript_op38]
+    leads_to: [copy_offer, macro_endpoint_unmet]
+
+  - id: piano_bench_worn
+    name: 钢琴琴凳
+    description: 305 琴房共用琴凳；表面磨光
+    initial_location: 钢琴前
+    visibility: 主角视角可见
+    keywords: [琴凳, 共用, 磨光]
+    requires: []
+    leads_to: [first_measure, parting_at_door]
+
+  - id: 305_door_lock
+    name: 305 琴房门锁
+    description: 老式弹簧锁；21:40 管理员敲门时锁舌被卡
+    initial_location: 305 琴房入口
+    visibility: 主角视角可见
+    keywords: [门锁, 弹簧, 21_40]
+    requires: []
+    leads_to: [21_40_door_knock, parting_at_door]
+
+  - id: room_thermos
+    name: 琴房暖瓶
+    description: 娜塔莎带的暖瓶；内有红茶
+    initial_location: 窗台
+    visibility: 主角视角可见
+    keywords: [暖瓶, 红茶, 窗台]
+    requires: []
+    leads_to: [comfort, parting_at_door]
+
+# -----------------------------------------------------------------------------
+# 在场人物详细（策划扩展，与 cast 字段对应）
+# -----------------------------------------------------------------------------
+characters_present:
+  - id: natasha_roschina
+    name: 娜塔莎·罗希娜
+    initial_state: 紧张
+    visibility: 主角视角可见
+    state_notes:
+      - 21 岁，莫斯科音乐学院大提琴四年级
+      - 头戴浅灰头巾 + 深绿色高领毛衣
+      - 蜂蜜色眼睛，编辫搭在左肩
+      - Petrof 1962 大提琴松香渍在左手食指指节
+
+  - id: ilya_berman
+    name: 伊利亚·贝尔曼
+    initial_state: 严肃
+    visibility: 主角视角可见
+    state_notes:
+      - 23 岁，莫斯科音乐学院钢琴研究生一年级
+      - 黑色高领毛衣 + 圆框眼镜
+      - 深褐色眼睛，深棕色卷发
+      - 红色笔记本夹在夹克内袋
+
+  - id: room_administrator_305
+    name: 305 琴房管理员（背景）
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 21:40 敲门的琴房管理员
+      - 手里夹着门禁检查表
+      - 不与两人发生直接对话
+
+# -----------------------------------------------------------------------------
+# 因果种子（策划扩展，与 schema.causal_seeds 对齐）
+# -----------------------------------------------------------------------------
+causal_seeds_extended:
+  - id: seed_ilya_pencil_page_in_notebook
+    description: 伊利亚把"И. Б."圈注页撕下夹在红色笔记本里
+    trigger: 玩家对 manuscript_op38 执行 reveal + give
+    effects:
+      - 锚点 3 1989 行李：红色笔记本第 1 页有"И. Б."圈注页
+      - 锚点 5 2008 桌边：伊利亚翻到第 1 页，娜塔莎看到"И. Б."
+    target_scenes: [scene_1989_farewell, scene_2008_reunion]
+
+  - id: seed_manuscript_stays_in_305
+    description: 总谱留在 305 琴房，伊利亚不撕页
+    trigger: 玩家对 manuscript_op38 执行 conceal + wait
+    effects:
+      - 锚点 3 1989 行李：伊利亚不带总谱
+      - 锚点 5 2008 桌边：伊利亚不翻第 1 页；让 Op.38 演奏本身成为"他承认"
+    target_scenes: [scene_1989_farewell, scene_2008_reunion]
+
+  - id: seed_natasha_keeps_manuscript
+    description: 伊利亚在 11 月 7 日前夜把总谱交给娜塔莎"你留"
+    trigger: 玩家对 ilya_berman 执行 give + promise
+    effects:
+      - 锚点 3 1989 行李：伊利亚不带总谱
+      - 锚点 5 2008 桌边：娜塔莎从斜挎包取出手抄谱，伊利亚看到"阿尼娅的蜡笔红星"
+    target_scenes: [scene_1989_farewell, scene_2008_reunion]
+
+  - id: seed_petroff_schellack_stain_in_2008_cafe
+    description: Petrof 1962 大提琴松香渍成为"她在场"的物质证据
+    trigger: 玩家对 cello_petroff_1962 执行 investigate
+    effects:
+      - 锚点 5 2008 桌边：伊利亚会主动提到"305 琴房的中央 C 键还在"
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_red_notebook_first_entry_1985
+    description: 红色笔记本 1985 第 1 页开始记录"305 琴房合排"
+    trigger: 玩家对 red_notebook_ilya 执行 give（娜塔莎允许伊利亚在 305 记笔记）
+    effects:
+      - 锚点 3 1989 行李：红色笔记本第 1 页是 1985 合排笔记
+      - 锚点 5 2008 桌边：娜塔莎看到第 1 页是她 21 岁的笔迹
+    target_scenes: [scene_1989_farewell, scene_2008_reunion]
+
+  - id: seed_third_bar_oral_message_1989
+    description: '第三小节是给你的 口信（替代第一案 我到了 短信）'
+    trigger: 玩家对 pencil_ilya 或 manuscript_op38 执行 investigate
+    effects:
+      - 锚点 3 1989 5:55 莉莎电话里转达"第三小节是给你的"
+    target_scenes: [scene_1989_farewell]
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+mandatory_echoes:
+  - id: pencil_circles_visible_in_1989
+    description: 伊利亚在 1985 圈注的"И. Б."页在 1989 行李里出现
+    trigger: 玩家对 manuscript_op38 执行 reveal 或 give
+    target_scenes: [scene_1989_farewell, scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_case_02_anchors: [1985_meeting, 1989_departure, 2008_reunion]
+
+  - id: red_notebook_1985_first_page
+    description: 红色笔记本第 1 页有 1985 305 琴房合排笔记
+    trigger: 玩家对 red_notebook_ilya 执行 give
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_case_02_anchors: [1985_meeting, 2008_reunion]
+
+  - id: petroff_schellack_stain_visible_in_2008
+    description: 2008 桌边伊利亚提到"305 琴房的中央 C 键还在"
+    trigger: 玩家对 cello_petroff_1962 执行 investigate
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_case_02_anchors: [1985_meeting, 2008_reunion]
+
+# -----------------------------------------------------------------------------
+# 合法结局（策划扩展；与 schema.legal_endings 对齐）
+# -----------------------------------------------------------------------------
+legal_endings_extended:
+  - id: ending_pencil_admit
+    label: 铅笔圈注承认
+    description: 伊利亚把"И. Б."圈注页撕下夹在红色笔记本里——他承认这是他问的
+    causal_seed_required:
+      - seed_ilya_pencil_page_in_notebook
+    next_scene_hooks: [scene_1987_creation, scene_1989_farewell]
+
+  - id: ending_pencil_silent
+    label: 铅笔圈注沉默
+    description: 伊利亚不撕页，让总谱留在 305 琴房——他压制"我承认"
+    causal_seed_required:
+      - seed_manuscript_stays_in_305
+    next_scene_hooks: [scene_1987_creation, scene_1989_farewell]
+
+  - id: ending_copy_offer
+    label: "抄一份给你"
+    description: 伊利亚在 11 月 7 日前夜把总谱交给娜塔莎"你留"
+    causal_seed_required:
+      - seed_natasha_keeps_manuscript
+    next_scene_hooks: [scene_1987_creation, scene_1989_farewell]
+
+  - id: ending_parting_at_door
+    label: 两人各自离开
+    description: 21:40 琴房管理员敲门后两人各自离开
+    causal_seed_required:
+      - beat.parting_at_door
+    next_scene_hooks: [scene_1987_creation]
+
+  - id: ending_first_not_absent
+    label: 第一次把"不在场"说出口
+    description: 娜塔莎在第二乐章中段说"给一个不在场的人"——场景在此收束
+    causal_seed_required:
+      - beat.natasha_first_not_absent
+    next_scene_hooks: [scene_1987_creation]
+
+# -----------------------------------------------------------------------------
+# 下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - scene_1987_creation（1987 春，塔甘卡剧院后台，《这里没有童话》首演前排练）
+  - 至少有 1 个跨年代种子被触发：seed_ilya_pencil_page_in_notebook / seed_manuscript_stays_in_305 / seed_natasha_keeps_manuscript 三选一
+
+# -----------------------------------------------------------------------------
+# 远期回响路由
+# -----------------------------------------------------------------------------
+far_echo_routes:
+  - scene_id: scene_1989_farewell
+    max_echoes: 2
+    seed_ids:
+      - seed_ilya_pencil_page_in_notebook
+      - seed_manuscript_stays_in_305
+      - seed_natasha_keeps_manuscript
+      - seed_red_notebook_first_entry_1985
+      - seed_third_bar_oral_message_1989
+    required_seeds_for_full_echo:
+      - seed_ilya_pencil_page_in_notebook
+
+  - scene_id: scene_2008_reunion
+    max_echoes: 2
+    seed_ids:
+      - seed_ilya_pencil_page_in_notebook
+      - seed_manuscript_stays_in_305
+      - seed_natasha_keeps_manuscript
+      - seed_petroff_schellack_stain_in_2008_cafe
+      - seed_red_notebook_first_entry_1985
+    required_seeds_for_full_echo:
+      - seed_petroff_schellack_stain_in_2008_cafe
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 1
+  manuscript_handling_budget: 2   # 玩家对总谱的可操作次数
+
+# -----------------------------------------------------------------------------
+# 验收（按经验教训"四项问题"自检）
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: true        # 决定了两份同版手抄谱的归属与在场位置
+  - changes_character_knowledge: true # 伊利亚从此知道/不知道娜塔莎带走了哪份
+  - changes_available_actions: true   # 触发或关闭后续场景的 give / leave / promise 行为
+  - creates_future_echo: true         # 至少触发 1 个影响 1989 或 2008 的因果种子
+  - preserves_macro_endpoints: true   # 1985 端点不动，1989 / 2008 端点不动
+  - forbidden_reveals_strict: true    # 没有泄露 1989 移民、1988 处分、十三年后重逢
+  - canonical_manuscript_consistent: true  # 两份手抄谱来自同一 canonical asset
+  - era_locked: true                  # 1985 时代锁定，不引入 1985 之后才出现的词
+  - character_anchor_natasha: 21 岁，浅金色编辫，蜂蜜色眼睛，Petrof 1962 大提琴
+  - character_anchor_ilya: 23 岁，深棕色卷发，黑色高领毛衣，圆框眼镜
+
+# -----------------------------------------------------------------------------
+# 章节与母题挂钩（替代第一案 G1N-DEMO-2008-01；本案的"G1N"不替换，仅以新 ID 标识）
+# -----------------------------------------------------------------------------
+chapter: chapter1_moscow_meeting
+chapter_label: 第一章 · 莫斯科音乐学院 305 琴房
+canonical_manuscript: canonical_manuscript_op38_1985.png
+schemaVersion: "1.0.0"
+motif: manuscript_op38_1985
+sound_motif: piano_sustain_pedal
+
+# -----------------------------------------------------------------------------
+# 美术参考（仅占位；本案不要求 v0 阶段有真实美术）
+# -----------------------------------------------------------------------------
+art:
+  - /case_02/placeholder/manuscript_op38_1985.png
+  - /case_02/placeholder/305_room_yamaha_u3.png
+  - /case_02/placeholder/natasha_petroff_1962.png
+  - /case_02/placeholder/ilya_red_notebook.png
+art_focus: piano_bench
+
+# -----------------------------------------------------------------------------
+# 备注
+# -----------------------------------------------------------------------------
+notes:
+  - 玩家在 1985_meeting 的所有动作都应通过 seed_ilya_pencil_page_in_notebook / seed_manuscript_stays_in_305 / seed_natasha_keeps_manuscript 三个种子影响 1989
+  - 至少一个种子影响 2008（最强种子为 seed_ilya_pencil_page_in_notebook + seed_natasha_keeps_manuscript 配对）
+  - 时代锁定：1985 苏联晚期；不引入 1985 之后才出现的词（如"克格勃"全名、"解体"）
+  - canonical 手抄谱此时在两人中的一人手中，必须被引出
+  - 12 行为词汇表与第一案完全相同——证明 V5 阶段"内容可规模化"

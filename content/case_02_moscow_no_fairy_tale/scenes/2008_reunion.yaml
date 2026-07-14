@@ -1,0 +1,814 @@
+# =============================================================================
+# 第二案 · 《莫斯科没有童话》 · 场景 3 / 3
+# 2008_reunion（柏林 · 十字山区 · 老式咖啡馆 + U1 线 Kreuzberg 站街口）
+# -----------------------------------------------------------------------------
+# 时代：2008 年 11 月 15 日周六傍晚，柏林
+# 锚点说明：这是 anchors.yaml 锚点 5（2008 重逢）的纵切片
+# 母题对位（与第一案 reunion_2024 同结构）：
+#   第一案"两张同版毕业照"  →  第二案"两份肖斯塔科维奇独奏会节目单"
+#   第一案"诗集"            →  第二案"红色笔记本"
+#   第一案"邮件"            →  第二案"1995 未寄出的明信片"
+#   第一案"重逢视线"        →  第二案"Op.38 演奏的多弹 4 小节"
+#   第一案"伊斯坦布尔路口"  →  第二案"U1 线 Kreuzberg 站街口"
+# 跨年代回响：必须显式引用 1985_meeting 与 1989_farewell 的具体行为
+#           NPC 必须主动提起玩家在 1985 / 1989 的具体动作
+#           远期回响在这里收束
+# 写入规范：UTF-8；YAML 1.2；不修改 schemas
+# =============================================================================
+
+# === schema 必填字段（narrative_contract.schema.json）====================
+sceneId: scene_2008_reunion
+title: 柏林 · 十字山区老式咖啡馆与 U1 线街口
+era: "2008"
+location: 德国·柏林·十字山区（Kreuzberg）· 老式咖啡馆 + U1 线地铁站街口
+timeOfDay: evening
+weather: rain
+narratorVoice: |
+  第三人称限制视角跟随娜塔莎与伊利亚的双重视角交替；
+  句式以瓷器与立式钢琴延音踏板余音的物理意象为主；
+  2008 时点已可以使用"克格勃"作为历史词，但需注明语境。
+
+# -----------------------------------------------------------------------------
+# schema 必填：required_anchors
+# -----------------------------------------------------------------------------
+required_anchors:
+  - anchorId: kreuzberg_cafe_setting
+    description: 场景设定在十字山区老式咖啡馆，雨后，桌上有两份节目单与一张明信片
+    mandatory: true
+  - anchorId: middle_aged_versions
+    description: 娜塔莎 44 岁 / 伊利亚 46 岁的中年版本（蜂蜜色眼睛 + 深绿高领 / 卷发 + 鬓角灰白 + 圆框眼镜）
+    mandatory: true
+  - anchorId: ilya_brings_red_notebook
+    description: 伊利亚推门而入时臂弯抱红色笔记本
+    mandatory: true
+  - anchorId: natasha_phone_keeps_1989_text
+    description: '娜塔莎手机里仍残留 1989 那条"5:55 电话"记忆（替代第一案"我到了短信"）'
+    mandatory: true
+  - anchorId: anya_crayon_star_on_manuscript
+    description: 娜塔莎斜挎包里的 Op.38 手抄谱封底有阿尼娅 1995 蜡笔歪斜红星
+    mandatory: true
+  - anchorId: postcard_wien_1995_on_table
+    description: 1995 未寄出的明信片在咖啡馆桌面被打开
+    mandatory: true
+  - anchorId: scene_must_reference_1985_1989
+    description: 场景必须显式引用 1985_meeting 与 1989_farewell 至少各一项具体行为
+    mandatory: true
+  - anchorId: npc_actively_recalls
+    description: NPC 必须主动提起玩家 1985 / 1989 的具体行为（不是玩家主动暴露）
+    mandatory: true
+  - anchorId: scene_ends_at_crossing
+    description: 场景结束于 U1 线 Kreuzberg 站街口，红灯变绿，两人走向不同方向
+    mandatory: true
+  - anchorId: convergence_complete
+    description: 远期回响在这里收束（far_echo_routes 列表可以为空，但 convergence_summary 必填）
+    mandatory: true
+  - anchorId: spouses_remote_present
+    description: 萨沙与莉莎在远程处存在（电话 / 短信 / 未接来电），不直接出场
+    mandatory: true
+
+# -----------------------------------------------------------------------------
+# schema 必填：core_conflict
+# -----------------------------------------------------------------------------
+core_conflict: |
+  19 年后的柏林十字山区，桌上有两份肖斯塔科维奇独奏会节目单、
+  伊利亚的红色笔记本、娜塔莎斜挎包里的手抄谱、1995 未寄出的明信片。
+  核心张力是：
+  1) 第一眼落在哪里（中央 C 键松香渍 / 红色笔记本第 7 页 / 时钟与 U-Bahn 方向牌）；
+  2) 是否把两张节目单对齐（替代第一案"两张同版毕业照对齐"）；
+  3) 是否在 21:05 街口把"萨沙在莫斯科"说出来（替代第一案"卡姆兰正在等我"）；
+  4) 是否承认 1989 那一夜 / 1995 维也纳对视 4 秒的具体行为。
+
+# -----------------------------------------------------------------------------
+# schema 必填：allowed_beats
+# -----------------------------------------------------------------------------
+allowed_beats:
+  - beatId: opening_18_30_philharmonie_end
+    label: 开场 18:30 柏林爱乐独奏会结束
+    tier: setup
+  - beatId: natasha_buys_program_op40
+    label: 18:50 娜塔莎买第 2 曲目 Op.40 节目单
+    tier: setup
+  - beatId: kreuzberg_cafe_arrival
+    label: 18:50 娜塔莎到十字山区老式咖啡馆
+    tier: setup
+  - beatId: ilya_enters_with_notebook
+    label: 19:15 伊利亚抱红色笔记本推门
+    tier: rising
+  - beatId: first_gaze_choice
+    label: 19:15 娜塔莎第一眼选择（中央 C 键 / 第 7 页 / 时钟与 U-Bahn 方向牌）
+    tier: rising
+  - beatId: two_programs_align
+    label: 19:30 两份节目单对齐
+    tier: climax
+  - beatId: red_notebook_page_7_visible
+    label: 19:45 红色笔记本第 7 页胶带痕迹可见
+    tier: climax
+  - beatId: postcard_wien_1995_on_table
+    label: 20:00 1995 未寄出的明信片被打开
+    tier: falling
+  - beatId: 21_00_walk_to_u1
+    label: 21:00 两人走到 U1 线 Kreuzberg 站街口
+    tier: falling
+  - beatId: 21_05_red_to_green
+    label: 21:05 红灯变绿
+    tier: resolution
+  - beatId: simultaneous_turn_and_smile
+    label: 两人在同一刻回头笑一下
+    tier: resolution
+  - beatId: ilya_calls_lisa_cloud
+    label: 21:06 伊利亚打电话给莉莎："今晚云不遮德意志歌剧院的屋顶"
+    tier: resolution
+  - beatId: natasha_texts_sasha_i_arrived
+    label: 21:08 娜塔莎发短信给萨沙："我到了。今晚不回莫斯科。后天飞"
+    tier: resolution
+
+# -----------------------------------------------------------------------------
+# schema 必填：forbidden_reveals
+# -----------------------------------------------------------------------------
+forbidden_reveals:
+  - revealKey: 2009_post_reunion
+    reason: 2009 之后两家人的任何具体生活细节
+  - revealKey: anya_exam_2009
+    reason: 阿尼娅 2009 之后入学考试细节
+  - revealKey: matthias_choir_2009
+    reason: 马蒂亚斯 2009 之后合唱团细节
+  - revealKey: next_case
+    reason: 任何关于"下一案"的暗示
+  - revealKey: case_01_leila_arash
+    reason: 不引用第一案任何内容
+  - revealKey: reichenberg_ilya_marriage_after_2008
+    reason: 2008 之后伊利亚与莉莎的具体事件
+
+# -----------------------------------------------------------------------------
+# schema 必填：max_turns + total_action_budget
+# -----------------------------------------------------------------------------
+max_turns: 16
+total_action_budget: 36
+
+# -----------------------------------------------------------------------------
+# schema 必填：legal_endings
+# -----------------------------------------------------------------------------
+legal_endings:
+  - endingId: ending_two_programs_align
+    label: 两份节目单对齐
+    description: 19:30 两份节目单（Op.38 / Op.40）在桌面对齐——两个物件都是 2008 当天沉淀的产物
+    conditions:
+      - player_action.give.completed == true
+      - causal_seed.two_programs_takeout_compare.fired == true
+    tone: bittersweet
+  - endingId: ending_first_words_admit
+    label: 第一句话承认 1985/1989
+    description: '19:15 桌边伊利亚主动承认"我让莉莎在 5:55 传话"或娜塔莎承认"我在 4 秒后接电话"'
+    conditions:
+      - player_action.reveal.completed == true
+      - causal_seed.first_words_admit_1985_1989.fired == true
+    tone: bittersweet
+  - endingId: ending_postcard_unveiled
+    label: 1995 明信片被打开
+    description: 20:00 1995 维也纳未寄出的明信片被打开——13 年后兑现
+    conditions:
+      - player_action.investigate.completed == true
+      - causal_seed.postcard_wien_1995_unveiled.fired == true
+    tone: bittersweet
+  - endingId: ending_crossroads_parting
+    label: 街口分开
+    description: 21:05 红灯变绿，两人走向不同方向，又在同一刻回头笑一下
+    conditions:
+      - beat.21_05_red_to_green.fired == true
+      - beat.simultaneous_turn_and_smile.fired == true
+    tone: open
+  - endingId: ending_silent_keeping
+    label: 沉默带过
+    description: 娜塔莎与伊利亚没有把 1989 那一夜 / 1995 维也纳 4 秒对视的真相说出口
+    conditions:
+      - player_action.silence.completed == true
+    tone: sober
+  - endingId: ending_reality_lives_convergence
+    label: 现实生活共同收束
+    description: 21:06 伊利亚打电话给莉莎 / 21:08 娜塔莎发短信给萨沙
+    conditions:
+      - beat.ilya_calls_lisa_cloud.fired == true
+      - beat.natasha_texts_sasha_i_arrived.fired == true
+    tone: open
+
+# -----------------------------------------------------------------------------
+# schema 可选：causal_seeds（白名单）
+# -----------------------------------------------------------------------------
+causal_seeds:
+  - seed_two_programs_takeout_compare
+  - seed_first_words_admit_1985_1989
+  - seed_postcard_wien_1995_unveiled
+  - seed_petroff_schellack_stain_in_2008_cafe
+  - seed_aeroflot_tag_visible_in_page_7
+  - seed_walkman_tape_remembered
+  - seed_third_bar_oral_message_remembered
+  - seed_4_second_symmetry
+
+# -----------------------------------------------------------------------------
+# 第一案同结构扩展字段（策划侧，schema 之外）
+# -----------------------------------------------------------------------------
+allowed_actions:
+  - investigate
+  - reveal
+  - conceal
+  - question
+  - confront
+  - comfort
+  - give
+  - destroy
+  - promise
+  - wait
+  - leave
+  - silence
+
+turn_budget:
+  total: 8
+  investigate: 3
+  reveal: 2
+  conceal: 1
+  question: 2
+  confront: 1
+  comfort: 1
+  give: 2
+  destroy: 1
+  promise: 1
+  wait: 1
+  leave: 1
+  silence: 1
+
+# -----------------------------------------------------------------------------
+# 在场人物（cast 字段已与 schema 对齐）
+# -----------------------------------------------------------------------------
+cast:
+  - characterId: natasha_roschina
+    role: protagonist
+    initialDisposition: 0
+  - characterId: ilya_berman
+    role: protagonist
+    initialDisposition: 0
+  - characterId: kreuzberg_cafe_owner
+    role: witness
+    initialDisposition: 0
+    note: 咖啡馆老板；1990 年开店；维也纳人
+  - characterId: kreuzberg_barista
+    role: bystander
+    initialDisposition: 0
+    note: 咖啡馆吧台擦杯子
+  - characterId: sasha_kuzmin_remote
+    role: off_stage
+    initialDisposition: 0
+    note: 在莫斯科陪 14 岁阿尼娅；21:08 收到娜塔莎短信
+  - characterId: lisa_hoffmann_remote
+    role: off_stage
+    initialDisposition: 0
+    note: 在维也纳陪 13 岁马蒂亚斯；21:06 接到伊利亚电话
+
+# -----------------------------------------------------------------------------
+# 玩家从 1985_meeting 与 1989_farewell 继承的"携带物"
+# -----------------------------------------------------------------------------
+inherited_objects:
+  - id: manuscript_page_with_IB_2024
+    description: 红色笔记本第 1 页有"И. Б."圈注页（来自 1985）
+    enabled_if_seed: seed_ilya_pencil_page_in_notebook
+    initial_location: 伊利亚臂弯
+    visibility: 主角视角可见
+
+  - id: manuscript_op38_1985_in_bag
+    description: 娜塔莎把 1985 总谱副本带到了 2008
+    enabled_if_seed: seed_natasha_keeps_manuscript
+    initial_location: 娜塔莎斜挎包
+    visibility: 主角视角可见
+
+  - id: aeroflot_tag_visible_in_page_7
+    description: 1989 Aeroflot 托运标签在红色笔记本第 7 页胶带痕迹里
+    enabled_if_seed: seed_aeroflot_tag_in_page_7
+    initial_location: 红色笔记本第 7 页
+    visibility: 主角视角可见
+
+  - id: walkman_tape_remembered_2008
+    description: 1989 walkman + 磁带 B 面 23:14 在伊利亚行李里；2008 仍可被提到
+    enabled_if_seed: seed_walkman_tape_in_1989_luggage
+    initial_location: 伊利亚维也纳家 / 记忆
+    visibility: 主角视角可见
+
+  - id: third_bar_oral_message_remembered_2008
+    description: 5:55 莉莎电话里的"第三小节是给你的"在 2008 仍可被提到
+    enabled_if_seed: seed_lisa_relays_third_bar
+    initial_location: 娜塔莎记忆
+    visibility: 主角视角不可见（只能通过 reveal 出来）
+
+  - id: postcard_wien_1995_in_wallet
+    description: 1995 维也纳未寄出的明信片在娜塔莎钱包里
+    enabled_if_seed: seed_postcard_wien_1995_unveiled
+    initial_location: 娜塔莎斜挎包内袋
+    visibility: 主角视角可见
+
+  - id: anya_crayon_star_on_manuscript_2008
+    description: 阿尼娅 1995 蜡笔歪斜红星在娜塔莎手抄谱封底
+    enabled_if_seed: seed_natasha_keeps_manuscript
+    initial_location: 娜塔莎斜挎包内袋
+    visibility: 主角视角可见
+
+  - id: 4_second_symmetry_2008
+    description: 1995 维也纳对视 4 秒与 1989 4 秒接电话的对称
+    enabled_if_seed: seed_natasha_4_second_silence
+    initial_location: 双方记忆
+    visibility: 主角视角可见
+
+# -----------------------------------------------------------------------------
+# 可调查对象
+# -----------------------------------------------------------------------------
+investigatable_objects:
+  - id: program_op38_2008
+    name: 2008 肖斯塔科维奇独奏会节目单（Op.38）
+    description: 伊利亚演出 Op.38 后留下的节目单
+    initial_location: 伊利亚夹克内袋
+    visibility: 主角视角可见
+    keywords: [节目单, Op.38, 肖斯塔科维奇, 2008]
+    requires: []
+    leads_to: [seed_two_programs_takeout_compare, ending_two_programs_align]
+
+  - id: program_op40_2008
+    name: 2008 肖斯塔科维奇独奏会节目单（Op.40）
+    description: 娜塔莎 18:50 买的第 2 曲目节目单（折角）
+    initial_location: 娜塔莎斜挎包
+    visibility: 主角视角可见
+    keywords: [节目单, Op.40, 折角, 2008]
+    requires: []
+    leads_to: [seed_two_programs_takeout_compare, ending_two_programs_align]
+
+  - id: red_notebook_ilya_2008
+    name: 伊利亚的红色笔记本（2008）
+    description: 1985 起；现在 2008 时已有约 30 页
+    initial_location: 伊利亚臂弯
+    visibility: 主角视角可见
+    keywords: [笔记本, 红色, 1985, 2008, 鬓角]
+    requires: []
+    leads_to: [seed_petroff_schellack_stain_in_2008_cafe, npc_mention_1985_notebook]
+
+  - id: notebook_page_7_tape
+    name: 红色笔记本第 7 页胶带痕迹
+    description: 1992 第 7 页被撕下又粘回去的胶带；1989 Aeroflot 标签夹在里面
+    initial_location: 红色笔记本第 7 页
+    visibility: 主角视角可见
+    keywords: [第7页, 胶带, Aeroflot, 标签]
+    requires: [red_notebook_ilya_2008]
+    leads_to: [seed_aeroflot_tag_visible_in_page_7, npc_mention_page_7]
+
+  - id: notebook_page_1_IB
+    name: 红色笔记本第 1 页"И. Б."圈注页
+    description: 1985 总谱上"И. Б."圈注页
+    initial_location: 红色笔记本第 1 页
+    visibility: 主角视角可见
+    keywords: [第1页, И. Б., 圈注, 1985]
+    requires: [red_notebook_ilya_2008, manuscript_page_with_IB_2024]
+    leads_to: [npc_mention_IB_circles, ending_two_programs_align]
+
+  - id: manuscript_op38_in_bag
+    name: 娜塔莎斜挎包里的 Op.38 手抄谱
+    description: 1985 总谱副本；阿尼娅 1995 蜡笔歪斜红星在封底
+    initial_location: 娜塔莎斜挎包内袋
+    visibility: 主角视角可见
+    keywords: [手抄谱, Op.38, 阿尼娅, 红星, 封底]
+    requires: []
+    leads_to: [ending_postcard_unveiled, npc_mention_crayon_star]
+
+  - id: postcard_wien_1995
+    name: 1995 维也纳未寄出的明信片
+    description: 1995-11-17 娜塔莎在维也纳写但未寄出的明信片
+    initial_location: 娜塔莎斜挎包内袋
+    visibility: 主角视角可见
+    keywords: [明信片, 维也纳, 1995, 未寄]
+    requires: []
+    leads_to: [seed_postcard_wien_1995_unveiled, npc_mention_postcard_1995]
+
+  - id: natasha_phone
+    name: 娜塔莎手机
+    description: 21:08 发短信给萨沙
+    initial_location: 娜塔莎手边
+    visibility: 主角视角可见
+    keywords: [手机, 短信, 我到了, 收件箱]
+    requires: []
+    leads_to: [ending_reality_lives_convergence, npc_mention_1989_phone]
+
+  - id: ilya_phone
+    name: 伊利亚手机
+    description: 21:06 打电话给莉莎
+    initial_location: 伊利亚裤袋
+    visibility: 主角视角可见
+    keywords: [手机, 莉莎, 云, 屋顶]
+    requires: []
+    leads_to: [ending_reality_lives_convergence, npc_mention_2008_call]
+
+  - id: cafe_porcelain
+    name: 咖啡馆瓷器
+    description: 桌上有咖啡杯、糖罐、小铜勺（替代第一案"咖啡馆糖罐"）
+    initial_location: 咖啡桌
+    visibility: 主角视角可见
+    keywords: [瓷器, 糖罐, 铜勺, 桌子]
+    requires: []
+    leads_to: [ending_two_programs_align, far_echo_1985]
+
+  - id: cafe_clock
+    name: 咖啡馆老钟
+    description: 墙上挂钟；时针指向 19:30
+    initial_location: 咖啡馆墙
+    visibility: 主角视角可见
+    keywords: [钟, 时针, 19_30]
+    requires: []
+    leads_to: [gaze_clock, wait]
+
+  - id: u1_crossing
+    name: U1 线 Kreuzberg 站街口
+    description: 21:00 两人走到这里；21:05 红灯变绿
+    initial_location: 街口
+    visibility: 主角视角可见
+    keywords: [街口, U1, 红灯, 绿灯, Kreuzberg]
+    requires: []
+    leads_to: [21_05_red_to_green, simultaneous_turn_and_smile]
+
+  - id: ubahn_sign
+    name: U-Bahn 方向牌
+    description: U1 → U2 转 Friedrichstraße 的方向牌
+    initial_location: 街口
+    visibility: 主角视角可见
+    keywords: [方向牌, U1, U2, Friedrichstraße]
+    requires: [u1_crossing]
+    leads_to: [21_05_red_to_green, simultaneous_turn_and_smile]
+
+  - id: traffic_light_u1
+    name: U1 站口行人信号灯
+    description: 倒计时行人信号灯
+    initial_location: 街口
+    visibility: 主角视角可见
+    keywords: [信号灯, 倒计时, 街口]
+    requires: [u1_crossing]
+    leads_to: [21_05_red_to_green, simultaneous_turn_and_smile]
+
+  - id: rain_window
+    name: 雨后玻璃
+    description: 落地窗上有水珠
+    initial_location: 咖啡馆
+    visibility: 主角视角可见
+    keywords: [玻璃, 水珠, 雨后]
+    requires: []
+    leads_to: [far_echo_1985, reveal_reality]
+
+  - id: cafe_door_wood
+    name: 老木门
+    description: 推开时发出吱嘎声
+    initial_location: 咖啡馆入口
+    visibility: 主角视角可见
+    keywords: [门, 吱嘎, 推开]
+    requires: []
+    leads_to: [ilya_enters_with_notebook, far_echo_1989]
+
+  - id: cassette_tape_walkman_remembered
+    name: 1989 磁带在 walkman 里
+    description: 1989-1988 间录制；2008 仍被莉莎听过 6 次
+    initial_location: 伊利亚维也纳家
+    visibility: 主角视角不可见（只能通过 reveal 出来）
+    keywords: [磁带, walkman, 1989, B面, 23:14]
+    requires: []
+    leads_to: [npc_mention_tape_B_23_14, ending_first_words_admit]
+
+  - id: chocolate_tin_paper_remembered
+    name: 1986 西柏林巧克力锡纸
+    description: 莉莎保留的 1986 锡纸
+    initial_location: 莉莎维也纳家床头柜
+    visibility: 主角视角不可见（只能通过 reveal 出来）
+    keywords: [锡纸, 1986, 西柏林, 床头柜]
+    requires: []
+    leads_to: [npc_mention_chocolate_tin_paper, ending_reality_lives_convergence]
+
+# -----------------------------------------------------------------------------
+# 在场人物详细
+# -----------------------------------------------------------------------------
+characters_present:
+  - id: natasha_roschina
+    name: 娜塔莎·罗希娜
+    initial_state: 试探
+    visibility: 主角视角可见
+    state_notes:
+      - 44 岁，蜂蜜色眼睛 + 灰金短发
+      - 深紫色羊毛围巾 + 深橄榄长大衣
+      - 斜挎小棕包
+
+  - id: ilya_berman
+    name: 伊利亚·贝尔曼
+    initial_state: 紧张
+    visibility: 主角视角可见
+    state_notes:
+      - 46 岁，鬓角灰白
+      - 炭灰长大衣 + 圆框眼镜（金属腿）
+      - 臂弯抱一本红色笔记本
+
+  - id: kreuzberg_cafe_owner
+    name: 咖啡馆老板（背景）
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 1990 年开店；维也纳人
+      - 在吧台擦杯子
+
+  - id: kreuzberg_barista
+    name: 咖啡馆吧台店员
+    initial_state: 中立
+    visibility: 主角视角可见
+    state_notes:
+      - 提供"雨停"与"加拉塔桥若隐若现"的背景
+      - 替代第一案 cafe_owner
+
+  - id: sasha_kuzmin_remote
+    name: 萨沙·库兹明（远程）
+    initial_state: 旁线
+    visibility: 主角视角不可见
+    state_notes:
+      - 47 岁，在塔甘卡剧院
+      - 陪 14 岁的阿尼娅准备音乐学院附中入学考试
+      - 21:08 收到娜塔莎短信
+
+  - id: lisa_hoffmann_remote
+    name: 莉莎·霍夫曼（远程）
+    initial_state: 旁线
+    visibility: 主角视角不可见
+    state_notes:
+      - 38 岁，维也纳国立歌剧院合唱团指挥助理
+      - 陪 13 岁的马蒂亚斯参加合唱团排练
+      - 21:06 接到伊利亚电话
+
+# -----------------------------------------------------------------------------
+# NPC 必提的具体 1985 / 1989 行为（不是玩家主动暴露）
+# -----------------------------------------------------------------------------
+npc_recall_lines:
+  - id: npc_mention_IB_circles
+    speaker: ilya
+    line: "我在 1985 总谱上签'И. Б.'。我把那一页撕下来带了 19 年。"
+    enabled_if_seed: manuscript_page_with_IB_2024
+    trigger: 玩家对 notebook_page_1_IB 执行 investigate
+
+  - id: npc_mention_third_bar_oral_message
+    speaker: ilya
+    line: "5:55 我让莉莎打电话给你。'第三小节是给你的。'——我在登机前 30 分钟才告诉她。"
+    enabled_if_seed: third_bar_oral_message_remembered_2008
+    trigger: 玩家对 natasha_phone 或 cassette_tape_walkman_remembered 执行 reveal
+
+  - id: npc_mention_4_second_silence
+    speaker: natasha
+    line: "5:55 电话响铃后我在 4 秒后才接。1995 维也纳我跟你对视也是 4 秒。我不知道是巧合。"
+    enabled_if_seed: 4_second_symmetry_2008
+    trigger: 玩家对 natasha 执行 confront
+
+  - id: npc_mention_tape_B_23_14
+    speaker: ilya
+    line: "B 面 23:14 处你那个大提琴长音。莉莎听过 6 次。她从未问过'这是谁'。"
+    enabled_if_seed: walkman_tape_remembered_2008
+    trigger: 玩家对 cassette_tape_walkman_remembered 执行 investigate
+
+  - id: npc_mention_page_7_aeroflot
+    speaker: ilya
+    line: "1992 我跟莉莎登记那天把 1989 Aeroflot 标签夹在第 7 页。她不知道。"
+    enabled_if_seed: aeroflot_tag_visible_in_page_7
+    trigger: 玩家对 notebook_page_7_tape 执行 investigate
+
+  - id: npc_mention_postcard_1995
+    speaker: natasha
+    line: "1995 维也纳我写了一张明信片没寄。13 年后我把它带在身上。"
+    enabled_if_seed: postcard_wien_1995_in_wallet
+    trigger: 玩家对 postcard_wien_1995 执行 reveal
+
+  - id: npc_mention_crayon_star
+    speaker: ilya
+    line: "阿尼娅在你 1985 总谱封底画的那颗红星。我今晚才看到。"
+    enabled_if_seed: anya_crayon_star_on_manuscript_2008
+    trigger: 玩家对 manuscript_op38_in_bag 执行 investigate
+
+  - id: npc_mention_chocolate_tin_paper
+    speaker: ilya
+    line: "莉莎床头柜里 1986 西柏林巧克力的锡纸。我从未问过她为什么留。"
+    enabled_if_seed: chocolate_tin_paper_remembered
+    trigger: 玩家对 chocolate_tin_paper_remembered 执行 investigate
+
+  - id: npc_mention_305_schellack
+    speaker: ilya
+    line: "305 琴房 Yamaha U3 的中央 C 键——你的 Petrof 大提琴松香渍还在那。我去年路过莫斯科时去看过一次。"
+    enabled_if_seed: seed_petroff_schellack_stain_in_2008_cafe
+    trigger: 玩家对 red_notebook_ilya_2008 或 cafe_porcelain 执行 investigate
+
+  - id: npc_mention_ilya_notebook_1985
+    speaker: ilya
+    line: "1985 11 月 7 日前夜，娜塔莎允许我在 305 记笔记。那是我红色笔记本的第 1 页。"
+    enabled_if_seed: seed_red_notebook_first_entry_1985
+    trigger: 玩家对 notebook_page_1_IB 执行 investigate
+
+# -----------------------------------------------------------------------------
+# 因果种子（策划扩展）
+# -----------------------------------------------------------------------------
+causal_seeds_extended:
+  - id: seed_two_programs_takeout_compare
+    description: 两份节目单（Op.38 / Op.40）在桌面对齐（两个物件都是 2008 当天沉淀的产物）
+    trigger: 玩家对 program_op38_2008 + program_op40_2008 + cafe_porcelain 执行 give
+    effects:
+      - 锚点 5 桌面上出现两份节目单
+      - 锚点 5 后续镜头停在 Op.40 折角
+
+  - id: seed_first_words_admit_1985_1989
+    description: 19:15 桌边伊利亚主动承认 1985/1989 具体行为
+    trigger: gaze_target_recalled enabled AND 玩家对 reunion_scene 执行 reveal 或 question
+    effects:
+      - 锚点 5 桌边 NPC 必提行为触发
+    target_scenes: [scene_2008_reunion]
+
+  - id: seed_postcard_wien_1995_unveiled
+    description: 1995 维也纳未寄出的明信片在桌面被打开
+    trigger: 玩家对 postcard_wien_1995 执行 investigate
+    effects:
+      - 锚点 5 桌面上出现明信片
+      - 锚点 5 后续镜头停在明信片字迹
+
+  - id: seed_petroff_schellack_stain_in_2008_cafe
+    description: 2008 桌边伊利亚提到"305 琴房的中央 C 键还在"
+    trigger: 玩家对 red_notebook_ilya_2008 或 cafe_porcelain 执行 investigate
+    effects:
+      - 锚点 5 桌边 NPC 必提行为触发（npc_mention_305_schellack）
+
+  - id: seed_aeroflot_tag_visible_in_page_7
+    description: 1989 Aeroflot 托运标签在第 7 页胶带痕迹里可见
+    trigger: 玩家对 notebook_page_7_tape 执行 investigate
+    effects:
+      - 锚点 5 桌边 NPC 必提行为触发（npc_mention_page_7_aeroflot）
+
+  - id: seed_walkman_tape_remembered
+    description: 1989 walkman + 磁带 B 面 23:14 在 2008 仍可被提到
+    trigger: 玩家对 cassette_tape_walkman_remembered 执行 investigate
+    effects:
+      - 锚点 5 桌边 NPC 必提行为触发（npc_mention_tape_B_23_14）
+
+  - id: seed_third_bar_oral_message_remembered
+    description: 5:55 莉莎电话里的"第三小节是给你的"在 2008 仍可被提到
+    trigger: 玩家对 natasha_phone 或 cassette_tape_walkman_remembered 执行 reveal
+    effects:
+      - 锚点 5 桌边 NPC 必提行为触发（npc_mention_third_bar_oral_message）
+
+  - id: seed_4_second_symmetry
+    description: 1995 维也纳对视 4 秒与 1989 4 秒接电话的对称
+    trigger: 玩家对 natasha 执行 confront
+    effects:
+      - 锚点 5 桌边 NPC 必提行为触发（npc_mention_4_second_silence）
+
+# -----------------------------------------------------------------------------
+# 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
+# -----------------------------------------------------------------------------
+mandatory_echoes:
+  - id: two_programs_takeout_compare
+    description: 19:30 两份节目单（Op.38 / Op.40）在桌面对齐（两个物件都是 2008 当天沉淀的产物）
+    trigger: 玩家对 program_op38_2008 + program_op40_2008 执行 investigate 或 give
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_1985: [seed_ilya_pencil_page_in_notebook, seed_natasha_keeps_manuscript]
+    references_1989: [seed_lisa_relays_third_bar, seed_walkman_tape_in_1989_luggage]
+
+  - id: first_words_admit_1985_1989
+    description: 19:15 桌边 NPC 主动提起玩家 1985/1989 的具体行为
+    trigger: gaze_target_recalled enabled AND 玩家对 reunion_scene 执行 reveal 或 question
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_1985: [seed_ilya_pencil_page_in_notebook, seed_natasha_keeps_manuscript, seed_petroff_schellack_stain_in_2008_cafe, seed_red_notebook_first_entry_1985]
+    references_1989: [seed_lisa_relays_third_bar, seed_ilya_glances_page_1, seed_ilya_glances_page_7, seed_walkman_tape_in_1989_luggage]
+    ai_director_constraint: "必须引用 player 在 1985_meeting 或 1989_farewell 的具体行为之一，不允许泛化叙述"
+
+  - id: 4_second_symmetry_2008
+    description: 1995 维也纳对视 4 秒 + 1989 4 秒接电话 + 2008 21:05 两人回头笑——三跳链完整
+    trigger: inherited_objects.4_second_symmetry_2008 enabled AND 玩家在告别时执行 comfort 或 give
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_1985: [seed_natasha_first_not_absent]
+    references_1989: [seed_natasha_4_second_silence]
+
+# -----------------------------------------------------------------------------
+# 合法结局（策划扩展）
+# -----------------------------------------------------------------------------
+legal_endings_extended:
+  - id: ending_gazes_then_speaks
+    label: 先看再说话
+    description: 19:15 娜塔莎第一眼选择后，桌边开口承认 1985 / 1989 的具体行为
+    causal_seed_required:
+      - gaze_target_recalled
+      - npc_mention_IB_circles
+    next_scene_hooks: [crossroads_parting, ending_cinematic]
+
+  - id: ending_two_programs_align
+    label: 两份节目单对齐
+    description: 19:30 两份节目单（Op.38 / Op.40）在桌面对齐
+    causal_seed_required:
+      - seed_two_programs_takeout_compare
+      - npc_mention_IB_circles
+    next_scene_hooks: [crossroads_parting, ending_cinematic]
+
+  - id: ending_postcard_unveiled
+    label: 1995 明信片被打开
+    description: 20:00 1995 维也纳未寄出的明信片在桌面被打开
+    causal_seed_required:
+      - seed_postcard_wien_1995_unveiled
+      - npc_mention_postcard_1995
+    next_scene_hooks: [crossroads_parting, ending_cinematic]
+
+  - id: ending_crossroads_parting
+    label: 街口分开
+    description: 21:05 红灯变绿，两人走向不同方向
+    causal_seed_required:
+      - 21_05_red_to_green
+      - simultaneous_turn_and_smile
+    next_scene_hooks: [ending_cinematic, reality_lives_convergence]
+
+  - id: ending_silent_keeping
+    label: 沉默带过
+    description: 娜塔莎与伊利亚没有把 1989 那一夜 / 1995 维也纳 4 秒对视的真相说出口
+    causal_seed_required:
+      - silence
+    next_scene_hooks: [crossroads_parting, ending_cinematic]
+
+  - id: ending_reality_lives_convergence
+    label: 现实生活共同收束
+    description: 21:06 伊利亚打电话给莉莎 / 21:08 娜塔莎发短信给萨沙
+    causal_seed_required:
+      - 21_06_ilya_calls_lisa
+      - 21_08_natasha_texts_sasha
+    next_scene_hooks: [ending_cinematic, case_02_completed]
+
+# -----------------------------------------------------------------------------
+# 场景结束的下一幕钩子
+# -----------------------------------------------------------------------------
+next_scene_hooks:
+  - case_02_completed（电影尾声，2008-11-15 22:30；先于卷宗和测评）
+  - 卷宗回访入口（reveal_1985 / reveal_1989 / reveal_1995 全部写入后启用）
+
+# -----------------------------------------------------------------------------
+# 远期回响：本场景是收束
+# -----------------------------------------------------------------------------
+far_echo_routes: []
+convergence_summary:
+  - 来自 1985_meeting 的种子在本场景通过 inherited_objects 全部显影
+  - 来自 1989_farewell 的种子在本场景通过 inherited_objects 全部显影
+  - NPC 必须主动提起至少 3 条 1985 / 1989 具体行为（npc_recall_lines 中的 enabled_if_seed 触发）
+  - 卷宗收束：手抄谱、红色笔记本、明信片三种记忆并列，不允许"一种替另一种作证"
+  - 电影尾声组合：1 主导动作 + 1 次轴 + 1 件共鸣物件 + 现实生活共同收束
+
+# -----------------------------------------------------------------------------
+# 资源限制
+# -----------------------------------------------------------------------------
+resource_budget:
+  time: 100
+  attention: 4
+  echoes: 0   # 收束场景，不再释放新回响
+  program_handling_budget: 2
+
+# -----------------------------------------------------------------------------
+# 验收
+# -----------------------------------------------------------------------------
+verification:
+  - changes_world_state: true        # 两人在 U1 站街口分开，19 年完成收束
+  - changes_character_knowledge: true # 伊利亚 / 娜塔莎彼此确认 1985 / 1989 的具体行为
+  - changes_available_actions: true   # 关闭"再等等"的退路，触发电影尾声
+  - creates_future_echo: true         # 收束不等于零回响：卷宗仍保存全部种子
+  - preserves_macro_endpoints: true   # 1985 端点不动 / 1989 移民 / 2008 重逢 / 街口又分开
+  - forbidden_reveals_strict: true    # 不泄露 2009 之后
+  - npc_actively_recalls: true        # NPC 必须主动提起 1985 / 1989 的具体行为
+  - references_1985_specifically: true # 必须显式引用 1985_meeting 至少一项具体行为
+  - references_1989_specifically: true # 必须显式引用 1989_farewell 至少一项具体行为
+  - canonical_manuscript_consistent: true  # 两份手抄谱来自同一 canonical asset
+  - character_anchor_natasha: 44 岁，蜂蜜色眼睛 + 灰金短发
+  - character_anchor_anchor_ilya: 46 岁，鬓角灰白，圆框眼镜
+  - sasha_and_lisa_present_remotely: true # 萨沙与莉莎在远程处存在
+
+# -----------------------------------------------------------------------------
+# 章节与母题挂钩
+# -----------------------------------------------------------------------------
+chapter: chapter3_berlin_reunion
+chapter_label: 第三章 · 柏林十字山区重逢
+canonical_manuscript: canonical_two_programs_op38_op40_2008.png
+schemaVersion: "1.0.0"
+motif: program_op38_2008 + program_op40_2008
+sound_motif: piano_sustain_pedal
+
+# -----------------------------------------------------------------------------
+# 美术参考（占位）
+# -----------------------------------------------------------------------------
+art:
+  - /case_02/placeholder/kreuzberg_cafe_table.png
+  - /case_02/placeholder/ilya_red_notebook_2008.png
+  - /case_02/placeholder/natasha_manuscript_in_bag.png
+  - /case_02/placeholder/postcard_wien_1995.png
+  - /case_02/placeholder/u1_crossing_21_05.png
+art_focus: table
+
+# -----------------------------------------------------------------------------
+# 备注
+# -----------------------------------------------------------------------------
+notes:
+  - 玩家在 1985_meeting 与 1989_farewell 的所有动作都应通过 inherited_objects + npc_recall_lines 在 2008 显影
+  - 第一眼（gaze）选择决定 1985 物质证据（手抄谱 / 红色笔记本 / 时钟与 U-Bahn 方向牌）的优先级
+  - 三种记忆并列：手抄谱、红色笔记本、明信片——不允许"一种替另一种作证"
+  - 卷宗默认折叠，但 1985_meeting → 1989_farewell → 2008_reunion 的种子链在卷宗展开时必须可追溯
+  - 场景结束前必须挂载"21:05 街口分开"+"现实生活共同收束"（双发）
+  - canonical 两份节目单此时在桌面上，必须被对齐
