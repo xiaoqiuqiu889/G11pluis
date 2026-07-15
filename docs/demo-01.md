@@ -13,12 +13,14 @@ Demo 01 只验收第一案 `case_01_revolution_street` 的第一场
 
 ## 一键启动
 
-1. 确保 8000、5173 端口没有残留的开发服务。
-2. 双击仓库根目录的 `Demo-01.cmd`。
-3. 首次启动会补齐缺失依赖，随后打开：
-   `http://localhost:5173/scene/photo_lab_2008`。
-4. 演示结束后，关闭标题为 `G1N-Demo01-Backend` 和
-   `G1N-Demo01-Frontend` 的两个窗口。
+`Demo-01.cmd` 是当前唯一受支持的启动入口。
+
+1. 双击仓库根目录的 `Demo-01.cmd`。
+2. 首次启动会补齐缺失依赖。
+3. 启动器优先使用 5173；若已被占用，会自动选择 5174–5199 中的
+   空闲端口，并打开控制台打印的 `photo_lab_2008` 地址。
+4. 演示结束后，关闭本次启动器创建的 `G1N-Demo01-Backend` 和
+   `G1N-Demo01-Frontend` 窗口。已安全复用的服务不会被启动器终止。
 
 只做环境预检、不启动服务：
 
@@ -34,8 +36,8 @@ Demo-01.cmd
 ```
 
 启动器的安全约束：不会强杀占用端口的进程；8000 仅在健康响应明确返回
-`service=g1n-server` 时复用；5173 不复用，因为已运行的 Vite 实例是否由
-`VITE_USE_MOCK=false` 编译无法从外部可靠判断。
+`service=g1n-server` 且 `llm.isMock=true` 时复用；已运行的 Vite 实例不复用，
+因为它是否由 `VITE_USE_MOCK=false` 编译无法从外部可靠判断。
 
 ## 现场演示脚本
 

@@ -58,8 +58,18 @@ if errorlevel 1 (
 
 set "PM_CMD="
 set "PM_NAME="
-for /f "delims=" %%P in ('where pnpm.cmd 2^>nul') do if not defined PM_CMD set "PM_CMD=%%P" ^& set "PM_NAME=pnpm"
-if not defined PM_CMD for /f "delims=" %%P in ('where npm.cmd 2^>nul') do if not defined PM_CMD set "PM_CMD=%%P" ^& set "PM_NAME=npm"
+for /f "delims=" %%P in ('where npm.cmd 2^>nul') do (
+  if not defined PM_CMD (
+    set "PM_CMD=%%P"
+    set "PM_NAME=npm"
+  )
+)
+if not defined PM_CMD for /f "delims=" %%P in ('where pnpm.cmd 2^>nul') do (
+  if not defined PM_CMD (
+    set "PM_CMD=%%P"
+    set "PM_NAME=pnpm"
+  )
+)
 if not defined PM_CMD (
   echo [ERROR] npm or pnpm was not found in PATH.
   pause
@@ -103,7 +113,7 @@ if /i "%~1"=="--check" (
 
 REM Reuse port 8000 only when it identifies itself as this G1N server.
 set "BACKEND_READY="
-powershell -NoProfile -Command "try{$r=Invoke-RestMethod -Uri 'http://%BACKEND_HOST%:%BACKEND_PORT%/health' -TimeoutSec 2;if($r.status -eq 'ok' -and $r.service -eq 'g1n-server'){exit 0}}catch{};exit 1" >nul 2>nul
+powershell -NoProfile -Command "try{$r=Invoke-RestMethod -Uri 'http://%BACKEND_HOST%:%BACKEND_PORT%/health' -TimeoutSec 2;if($r.status -eq 'ok' -and $r.service -eq 'g1n-server' -and $r.llm.isMock -eq $true){exit 0}}catch{};exit 1" >nul 2>nul
 if not errorlevel 1 set "BACKEND_READY=1"
 if not defined BACKEND_READY (
   netstat -ano | findstr /R /C:":%BACKEND_PORT% .*LISTENING" >nul 2>nul
@@ -118,7 +128,7 @@ if not defined BACKEND_READY (
   start "G1N-Demo01-Backend" /D "%ROOT%" cmd /k "set G1N_USE_MOCK=1&&set G1N_HOST=%BACKEND_HOST%&&set G1N_PORT=%BACKEND_PORT%&&python -m uvicorn server.app:app --host %BACKEND_HOST% --port %BACKEND_PORT% --log-level info"
   for /l %%I in (1,1,30) do (
     if not defined BACKEND_READY (
-      powershell -NoProfile -Command "try{$r=Invoke-RestMethod -Uri 'http://%BACKEND_HOST%:%BACKEND_PORT%/health' -TimeoutSec 1;if($r.status -eq 'ok' -and $r.service -eq 'g1n-server'){exit 0}}catch{};exit 1" >nul 2>nul
+      powershell -NoProfile -Command "try{$r=Invoke-RestMethod -Uri 'http://%BACKEND_HOST%:%BACKEND_PORT%/health' -TimeoutSec 1;if($r.status -eq 'ok' -and $r.service -eq 'g1n-server' -and $r.llm.isMock -eq $true){exit 0}}catch{};exit 1" >nul 2>nul
       if not errorlevel 1 (
         set "BACKEND_READY=1"
       ) else (
@@ -144,13 +154,22 @@ if errorlevel 1 (
   exit /b 1
 )
 
-netstat -ano | findstr /R /C:":%FRONTEND_PORT% .*LISTENING" >nul 2>nul
-if not errorlevel 1 (
-  echo [ERROR] Port %FRONTEND_PORT% is already occupied.
-  echo         Stop the existing Vite process first. Its VITE_USE_MOCK mode
-  echo         cannot be verified after compilation, so it is not reused.
+set "PREFERRED_FRONTEND_PORT=%FRONTEND_PORT%"
+set "FRONTEND_PORT="
+for /l %%P in (5173,1,5199) do (
+  if not defined FRONTEND_PORT (
+    netstat -ano | findstr /R /C:":%%P .*LISTENING" >nul 2>nul
+    if errorlevel 1 set "FRONTEND_PORT=%%P"
+  )
+)
+if not defined FRONTEND_PORT (
+  echo [ERROR] No free frontend port was found in range 5173-5199.
   pause
   exit /b 1
+)
+set "DEMO_URL=http://localhost:!FRONTEND_PORT!/scene/photo_lab_2008"
+if not "!FRONTEND_PORT!"=="!PREFERRED_FRONTEND_PORT!" (
+  echo [INFO] Port !PREFERRED_FRONTEND_PORT! is occupied; using !FRONTEND_PORT! instead.
 )
 
 echo [INFO] Starting Vite in real-backend mode...

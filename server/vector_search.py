@@ -5,7 +5,7 @@ W9 deliverable.  The production path uses PostgreSQL 15+ with the
 serves **4-8 segment recall under 100ms p95** (W9 acceptance).
 The module is also importable on a SQLite dev box — the
 :class:`InMemoryVectorIndex` fallback keeps unit tests + local
-``启动游戏.cmd`` work-flow green.
+``Demo-01.cmd`` local deterministic-stack work-flow green.
 
 Why HNSW (not IVFFLAT)
 ----------------------
@@ -285,7 +285,7 @@ class InMemoryVectorIndex:
 
     Used by:
 
-    * the dev / mock flow (``启动游戏.cmd`` on a SQLite box);
+    * the local deterministic flow (``Demo-01.cmd`` on a SQLite box);
     * the unit tests so they don't need a running PostgreSQL.
 
     The cosine distance is computed in pure Python — fine for

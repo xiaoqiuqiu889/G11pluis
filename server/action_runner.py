@@ -386,20 +386,43 @@ class ActionRunner:
         active = self._registry.open(run_id)
         scene_id = scene_id or active.snapshot.canonicalState.currentSceneId
 
-        # Re-anchor the active run to the requested scene if
-        # the client is jumping (e.g. the 2008 → 2011
-        # transition after Director says transitionToNext).
+        # Actions cannot perform scene transitions implicitly; transition
+        # authority belongs to the dedicated validated workflow.
         if active.snapshot.canonicalState.currentSceneId != scene_id:
-            active = self._registry.transition_to_scene(
-                run_id, new_scene_id=scene_id
+            return self._build_rejection_result(
+                started=started,
+                snapshot=active.snapshot,
+                player_action=dict(player_action),
+                client_action_id=client_action_id,
+                reason=(
+                    "SceneMismatchError: requested scene "
+                    f"{scene_id!r} does not match canonical "
+                    f"{active.snapshot.canonicalState.currentSceneId!r}"
+                ),
             )
 
         # Normalise resolver-owned bookkeeping before any model call.  A
         # zero sequence is meaningful on the first turn, so do not use a
         # truthiness check here.
         player_action = dict(player_action)
+        nested_client_action_id = player_action.get("clientActionId")
+        if (
+            nested_client_action_id is not None
+            and str(nested_client_action_id) != str(client_action_id)
+        ):
+            return self._build_rejection_result(
+                started=started,
+                snapshot=active.snapshot,
+                player_action=player_action,
+                client_action_id=client_action_id,
+                reason=(
+                    "ClientActionIdMismatchError: top-level clientActionId "
+                    "does not match playerAction.clientActionId"
+                ),
+            )
         player_action["expectedEventSequence"] = int(expected_event_sequence)
-        player_action.setdefault("clientActionId", client_action_id)
+        # The request envelope is the single authority for idempotency.
+        player_action["clientActionId"] = client_action_id
 
         # Reject deterministic player-input failures before starting the
         # gateway, planting mandatory seeds, or touching persistence.  The
@@ -524,6 +547,12 @@ class ActionRunner:
         # 触达").  The action is checked against the scene's
         # contract for the (action, target, evidence)
         # combination that triggers a known seed.
+        snapshot_for_resolve = active.snapshot
+        event_log_for_resolve = EventLog.from_iterable(
+            active.event_log.runId,
+            active.event_log.events,
+        )
+        scene_budget_for_resolve = deepcopy(active.scene_budget)
         try:
             seeds_to_plant = _select_mandatory_seeds(
                 scene_id=scene_id,
@@ -532,24 +561,25 @@ class ActionRunner:
                 evidence_ids=list(player_action.get("evidenceIds", []) or []),
             )
             if seeds_to_plant:
-                active.snapshot = active.snapshot.with_causal_seeds_active(
+                snapshot_for_resolve = snapshot_for_resolve.with_causal_seeds_active(
                     _merge_mandatory_seeds(
-                        active.snapshot.causalSeedsActive, seeds_to_plant
+                        snapshot_for_resolve.causalSeedsActive, seeds_to_plant
                     )
                 )
         except Exception as exc:  # noqa: BLE001
             logger.warning("action_runner: seed planting failed: %s", exc)
 
+        canonical_write = True
         try:
             new_snapshot, outcome, mandatory_echo, era_check, four_q = (
                 resolver.resolve_turn(
-                    snapshot=active.snapshot,
-                    event_log=active.event_log,
+                    snapshot=snapshot_for_resolve,
+                    event_log=event_log_for_resolve,
                     player_action=player_action,
                     npc_proposal_dict=npc_proposal,
                     director_beat_dict=director_beat,
                     scene_contract=contract,
-                    scene_budget=active.scene_budget,
+                    scene_budget=scene_budget_for_resolve,
                     recall_set=set(),
                     # The outcome's ``auditTrail.llmCalls`` field
                     # is schema-strict (only agent / model /
@@ -571,6 +601,7 @@ class ActionRunner:
                 reason=f"{type(exc).__name__}: {exc}",
             )
             new_snapshot = active.snapshot
+            canonical_write = False
             fallback_used = True
             if degradation_level is None:
                 degradation_level = "L4"
@@ -584,24 +615,32 @@ class ActionRunner:
                 reason=f"internal_error: {exc}",
             )
             new_snapshot = active.snapshot
+            canonical_write = False
             fallback_used = True
             degradation_level = "L4"
 
-        # 5. Update the active-run cache.
-        active.snapshot = new_snapshot
-        active.event_log = self._registry.open(run_id).event_log  # ensure
-        # the resolver's mutations stick (event_log is mutated
-        # in place by the engine's record path).
-        # Persist via the repository.
+        # 5. Update canonical state only after a complete resolver success.
+        # Rejections and internal failures are response/audit objects, not
+        # canonical events, so they must never consume an event slot.
         snap_dict = new_snapshot.to_dict()
-        self._repo.save_outcome(
-            run_id=run_id,
-            snapshot=snap_dict,
-            outcome=outcome.to_dict(),
-            scene_contract=contract,
-            player_action=player_action,
-            npc_proposal=npc_proposal,
-        )
+        if canonical_write:
+            try:
+                self._repo.save_outcome(
+                    run_id=run_id,
+                    snapshot=snap_dict,
+                    outcome=outcome.to_dict(),
+                    scene_contract=contract,
+                    player_action=player_action,
+                    npc_proposal=npc_proposal,
+                )
+            except Exception:
+                # ResolverAgent caches before returning.  If durability fails,
+                # discard speculative cache state; active state is untouched.
+                resolver.clear_idempotency_cache()
+                raise
+            active.snapshot = new_snapshot
+            active.event_log = event_log_for_resolve
+            active.scene_budget = scene_budget_for_resolve
 
         # 6. Record LLM call audit (one row per call).
         for rec in llm_call_records:
@@ -658,9 +697,9 @@ class ActionRunner:
         """Run deterministic input gates without mutating canonical state."""
 
         expected = player_action.get("expectedEventSequence")
-        if expected is not None and snapshot.eventSequence - int(expected) > 1:
+        if expected is not None and int(expected) != snapshot.eventSequence:
             raise SequenceMismatchError(
-                f"client sequence {expected} is more than 1 behind canonical "
+                f"client sequence {expected} does not match canonical "
                 f"{snapshot.eventSequence}"
             )
 
@@ -843,7 +882,17 @@ _MANDATORY_SEED_RULES: list[dict[str, Any]] = [
         "seed_id": "photo_in_book",
         "description": "Arash keeps one graduation photo in the Rumi book.",
         "target_scenes": ["farewell_2011", "reunion_2024"],
-    },    {
+    },
+    {
+        "scene": "photo_lab_2008",
+        "action": "give",
+        "target": "leila",
+        "evidence": ["photo_pair"],
+        "seed_id": "both_photos_with_one",
+        "description": "Leila keeps both graduation photos in her bag.",
+        "target_scenes": ["farewell_2011", "reunion_2024"],
+    },
+    {
         "scene": "photo_lab_2008",
         "action": "give",
         "target": "leila",

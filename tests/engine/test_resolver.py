@@ -195,6 +195,7 @@ class ResolverWriteAuthorityTests(unittest.TestCase):
             contract=_contract(), scene_budget=_budget(),
         )
         # Replaying the same clientActionId: should raise.
+        action["expectedEventSequence"] = new_snap.eventSequence
         with self.assertRaises(IdempotencyReplayError):
             resolver.resolve(
                 snapshot=new_snap,

@@ -285,15 +285,52 @@ class RunRegistry:
                 )
 
         # ---- hydrate event log (one entry per event row) ----
-        event_log = EventLog(runId=run_id)
-        # We re-hydrate event_seq from the snapshot — the
-        # event_log is a runtime cache, not the source of truth.
+        persisted_events = self._repo.list_events(
+            run_id, limit=max(200, int(snapshot.eventSequence))
+        )
+        event_log = EventLog.from_iterable(run_id, [
+            {
+                "sequence": event["eventSequence"],
+                "sceneId": event["sceneId"],
+                "actorId": event["actorId"],
+                "actionType": event["actionType"],
+                "actionPayload": event.get("actionPayload", {}),
+                "validatedDelta": event.get("validatedDelta", {}),
+                "causalSeed": event.get("causalSeed"),
+                "randomSeed": event.get("randomSeed", 0),
+                "createdAt": event.get("createdAt", ""),
+                "idempotencyKey": event.get("idempotencyKey", ""),
+                "runId": event.get("runId", run_id),
+                "outcomeId": event.get("outcomeId", ""),
+            }
+            for event in persisted_events
+        ])
+        if event_log.last_sequence != snapshot.eventSequence:
+            raise RuntimeError(
+                "persisted event log/snapshot sequence mismatch for run "
+                f"{run_id}: log={event_log.last_sequence}, "
+                f"snapshot={snapshot.eventSequence}"
+            )
+
+        current_scene_events = [
+            event for event in persisted_events
+            if event.get("sceneId") == scene_id
+        ]
+        consumed: dict[str, int] = {}
+        for event in current_scene_events:
+            action_type = str(event.get("actionType", ""))
+            if action_type:
+                consumed[action_type] = consumed.get(action_type, 0) + 1
+        # Rehydrate sequence, idempotency indexes, and budget from the same
+        # canonical event ledger as the snapshot.
 
         scene_budget = SceneBudget(
             sceneId=scene_id,
             max_turns=int(contract.get("max_turns", 8) or 8),
             total_action_budget=int(contract.get("total_action_budget", 32) or 32),
             per_action={k: int(v) for k, v in scene.turn_budget.items()},
+            consumed=consumed,
+            elapsed_turns=len(current_scene_events),
         )
 
         active = ActiveRun(

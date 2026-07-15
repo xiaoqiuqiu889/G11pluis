@@ -641,24 +641,48 @@ def reduce_give(
     actor = action.get("actorId")
     target = action.get("targetId") or actor
     evidence_ids = action.get("evidenceIds") or []
-    artifact_updates: list[ArtifactUpdate] = [
-        ArtifactUpdate(
-            artifactId=eid,
-            operation=ArtifactOperation.TRANSFER,
-            newOwnerId=target,
-            reasonCode="give",
+    if (
+        snapshot.canonicalState.currentSceneId == "photo_lab_2008"
+        and evidence_ids == ["photo_pair"]
+        and target in {"arash", "leila"}
+    ):
+        # Resolve the aggregate interaction handle into two physical photos.
+        photo_b_owner = "arash" if target == "arash" else "leila"
+        photo_b_state = "in_book" if target == "arash" else "in_pocket"
+        artifact_updates = [
+            ArtifactUpdate(artifactId="photo_A", operation=ArtifactOperation.TRANSFER, newOwnerId="leila", reasonCode="photo_pair_choice"),
+            ArtifactUpdate(artifactId="photo_A", operation=ArtifactOperation.MODIFY_STATE, newState="in_pocket", reasonCode="photo_pair_choice"),
+            ArtifactUpdate(artifactId="photo_B", operation=ArtifactOperation.TRANSFER, newOwnerId=photo_b_owner, reasonCode="photo_pair_choice"),
+            ArtifactUpdate(artifactId="photo_B", operation=ArtifactOperation.MODIFY_STATE, newState=photo_b_state, reasonCode="photo_pair_choice"),
+            ArtifactUpdate(artifactId="photo_pair", operation=ArtifactOperation.DESTROY, reasonCode="photo_pair_choice_resolved"),
+        ]
+        decisions.append(
+            "resolved photo_pair as one_each"
+            if target == "arash"
+            else "resolved photo_pair as leila_keeps_both"
         )
-        for eid in evidence_ids
-    ]
+    else:
+        artifact_updates = [
+            ArtifactUpdate(
+                artifactId=eid,
+                operation=ArtifactOperation.TRANSFER,
+                newOwnerId=target,
+                reasonCode="give",
+            )
+            for eid in evidence_ids
+        ]
     disclosure = float(action.get("disclosureLevel", 0.5))
-    fwd, back = _actor_delta(actor, target, ActionType.GIVE.value, disclosure)
+    relationship_deltas: list[RelationshipDelta] = []
+    if target != actor:
+        fwd, back = _actor_delta(actor, target, ActionType.GIVE.value, disclosure)
+        relationship_deltas = [fwd] + ([back] if back else [])
     budget.consume(ActionType.GIVE.value)
     decisions.append(
         f"transferred {len(evidence_ids)} artifact(s) from {actor!r} to {target!r}"
     )
     return ReducerOutcome(
         accepted=True,
-        relationshipDeltas=[fwd] + ([back] if back else []),
+        relationshipDeltas=relationship_deltas,
         artifactUpdates=artifact_updates,
         beliefUpdates=[],
         causalSeeds=[],

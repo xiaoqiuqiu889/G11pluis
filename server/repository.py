@@ -373,22 +373,40 @@ class RunRepository:
             if run is None:
                 raise LookupError(f"run not found: {run_id}")
 
-            # The outcome's eventSequence is the *next* sequence
-            # (the resolver advances it).  The snapshot carries
-            # the same value post-resolve; we read from outcome
-            # to be explicit about the "next" semantics.
-            event_sequence = int(
-                outcome.get("eventSequence")
-                or snapshot.get("eventSequence", 0)
-            )
-            if event_sequence < 1:
-                # Defensive: the resolver_outcome schema requires
-                # eventSequence >= 1.  Force to 1 so a malformed
-                # payload (or a "no-op" outcome) still doesn't
-                # break the unique constraint on (run_id, seq).
-                event_sequence = 1
             outcome_id = str(outcome.get("outcomeId", uuid.uuid4()))
-            idempotency_key = str(outcome.get("idempotencyKey", uuid.uuid4().hex))
+            idempotency_key = str(outcome.get("idempotencyKey") or "")
+            if not idempotency_key:
+                raise ValueError("outcome.idempotencyKey is required")
+
+            # Preserve repository-level idempotency for a byte-for-byte retry
+            # before enforcing the next-sequence gate.
+            existing_event = s.execute(
+                select(GameEventRow).where(
+                    GameEventRow.run_id == run_id,
+                    GameEventRow.idempotency_key == idempotency_key,
+                )
+            ).scalar_one_or_none()
+            if existing_event is not None:
+                logger.info("save_outcome: idempotency key replay, returning existing")
+                return existing_event.to_dict()
+
+            try:
+                event_sequence = int(outcome["eventSequence"])
+                snapshot_sequence = int(snapshot["eventSequence"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(
+                    "outcome and snapshot require integer eventSequence values"
+                ) from exc
+            expected_sequence = int(run.event_sequence) + 1
+            if (
+                event_sequence != snapshot_sequence
+                or event_sequence != expected_sequence
+            ):
+                raise ValueError(
+                    "non-atomic event sequence: "
+                    f"run expects {expected_sequence}, outcome={event_sequence}, "
+                    f"snapshot={snapshot_sequence}"
+                )
             # Actor and action type come from the player_action
             # dict (the outcome only carries the *trigger* id,
             # not the actor).
@@ -403,15 +421,6 @@ class RunRepository:
             )
 
             # ---- 1. Event log row (idempotent) -------------------------
-            existing_event = s.execute(
-                select(GameEventRow).where(
-                    GameEventRow.run_id == run_id,
-                    GameEventRow.idempotency_key == idempotency_key,
-                )
-            ).scalar_one_or_none()
-            if existing_event is not None:
-                logger.info("save_outcome: idempotency key replay, returning existing")
-                return existing_event.to_dict()
 
             event_row = GameEventRow(
                 run_id=run_id,
@@ -438,8 +447,19 @@ class RunRepository:
                 s.flush()
             except IntegrityError as exc:
                 s.rollback()
-                logger.warning("save_outcome: integrity error, treating as replay: %s", exc)
-                return self.list_events(run_id, limit=1)[0]
+                existing_event = s.execute(
+                    select(GameEventRow).where(
+                        GameEventRow.run_id == run_id,
+                        GameEventRow.idempotency_key == idempotency_key,
+                    )
+                ).scalar_one_or_none()
+                if existing_event is not None:
+                    logger.info(
+                        "save_outcome: concurrent idempotency replay, returning existing"
+                    )
+                    return existing_event.to_dict()
+                logger.warning("save_outcome: non-idempotent integrity error: %s", exc)
+                raise
 
             # ---- 2. World snapshot row (one per event) ---------------
             snap_row = WorldSnapshotRow(

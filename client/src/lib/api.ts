@@ -470,7 +470,7 @@ export async function submitTurn(
 ): Promise<TurnResponse> {
   const started = performance.now();
   const clientActionId = uuid();
-  const eventSequence = useStore.getState().lastEventSequence + 1;
+  const eventSequence = useStore.getState().lastEventSequence;
 
   const action: PlayerAction = {
     runId: opts.runId,

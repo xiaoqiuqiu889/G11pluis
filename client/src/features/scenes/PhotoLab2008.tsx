@@ -35,10 +35,14 @@ export default function PhotoLab2008() {
   const nav = useNavigate();
   const currentState = useStore((s) => s.currentState);
   const currentNarration = useStore((s) => s.currentNarration);
+  const worldSnapshot = useStore((s) => s.worldSnapshot);
+  const causalSeedsActive = useStore((s) => s.causalSeedsActive);
+  const pendingAction = useStore((s) => s.pendingAction);
 
   const [jumping, setJumping] = useState(false);
+  const [showOtherActions, setShowOtherActions] = useState(false);
 
-  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction } = useSceneRunner({
     sceneId: "photo_lab_2008",
     actorId: "leila",
     targetId: "arash",
@@ -54,10 +58,33 @@ export default function PhotoLab2008() {
     });
   };
 
-  // 场景结束 → 时间跳转到 2011
-  const onEnd = () => {
-    finishScene("shared_secret");
-    setJumping(true);
+  const authoritativeEndingId = worldSnapshot?.canonicalState.endingId ?? null;
+  const photoSeedIds = new Set(causalSeedsActive.map((seed) => seed.id));
+  const keptBoth =
+    authoritativeEndingId === "one_sided_memory" || photoSeedIds.has("both_photos_with_one");
+  const splitPhotos =
+    authoritativeEndingId === "shared_secret" ||
+    (photoSeedIds.has("photo_in_pocket") && photoSeedIds.has("photo_in_book"));
+  const photoConsequence = keptBoth
+    ? "两张照片都在莱拉的包里；阿拉什没有照片。"
+    : splitPhotos
+      ? "莱拉的包里一张，阿拉什的诗集里一张。"
+      : "照片的去向已经写入这次 run 的卷宗。";
+  const rememberedConsequence = keptBoth
+    ? "这会成为一段单方保存的记忆：莱拉留下证据，阿拉什只记得她把两张都收走。"
+    : splitPhotos
+      ? "他们各自带走同一夜的一半，也共同记住照片被分开的时刻。"
+      : "这次选择已经留下因果记录；谁保存了照片，谁就保存了这一夜的证据。";
+  const choiceDisabled = !ready || !!pendingAction;
+
+  const choosePhotoDestination = (targetId: "arash" | "leila", utterance: string) => {
+    void handleAction({
+      actionType: "give",
+      utterance,
+      tone: "gentle",
+      targetId,
+      evidenceIds: ["photo_pair"],
+    });
   };
 
   if (jumping) {
@@ -86,24 +113,24 @@ export default function PhotoLab2008() {
       background={ART_URL}
       meta={{ year: "2008 · 夏", location: sceneMeta.location }}
       bulbFlicker
-      className="pb-14"
+      className="scene-photo-lab pb-14"
     >
       <ObserverCamera focuses={FOCUSES} defaultFocusId="wide" ariaLabel="地下放映室镜头">
         <SceneStage meta={sceneMeta} />
       </ObserverCamera>
 
-      <div className="absolute top-12 right-6 z-20">
+      <div className="absolute top-28 sm:top-20 right-3 sm:right-6 z-40">
         <POVSwitcher />
       </div>
 
-      <div className="absolute top-28 right-6 z-20 flex flex-col gap-2 max-w-xs">
+      <div className="absolute top-40 sm:top-28 right-3 sm:right-6 z-20 flex flex-col gap-2 max-w-xs">
         <StateFlux tone="warm" note="灯泡烘得空气发甜" />
       </div>
 
       <ObserverHint trigger="critical_moment" pov="arash" delayMs={8000} />
       <ObserverHint trigger="after_choice" pov="leila" delayMs={4000} />
 
-      <div className="absolute bottom-16 left-0 right-0 z-20 px-6">
+      <div className="absolute bottom-32 left-0 right-0 z-20 px-3 sm:px-6">
         <div className="max-w-4xl mx-auto mb-3">
           <ObserverNarration text={currentNarration} typewriter />
         </div>
@@ -113,56 +140,124 @@ export default function PhotoLab2008() {
         <NPCReactions />
       </div>
 
-      <div className="absolute bottom-32 left-6 z-20 w-[28rem] max-w-[42vw]">
-        <InvestigationPanel
-          objects={sceneMeta.investigatableObjects}
-          budget={sceneMeta.turnBudget.investigate ?? 3}
-          onInvestigate={onInvestigate}
-          disabled={!ready}
-        />
-      </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 px-6 pb-20">
-        <div className="max-w-4xl mx-auto">
-          <ActionBar
-            onAct={(p) => void handleAction(p)}
-            contextActions={{
-              ...{
-                give: {
-                  label: "一人一张……",
-                  targetId: "arash",
-                  evidenceIds: ["photo_pair"],
-                  defaultUtterance: "一人一张……",
-                },
-              },
-              comfort: { label: "安抚阿拉什", targetId: "arash" },
-              question: { label: "问阿拉什", targetId: "arash" },
-              confront: { label: "直面阿拉什", targetId: "arash" },
-            }}
-            ready={ready}
-            runError={runError}
-            onRetryRun={retryRun}
-          />
+      {showOtherActions && (
+        <div
+          className="absolute inset-x-3 sm:inset-x-6 bottom-20 z-40 max-h-[calc(100%-8rem)] overflow-y-auto glass-strong rounded-md p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Other actions"
+          onKeyDown={(event) => { if (event.key === "Escape") setShowOtherActions(false); }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="t-overline text-paper-100/50">其他行动</p>
+              <p className="t-meta text-paper-200/60">调查环境，或使用结构化行为继续试探。</p>
+            </div>
+            <button type="button" className="action-btn" onClick={() => setShowOtherActions(false)} autoFocus>
+              收起
+            </button>
+          </div>
+          <div className="grid lg:grid-cols-[minmax(18rem,0.8fr)_minmax(30rem,1.4fr)] gap-4">
+            <InvestigationPanel
+              objects={sceneMeta.investigatableObjects}
+              budget={sceneMeta.turnBudget.investigate ?? 3}
+              onInvestigate={onInvestigate}
+              disabled={!ready}
+            />
+            <ActionBar
+              onAct={(params) => void handleAction(params)}
+              contextActions={{
+                comfort: { label: "安抚阿拉什", targetId: "arash" },
+                question: { label: "问阿拉什", targetId: "arash" },
+                confront: { label: "直面阿拉什", targetId: "arash" },
+              }}
+              ready={ready}
+              runError={runError}
+              onRetryRun={retryRun}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-14 left-0 right-0 z-20 px-3 sm:px-6 pb-16">
+        <div className="max-w-4xl mx-auto glass-strong rounded-md p-3 sm:p-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-3">
+            <div>
+              <p className="t-overline text-amber-glow">今夜只决定一件事</p>
+              <h2 className="t-display text-xl text-paper-100">决定两张照片的去向</h2>
+              <p className="t-narration text-sm text-paper-200/70">
+                谁带走照片，谁就会替这一夜保存一份可以被记住的证据。
+              </p>
+            </div>
+            <span className="t-meta text-paper-100/50">
+              {runError ? "run 未就绪" : pendingAction ? "选择正在写入世界……" : ready ? "选择会立即生效" : "正在创建 run……"}
+            </span>
+          </div>
+          {runError && (
+            <div className="mb-3 flex items-center justify-between gap-3 border border-red-500/40 bg-red-500/10 rounded p-3">
+              <p className="text-sm text-red-300">{runError}</p>
+              <button type="button" className="action-btn border-amber-glow text-amber-glow" onClick={retryRun}>
+                重试
+              </button>
+            </div>
+          )}
+          <div className="grid md:grid-cols-2 gap-3" role="group" aria-label="照片去向">
+            <button
+              type="button"
+              data-testid="photo-choice-split"
+              className="action-btn min-h-[72px] border-amber-glow text-left px-4"
+              disabled={choiceDisabled}
+              onClick={() => choosePhotoDestination("arash", "一人一张。你把一张夹进诗集，我带走另一张。")}
+            >
+              <span className="block t-overline text-amber-glow">A · 一人一张</span>
+              <span className="block t-narration text-paper-100 mt-1">莱拉包里一张 · 阿拉什诗集里一张</span>
+            </button>
+            <button
+              type="button"
+              data-testid="photo-choice-keep-both"
+              className="action-btn min-h-[72px] border-paper-100/30 text-left px-4"
+              disabled={choiceDisabled}
+              onClick={() => choosePhotoDestination("leila", "两张都先放在我这里。")}
+            >
+              <span className="block t-overline text-paper-200">B · 两张都留下</span>
+              <span className="block t-narration text-paper-100 mt-1">两张都放进莱拉的包</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            className="mt-3 t-meta text-paper-100/60 underline underline-offset-4"
+            onClick={() => setShowOtherActions((shown) => !shown)}
+            aria-expanded={showOtherActions}
+          >
+            其他行动 · 调查 / 交谈 / 等待
+          </button>
         </div>
       </div>
 
       <SceneStatusBar />
 
       {currentState === "scene_ended" && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-ink-900/70 backdrop-blur">
-          <div className="glass-strong p-8 max-w-md text-center">
-            <p className="t-overline text-amber-glow mb-2">场景结束</p>
-            <h2 className="t-display text-2xl mb-4">这一夜走完了</h2>
-            <p className="t-narration text-paper-200 mb-6">
-              （灯泡暗下来。放映机的低频慢慢停下。照片已经被分到两个不同的手里——接下来是十三年的别处。）
+        <div className="absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-ink-900/70 px-3 py-12 backdrop-blur">
+          <div className="glass-strong w-full max-w-lg max-h-[calc(100vh-6rem)] overflow-y-auto p-5 sm:p-8 text-center" role="dialog" aria-modal="true" aria-label="Photo consequence" data-testid="photo-ending-consequence">
+            <p className="t-overline text-amber-glow mb-2">选择已被世界记住</p>
+            <h2 className="t-display text-2xl mb-3">{photoConsequence}</h2>
+            {authoritativeEndingId && (
+              <p className="t-meta text-paper-100/45 mb-3">结局记录 · {authoritativeEndingId}</p>
+            )}
+            <p className="t-narration text-paper-200 mb-2">
+              {rememberedConsequence}
             </p>
-            <div className="flex justify-center gap-2">
-              <button className="action-btn" onClick={() => nav("/archive")}>
+            <p className="t-meta text-paper-100/50 mb-6">
+              灯泡暗下来，放映机停住。此后如何回响，仍由你之后的行为决定。
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-2">
+              <button className="action-btn" onClick={() => nav("/archive")} autoFocus>
                 打开卷宗
               </button>
               <button
                 className="action-btn border-amber-glow text-amber-glow"
-                onClick={onEnd}
+                onClick={() => setJumping(true)}
               >
                 时间跳转 · 2011
               </button>
@@ -179,7 +274,7 @@ function SceneStage({ meta }: { meta: NonNullable<ReturnType<typeof useStore.get
     <div className="w-full h-full flex items-center justify-center p-12">
       <div className="w-full max-w-5xl aspect-[2.35/1] relative">
         {/* 地下放映室"想象"：分镜布局 */}
-        <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-4">
+        <div className="absolute inset-0 hidden sm:grid grid-cols-3 grid-rows-2 gap-4">
           {/* 左上：放映机 / 灯泡 */}
           <div className="col-span-1 row-span-1 glass rounded p-4 flex items-center justify-center text-center">
             <div>

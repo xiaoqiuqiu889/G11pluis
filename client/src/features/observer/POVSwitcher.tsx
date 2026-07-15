@@ -24,11 +24,13 @@ export function POVSwitcher() {
 
   return (
     <div
-      className="flex items-center gap-1 glass rounded-full px-1.5 py-1"
+      className="g1n-pov-switcher flex max-w-[calc(100vw-1.5rem)] flex-nowrap items-center gap-1 overflow-x-auto glass rounded-full px-1.5 py-1"
       role="radiogroup"
       aria-label="叙事视角"
     >
-      {POV_META.map((m) => {
+      {POV_META
+        .filter((m) => m.id === "observer" || unlockedPOVs.includes(m.id))
+        .map((m) => {
         const isActive = m.id === povMode;
         const isUnlocked = m.id === "observer" || unlockedPOVs.includes(m.id);
         return (

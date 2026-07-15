@@ -14,10 +14,10 @@ export function TitleBar() {
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-50 h-9 flex items-center justify-between px-4 glass-strong"
+      className="g1n-titlebar fixed inset-x-0 top-0 z-50 h-9 flex items-center justify-between gap-2 px-2 sm:px-4 glass-strong"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      <div className="flex items-center gap-3 text-xs t-meta" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+      <div className="g1n-titlebar-brand flex min-w-0 items-center gap-2 sm:gap-3 whitespace-nowrap text-xs t-meta" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
         <Link to="/" className="hover:text-amber-glow transition-colors" aria-label="返回启动页">
           革命街
         </Link>
@@ -34,7 +34,7 @@ export function TitleBar() {
       </div>
 
       <nav
-        className="flex items-center gap-2 text-xs"
+        className="g1n-titlebar-nav flex shrink-0 items-center gap-0 sm:gap-1 text-xs whitespace-nowrap"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         aria-label="主导航"
       >

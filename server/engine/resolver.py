@@ -218,9 +218,9 @@ class Resolver:
         # ---- 1. Sequence + idempotency gate ------------------------------
         if player_action is not None:
             exp = player_action.get("expectedEventSequence")
-            if exp is not None and snapshot.eventSequence - exp > 1:
+            if exp is not None and int(exp) != snapshot.eventSequence:
                 raise SequenceMismatchError(
-                    f"client sequence {exp} is more than 1 behind canonical {snapshot.eventSequence}"
+                    f"client sequence {exp} does not match canonical {snapshot.eventSequence}"
                 )
             # Replay detection: if the same clientActionId was
             # already recorded, this is a duplicate and we

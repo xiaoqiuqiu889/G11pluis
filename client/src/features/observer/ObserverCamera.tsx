@@ -162,7 +162,7 @@ export const ObserverCamera = forwardRef<ObserverCameraHandle, ObserverCameraPro
   }, [reset]);
 
   return (
-    <div className={`relative w-full h-full overflow-hidden bg-ink-900 select-none ${className}`}>
+    <div className={`relative w-full h-full overflow-hidden bg-transparent select-none ${className}`}>
       {/* 镜头区：可拖动 */}
       <div
         ref={containerRef}

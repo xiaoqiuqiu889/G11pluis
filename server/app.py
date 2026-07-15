@@ -933,14 +933,16 @@ async def submit_action(
 
     runner = get_default_runner()
     try:
-        result = await runner.drive_turn(
-            run_id=run_id,
-            scene_id=req.sceneId,
-            client_action_id=req.clientActionId,
-            expected_event_sequence=req.expectedEventSequence,
-            player_action=req.playerAction,
-            client_version=req.clientVersion,
-        )
+        active = runner.registry.open(run_id)
+        async with active.lock:
+            result = await runner.drive_turn(
+                run_id=run_id,
+                scene_id=req.sceneId,
+                client_action_id=req.clientActionId,
+                expected_event_sequence=req.expectedEventSequence,
+                player_action=req.playerAction,
+                client_version=req.clientVersion,
+            )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -1094,7 +1096,7 @@ async def root() -> str:
     <tr><td>GET</td><td><code>/v1/scenes/:sceneId</code></td><td>场景元数据</td></tr>
     <tr><td>POST</td><td><code>/v1/analytics/events</code></td><td>埋点</td></tr>
   </table>
-  <p>客户端：<code>启动游戏.cmd</code>（mock 模式） / <code>启动完整.cmd</code>（前后端）。</p>
+  <p>客户端：仓库根目录唯一入口 <code>Demo-01.cmd</code>（真实 API + 确定性 mock LLM）。</p>
   <p>OpenAPI: <a href="/docs" style="color: #b08cff;">/docs</a></p>
   <h2>W7 留存机制</h2>
   <table>

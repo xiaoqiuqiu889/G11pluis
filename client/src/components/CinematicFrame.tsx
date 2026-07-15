@@ -53,11 +53,13 @@ export function CinematicFrame({
       {/* 灯泡闪烁覆盖层（photo_lab 专用） */}
       {bulbFlicker && <div className="absolute inset-0 bulb-flicker pointer-events-none" aria-hidden />}
 
-      {/* 状态栏：年份 + 地点（左上） */}
+      {/* 状态栏：年份 + 地点（左上） · UP-20260715-042 修复"室"字孤零零 */}
       {meta && (
-        <div className="absolute top-12 left-6 z-20 max-w-md">
-          <p className="t-overline text-amber-glow mb-1">{meta.year}</p>
-          <p className="t-narration text-paper-200 text-sm">{meta.location}</p>
+        <div className="absolute top-12 left-3 right-3 sm:left-6 sm:right-6 z-40 flex flex-col items-center text-center pointer-events-none">
+          <p className="t-overline text-amber-glow mb-1 px-4">{meta.year}</p>
+          <p className="t-narration text-paper-200 text-sm max-w-3xl px-4 py-1 leading-relaxed">
+            {meta.location}
+          </p>
         </div>
       )}
 

@@ -124,6 +124,9 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
         // eslint-disable-next-line no-console
       useStore.getState().setSnapshot(snapshot);
       loadScene(entered.scene);
+      // A successful retry must clear the stale service-unavailable state
+      // left by an earlier create/enter/snapshot failure.
+      useStore.getState().setDegradation("none");
       useStore.getState().setNetworkState("idle");
       setLoading(false);
     } catch (e) {
@@ -180,7 +183,7 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
         runId: activeRunId,
         sceneId,
         clientActionId: makeUuid(),
-        expectedEventSequence: stateAtSubmit.lastEventSequence + 1,
+        expectedEventSequence: stateAtSubmit.lastEventSequence,
         actionType: params.actionType,
         actorId,
         targetId: params.targetId ?? targetId ?? null,

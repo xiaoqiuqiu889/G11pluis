@@ -2,8 +2,8 @@
  * M1 acceptance canary: case 01, real client -> real FastAPI.
  *
  * Preconditions (from the repository root):
- *   1. Double-click `启动完整.cmd` (VITE_USE_MOCK=false), or start the same
- *      backend/frontend pair manually.
+ *   1. Double-click `Demo-01.cmd` (VITE_USE_MOCK=false). If it selects a port
+ *      other than 5173, set G1N_FRONTEND_URL to the printed Demo URL origin.
  *   2. Run: node client/e2e/m1-real-case01.cjs
  *
  * This deliberately does not intercept or mock any /v1 request.  A pass proves
@@ -47,7 +47,7 @@ async function requireRealStack() {
   } catch (error) {
     throw new Error(
       `FastAPI is not reachable at ${BACKEND}. Start the real stack with ` +
-        `\`启动完整.cmd\` before this test. Original error: ${error.message}`,
+        `\`Demo-01.cmd\` before this test. Original error: ${error.message}`,
     );
   }
   assert.equal(health.ok, true, `FastAPI /health returned ${health.status}`);
@@ -60,7 +60,7 @@ async function requireRealStack() {
   } catch (error) {
     throw new Error(
       `Vite is not reachable at ${FRONTEND}. Start the real stack with ` +
-        `\`启动完整.cmd\` before this test. Original error: ${error.message}`,
+        `\`Demo-01.cmd\` before this test. Original error: ${error.message}`,
     );
   }
   assert.equal(frontend.ok, true, `Vite scene route returned ${frontend.status}`);
@@ -154,21 +154,16 @@ async function main() {
       "the browser must enter the scene on the same server run",
     );
 
-    // Stable semantic selector: the button already exposes its action type.
-    const giveButton = page.locator('button[data-type="give"]');
-    await giveButton.waitFor({ state: "visible", timeout: TIMEOUT_MS });
-    await giveButton.click();
-
-    const utterance = page.locator("#utterance");
-    await utterance.fill("把这一张夹进你的诗集；另一张我留下。");
-
+    // The primary contextual choice submits immediately; arm the waiter first.
     const actionResponsePromise = page.waitForResponse(
       (response) =>
         response.request().method() === "POST" &&
         new URL(response.url()).pathname === `/v1/runs/${runId}/actions`,
       { timeout: TIMEOUT_MS },
     );
-    await page.getByRole("button", { name: "提交 · 给出", exact: true }).click();
+    const splitChoice = page.getByTestId("photo-choice-split");
+    await splitChoice.waitFor({ state: "visible", timeout: TIMEOUT_MS });
+    await splitChoice.click();
 
     const actionResponse = await actionResponsePromise;
     const actionRequest = actionResponse.request();
@@ -178,6 +173,11 @@ async function main() {
     assert.equal(actionRequestBody.playerAction.actionType, "give");
     assert.equal(actionRequestBody.playerAction.actorId, "leila");
     assert.equal(actionRequestBody.playerAction.targetId, "arash");
+    assert.equal(
+      actionRequestBody.playerAction.expectedEventSequence,
+      0,
+      "the first action must send the canonical sequence currently observed by the client",
+    );
     assert.deepEqual(
       actionRequestBody.playerAction.evidenceIds,
       ["photo_pair"],
@@ -232,13 +232,18 @@ async function main() {
       "the persisted snapshot must retain both photo causal seeds",
     );
 
-    // Finally prove that applyServerTurn drove the React scene to its end state.
-    const endingOverlay = page.getByText("场景结束", { exact: true });
-    await endingOverlay.waitFor({ state: "visible", timeout: TIMEOUT_MS });
-    await page.getByRole("heading", { name: "这一夜走完了", exact: true }).waitFor({
-      state: "visible",
-      timeout: TIMEOUT_MS,
-    });
+    // Finally prove that applyServerTurn rendered the authoritative consequence.
+    const endingConsequence = page.getByTestId("photo-ending-consequence");
+    await endingConsequence.waitFor({ state: "visible", timeout: TIMEOUT_MS });
+    const endingText = await endingConsequence.innerText();
+    assert.match(endingText, /shared_secret/, "the overlay must expose the authoritative ending");
+    for (const expectedText of ["一张", "阿拉什", "诗集"]) {
+      assert.equal(
+        endingText.includes(expectedText),
+        true,
+        `the split-photo consequence must mention ${expectedText}`,
+      );
+    }
 
     assert.deepEqual(pageErrors, [], `unexpected page errors: ${pageErrors.join(" | ")}`);
     assert.deepEqual(

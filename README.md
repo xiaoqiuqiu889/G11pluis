@@ -20,31 +20,24 @@ W4 = **完整可玩的部署**：
 
 ---
 
-## 三种启动方式
+## 唯一启动方式
 
-| 启动器 | 后端 | 客户端 | 数据库 | LLM | 用途 |
-|---|---|---|---|---|---|
-| `启动游戏.cmd` | ❌ 不用 | ✅ mock | ❌ 不用 | 内置 mock | 体验 demo（默认） |
-| `启动后端.cmd` | ✅ | ❌ 不用 | ✅ SQLite | mock | 联调 API |
-| `启动完整.cmd` | ✅ | ✅ VITE_USE_MOCK=false | ✅ SQLite | mock | **完整端到端** |
+双击仓库根目录的 `Demo-01.cmd`。这是当前唯一受支持的一键启动入口：
 
-`启动完整.cmd` 是 W4 的关键交付：双击后浏览器打开游戏，
-每个动作都打到 `:8000/v1/runs/:id/actions`，每个回响都进
-`data/g1n.db`，每个 LLM 调用都留痕在 `model_calls` 表。
+* 客户端固定使用真实 API 链路（`VITE_USE_MOCK=false`）。
+* 服务端固定使用确定性 mock LLM（`G1N_USE_MOCK=1`），无需 API Key。
+* 服务端状态写入 SQLite；玩家动作会到达
+  `:8000/v1/runs/:id/actions`，模型调用会记录在 `model_calls`。
+* 启动器不会强杀未知进程；5173 被占用时会自动选择 5174–5199
+  中的空闲端口，并在控制台打印最终 Demo 地址。
 
-### 启用真实 LLM（可选）
+只检查依赖、不启动服务：
 
 ```cmd
-set DEEPSEEK_API_KEY=sk-...
-启动完整.cmd
+Demo-01.cmd --check
 ```
 
-* 没设 API key → 默认 mock 模式（无需任何 key）。
-* 任何一个 key 设了 → 切换到对应 provider：
-  * `OPENAI_API_KEY` → OpenAI 兼容（默认 base URL）
-  * `DEEPSEEK_API_KEY` → DeepSeek
-  * `QWEN_API_KEY` → 通义千问
-* 想强制 mock：`set G1N_USE_MOCK=1` 后启动。
+演示边界和验收方法见 `docs/demo-01.md`。
 
 ---
 
@@ -237,9 +230,10 @@ export const USE_MOCK: boolean =
 | VITE_USE_MOCK | 行为 |
 |---|---|
 | `true` (默认) / 未设 | 客户端内置 mock；可独立跑；不需要后端 |
-| `false` | 调 `:8000/v1/...`；需 `启动后端.cmd` 配合 |
+| `false` | 调 `:8000/v1/...`；由 `Demo-01.cmd` 启动并校验后端 |
 
-`启动完整.cmd` 已经把 `VITE_USE_MOCK=false` 注入到 Vite 启动命令里。
+`Demo-01.cmd` 会把 `VITE_USE_MOCK=false` 注入 Vite，并把服务端锁定在
+确定性 mock LLM 模式；不要使用未知来源的已编译 Vite 实例替代该入口。
 
 ---
 
@@ -340,9 +334,7 @@ G1-ai-native/
 │   └── w3-integration-report.md   # W3 集成报告
 ├── data/                    # 运行时（SQLite + 日志）— 不入 git
 ├── tools/                   # 内容工具 + 4 项自检 + W4 烟雾测试
-├── 启动游戏.cmd             # 客户端（mock 模式）
-├── 启动后端.cmd             # ← W4：后端 + SQLite
-├── 启动完整.cmd             # ← W4：前后端 + SQLite（VITE_USE_MOCK=false）
+├── Demo-01.cmd              # 唯一一键启动入口（真实 API + 确定性 mock LLM）
 └── README.md                # 本文件
 ```
 
@@ -351,22 +343,21 @@ G1-ai-native/
 ## 快速验证
 
 ```cmd
-:: 1) 启动后端
-启动后端.cmd
+:: 1) 环境预检
+Demo-01.cmd --check
 
-:: 2) 另开窗口 — 跑端到端烟雾测试
-cd D:\G1-ai-native
-python tools\_w4_e2e_smoke.py
+:: 2) 启动真实 API Demo
+Demo-01.cmd
 
-:: 3) 启动完整
-启动完整.cmd
+:: 3) 另开窗口运行正式浏览器 E2E
+node client\e2e\m1-real-case01.cjs
 ```
 
 应该看到：
-* 浏览器打开 `http://localhost:5173/`
+* 浏览器打开控制台所打印的 `photo_lab_2008` 地址
 * 每个动作打到后端
 * `data/g1n.db` 增长
-* `data/server.log` 有 LLM 调用留痕
+* `/health` 返回 `service=g1n-server` 且 `llm.isMock=true`
 
 ---
 

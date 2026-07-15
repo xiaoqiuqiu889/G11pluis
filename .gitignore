@@ -92,6 +92,9 @@ tmp/
 
 # --- Project-specific noise ---
 _dbg.py
+_start_*.cmd
+client/e2e/_debug-*.cjs
+e2e-screenshots/_debug-*.png
 *.bak
 *.tmp
 *.orig
