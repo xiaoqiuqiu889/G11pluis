@@ -52,7 +52,7 @@ from .state_machine import (
     apply_reducer_outcome,
     reduce,
 )
-from .types import SCHEMA_VERSION, clamp_unit
+from .types import SCHEMA_VERSION, ScenePhase, clamp_unit
 from .world_snapshot import (
     CanonicalState,
     RecentOutcomeRef,
@@ -272,7 +272,7 @@ class Resolver:
                 deterministic.append(f"rejected player action: {exc}")
                 outcome = self._build_rejection(
                     snapshot=snapshot,
-                    event_sequence=snapshot.eventSequence,
+                    event_sequence=next_seq,
                     idempotency_key=idem,
                     player_action=player_action,
                     reason=str(exc),
@@ -400,6 +400,30 @@ class Resolver:
         for s in auto_fired:
             if s not in fired_seeds:
                 fired_seeds.append(s)
+
+        # The Resolver alone decides when a whitelisted scene ending is met.
+        # Planted seeds remain in the snapshot; fired seeds may have been
+        # retired, so include both this turn and the append-only event log.
+        available_seed_ids = {
+            str(seed.get("id"))
+            for seed in working.causalSeedsActive
+            if isinstance(seed, dict) and seed.get("id")
+        }
+        available_seed_ids.update(fired_seeds)
+        available_seed_ids.update(_historical_fired_seed_ids(event_log))
+        legal_ending_id = _match_legal_ending(contract, available_seed_ids)
+        if legal_ending_id is not None:
+            working = working.with_canonical_state(
+                phase=ScenePhase.ENDED.value,
+                endingId=legal_ending_id,
+            )
+            next_beat_info = {
+                "sceneId": working.canonicalState.currentSceneId,
+                "beatId": f"ending:{legal_ending_id}",
+                "legalEndingId": legal_ending_id,
+            }
+            transition = "end_scene"
+            deterministic.append(f"legal ending matched: {legal_ending_id!r}")
 
         # ---- 7. Bump event sequence + compute checksum -----------------
         working = working.with_event_sequence(next_seq)
@@ -695,6 +719,45 @@ def _reason_code(exc: Exception) -> str:
         return "duplicate_proposal"
     return "violates_contract"
 
+
+def _historical_fired_seed_ids(event_log: EventLog) -> set[str]:
+    """Collect causal seeds retired by earlier authoritative turns."""
+
+    fired: set[str] = set()
+    for event in event_log:
+        if event.causalSeed:
+            fired.add(str(event.causalSeed))
+        values = event.validatedDelta.get("firedCausalSeeds", [])
+        if isinstance(values, list):
+            fired.update(str(value) for value in values if value)
+    return fired
+
+
+def _match_legal_ending(
+    contract: NarrativeContract, available_seed_ids: set[str]
+) -> str | None:
+    """Return the first declared ending whose non-empty seed conditions match."""
+
+    for ending in contract.legal_endings:
+        ending_id = ending.get("endingId")
+        conditions = ending.get("conditions", []) or []
+        if not ending_id or not isinstance(conditions, list) or not conditions:
+            continue
+        required: set[str] = set()
+        for condition in conditions:
+            if isinstance(condition, str) and condition:
+                required.add(condition)
+            elif isinstance(condition, dict):
+                seed_id = (
+                    condition.get("seedId")
+                    or condition.get("seed_id")
+                    or condition.get("id")
+                )
+                if seed_id:
+                    required.add(str(seed_id))
+        if required and required.issubset(available_seed_ids):
+            return str(ending_id)
+    return None
 
 def _merge_clamp_audits(
     reducer_outcome: ReducerOutcome | None,

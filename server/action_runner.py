@@ -49,6 +49,7 @@ import json
 import logging
 import time
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -59,9 +60,12 @@ from engine import (
 )
 from engine.exceptions import (
     EngineError,
+    IdempotencyReplayError,
+    SequenceMismatchError,
     ValidationError,
 )
 from engine.resolver import Resolver as EngineResolver
+from engine.state_machine import REDUCERS, reduce
 from engine.types import ScenePhase
 
 from agents.resolver import (
@@ -158,6 +162,16 @@ def _build_npc_proposer_request(
     )
 
 
+def _contract_cast_ids(contract: dict[str, Any]) -> list[str]:
+    """Return the scene contract's authoritative on-stage cast."""
+
+    return [
+        character["characterId"]
+        for character in contract.get("cast", [])
+        if isinstance(character, dict) and character.get("characterId")
+    ]
+
+
 def _build_director_request(
     *, run_id: str, scene_id: str, player_action: dict[str, Any],
     contract: dict[str, Any],
@@ -167,7 +181,7 @@ def _build_director_request(
     payload = {
         "sceneId": scene_id,
         "allowedBeats": [b.get("beatId") for b in contract.get("allowed_beats", [])][:12],
-        "forbiddenReveals": [r.get("revealKey") for r in contract.get("forbidden_reveals", [])][:8],
+        "forbiddenReveals": [r.get("revealKey") for r in contract.get("forbidden_reveals", [])],
         "actionType": player_action.get("actionType"),
     }
     return ModelRequest(
@@ -380,6 +394,40 @@ class ActionRunner:
                 run_id, new_scene_id=scene_id
             )
 
+        # Normalise resolver-owned bookkeeping before any model call.  A
+        # zero sequence is meaningful on the first turn, so do not use a
+        # truthiness check here.
+        player_action = dict(player_action)
+        player_action["expectedEventSequence"] = int(expected_event_sequence)
+        player_action.setdefault("clientActionId", client_action_id)
+
+        # Reject deterministic player-input failures before starting the
+        # gateway, planting mandatory seeds, or touching persistence.  The
+        # reducer is run against a copied budget: this reuses the canonical
+        # validation rules without consuming the real scene budget on the
+        # successful path.
+        try:
+            self._prevalidate_player_action(
+                snapshot=active.snapshot,
+                event_log=active.event_log,
+                player_action=player_action,
+                scene_budget=active.scene_budget,
+                contract=active.contract,
+            )
+        except ValidationError as exc:
+            logger.warning(
+                "action_runner: rejected player action before model calls: %s: %s",
+                type(exc).__name__,
+                exc,
+            )
+            return self._build_rejection_result(
+                started=started,
+                snapshot=active.snapshot,
+                player_action=player_action,
+                client_action_id=client_action_id,
+                reason=f"{type(exc).__name__}: {exc}",
+            )
+
         # Start the gateway's per-run state BEFORE the first
         # LLM call.  Without this, the gateway raises
         # "run not started; call start_run() first".
@@ -462,16 +510,14 @@ class ActionRunner:
             director_beat = _default_director_beat(
                 run_id=run_id, scene_id=scene_id, contract=contract
             )
+        # ``involvedCharacterIds`` is internal resolver context, not a
+        # Director model-output field.  Inject the authoritative scene cast
+        # after schema validation so target legality uses the same source as
+        # the deterministic preflight.
+        director_beat = dict(director_beat)
+        director_beat["involvedCharacterIds"] = _contract_cast_ids(contract)
 
         # 4. Resolver (the only writer).
-        # Attach the resolver's expected event sequence to the
-        # action so the engine's sequence-mismatch check fires
-        # on stale clients.
-        if expected_event_sequence:
-            player_action = dict(player_action)
-            player_action["expectedEventSequence"] = int(expected_event_sequence)
-        player_action.setdefault("clientActionId", client_action_id)
-
         # Plant mandatory-echo seeds BEFORE the resolver runs
         # so the resolver's auto-fire evaluation sees them
         # (decision 3: "mandatory_echo is the only path for AI
@@ -479,16 +525,17 @@ class ActionRunner:
         # contract for the (action, target, evidence)
         # combination that triggers a known seed.
         try:
-            from engine.causal_seed import CausalSeed, TriggerCondition
-            seed_to_plant = _select_mandatory_seed(
+            seeds_to_plant = _select_mandatory_seeds(
                 scene_id=scene_id,
                 action_type=player_action.get("actionType", ""),
                 target_id=player_action.get("targetId"),
                 evidence_ids=list(player_action.get("evidenceIds", []) or []),
             )
-            if seed_to_plant is not None:
+            if seeds_to_plant:
                 active.snapshot = active.snapshot.with_causal_seeds_active(
-                    list(active.snapshot.causalSeedsActive) + [seed_to_plant.to_dict()]
+                    _merge_mandatory_seeds(
+                        active.snapshot.causalSeedsActive, seeds_to_plant
+                    )
                 )
         except Exception as exc:  # noqa: BLE001
             logger.warning("action_runner: seed planting failed: %s", exc)
@@ -599,6 +646,70 @@ class ActionRunner:
         self._resolvers[run_id] = ResolverHolder(resolver=resolver)
         return resolver
 
+    @staticmethod
+    def _prevalidate_player_action(
+        *,
+        snapshot: WorldSnapshot,
+        event_log: EventLog,
+        player_action: dict[str, Any],
+        scene_budget: SceneBudget,
+        contract: dict[str, Any],
+    ) -> None:
+        """Run deterministic input gates without mutating canonical state."""
+
+        expected = player_action.get("expectedEventSequence")
+        if expected is not None and snapshot.eventSequence - int(expected) > 1:
+            raise SequenceMismatchError(
+                f"client sequence {expected} is more than 1 behind canonical "
+                f"{snapshot.eventSequence}"
+            )
+
+        client_action_id = player_action.get("clientActionId")
+        if client_action_id:
+            for event in event_log:
+                if event.actionPayload.get("clientActionId") == client_action_id:
+                    raise IdempotencyReplayError(
+                        f"clientActionId already applied: {str(client_action_id)[:8]}"
+                    )
+
+        cast = _contract_cast_ids(contract)
+        reduce(
+            player_action,
+            snapshot,
+            deepcopy(scene_budget),
+            scene_whitelist=set(REDUCERS),
+            cast=cast or None,
+        )
+
+    def _build_rejection_result(
+        self,
+        *,
+        started: float,
+        snapshot: WorldSnapshot,
+        player_action: dict[str, Any],
+        client_action_id: str,
+        reason: str,
+    ) -> TurnResult:
+        """Return a non-canonical rejection at the current event sequence."""
+
+        outcome = self._build_rejection_outcome(
+            snapshot=snapshot,
+            player_action=player_action,
+            reason=reason,
+        )
+        return TurnResult(
+            outcome=outcome.to_dict(),
+            snapshot=snapshot.to_dict(),
+            client_action_id=client_action_id,
+            event_sequence=int(snapshot.eventSequence),
+            degraded=None,
+            fallback_used=False,
+            latency_ms=int((time.monotonic() - started) * 1000),
+            resolved_text="",
+            model_calls=[],
+            degraded_to_l3=False,
+        )
+
     def _build_rejection_outcome(
         self,
         *,
@@ -607,9 +718,9 @@ class ActionRunner:
         reason: str,
     ) -> Any:
         from engine.resolver import ResolverOutcome
-        # The schema requires eventSequence >= 1; rejection
-        # outcomes should still consume the next event slot
-        # so the client can sync up.  Use next_seq.
+        # Rejections are returned to the caller but never persisted.  Keep
+        # their audit outcome schema-valid (eventSequence >= 1) while the
+        # TurnResult and unchanged snapshot remain at the canonical N.
         next_seq = max(1, snapshot.eventSequence + 1)
         return ResolverOutcome(
             outcomeId=str(uuid.uuid4()),
@@ -718,6 +829,23 @@ _MANDATORY_SEED_RULES: list[dict[str, Any]] = [
     {
         "scene": "photo_lab_2008",
         "action": "give",
+        "target": "arash",
+        "evidence": ["photo_pair"],
+        "seed_id": "photo_in_pocket",
+        "description": "Leila keeps one graduation photo in her bag.",
+        "target_scenes": ["farewell_2011", "reunion_2024"],
+    },
+    {
+        "scene": "photo_lab_2008",
+        "action": "give",
+        "target": "arash",
+        "evidence": ["photo_pair"],
+        "seed_id": "photo_in_book",
+        "description": "Arash keeps one graduation photo in the Rumi book.",
+        "target_scenes": ["farewell_2011", "reunion_2024"],
+    },    {
+        "scene": "photo_lab_2008",
+        "action": "give",
         "target": "leila",
         "evidence": ["photo_A"],
         "seed_id": "photo_in_pocket",
@@ -754,43 +882,38 @@ _MANDATORY_SEED_RULES: list[dict[str, Any]] = [
 ]
 
 
-def _select_mandatory_seed(
+def _select_mandatory_seeds(
     *,
     scene_id: str,
     action_type: str,
     target_id: str | None,
     evidence_ids: list[str],
-):
-    """Pick the mandatory-echo seed to plant for this turn.
-
-    Returns ``None`` if no rule matches; the resolver will
-    still run, but no seed will be planted.  Returning a
-    :class:`engine.causal_seed.CausalSeed` here is the W4
-    equivalent of the integration test's manual
-    ``with_causal_seeds_active`` call.
-    """
+) -> list[Any]:
+    """Return all mandatory seeds planted by this turn, de-duplicated by ID."""
 
     from engine.causal_seed import CausalSeed, TriggerCondition
 
     target = (target_id or "").strip()
     evidence_set = {eid for eid in evidence_ids if eid}
+    selected: list[CausalSeed] = []
+    selected_ids: set[str] = set()
     for rule in _MANDATORY_SEED_RULES:
-        if rule["scene"] != scene_id:
-            continue
-        if rule["action"] != action_type:
+        if rule["scene"] != scene_id or rule["action"] != action_type:
             continue
         if rule["target"] != target:
             continue
         if not evidence_set.issuperset(set(rule["evidence"])):
             continue
-        return CausalSeed(
+        if rule["seed_id"] in selected_ids:
+            continue
+        selected.append(CausalSeed(
             id=rule["seed_id"],
             source_scene=scene_id,
-            source_event="w4_demo_plant",  # the engine requires this
+            source_event="w4_demo_plant",
             description=rule["description"],
             trigger_condition=TriggerCondition(
                 type="scene_match",
-                predicate=f"current_scene in target_scenes",
+                predicate="current_scene in target_scenes",
             ),
             target_scenes=list(rule["target_scenes"]),
             echo_intensity=0.9,
@@ -798,9 +921,47 @@ def _select_mandatory_seed(
             linkedCharacterIds=["leila", "arash"],
             decayRate=0.02,
             tags=["mandatory_echo", "w4_demo"],
-        )
-    return None
+        ))
+        selected_ids.add(rule["seed_id"])
+    return selected
 
+
+def _select_mandatory_seed(
+    *,
+    scene_id: str,
+    action_type: str,
+    target_id: str | None,
+    evidence_ids: list[str],
+):
+    """Backward-compatible single-seed selector."""
+
+    seeds = _select_mandatory_seeds(
+        scene_id=scene_id,
+        action_type=action_type,
+        target_id=target_id,
+        evidence_ids=evidence_ids,
+    )
+    return seeds[0] if seeds else None
+
+
+def _merge_mandatory_seeds(
+    existing: list[dict[str, Any]], additions: list[Any]
+) -> list[dict[str, Any]]:
+    """Append newly planted seeds without duplicating canonical IDs."""
+
+    merged = [dict(seed) for seed in existing]
+    known_ids = {
+        str(seed.get("id")) for seed in merged
+        if isinstance(seed, dict) and seed.get("id")
+    }
+    for seed in additions:
+        seed_dict = seed.to_dict()
+        seed_id = str(seed_dict.get("id", ""))
+        if not seed_id or seed_id in known_ids:
+            continue
+        merged.append(seed_dict)
+        known_ids.add(seed_id)
+    return merged
 
 # ---------------------------------------------------------------------------
 # Singleton

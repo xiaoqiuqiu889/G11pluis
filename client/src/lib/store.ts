@@ -42,6 +42,7 @@ export interface RunSlice {
   setRun: (runId: string, sceneId: SceneId) => void;
   setState: (state: RunState) => void;
   setSnapshot: (snapshot: WorldSnapshot) => void;
+  applyServerTurn: (snapshot: WorldSnapshot, outcome: ResolverOutcome, eventSequence: number) => void;
   appendOutcome: (outcome: ResolverOutcome) => void;
   bumpTurn: () => void;
   setPendingAction: (pa: { clientActionId: string; actionType: ActionType } | null) => void;
@@ -57,6 +58,12 @@ export interface SceneProgress {
   evidenceCollected: string[];   // 已发现证据 ID
   causalSeedsFired: string[];    // 本场景已触发的种子
   artifactsHeld: string[];       // 当前持有的物件
+  /**
+   * UP-20260715-028 落地：玩家在当前场景点过（含 selected 但未提交）的行为。
+   * 引导模式（discoverable guidance）依据此集合判定：已发现的全亮；未发现的灰度 + 悬停亮起；
+   * "调查" 永远作为引导入口全亮。
+   */
+  discoveredActions: ActionType[];
   npcReactions: Array<{
     characterId: string;
     text: string;
@@ -73,9 +80,15 @@ export interface SceneSlice {
   loadScene: (meta: SceneMeta) => void;
   markInvestigated: (id: string) => void;
   spendAction: (type: ActionType) => void;
+  refundAction: (type: ActionType) => void;
   addEvidence: (evidenceId: string) => void;
   fireSeed: (seedId: string) => void;
   holdArtifact: (id: string) => void;
+  /**
+   * UP-20260715-028：玩家点过（含 selected 但未提交）某个行为后调一次，
+   * 把该行为从"灰度引导态"切到"全亮已熟悉态"。
+   */
+  discoverAction: (type: ActionType) => void;
   pushNpcReaction: (r: SceneProgress["npcReactions"][number]) => void;
   setNarration: (text: string, typewriter?: boolean) => void;
   clearScene: () => void;
@@ -115,6 +128,7 @@ export interface CommerceSlice {
   paywallFrom: SceneId | RunState | null;
   setCredits: (c: number) => void;
   spendCredits: (n: number) => boolean;
+  refundCredits: (n: number) => void;
   grantProduct: (id: ProductId, credits?: number, replays?: number) => void;
   consumeReplay: () => boolean;
   openPaywall: (from: SceneId | RunState) => void;
@@ -166,6 +180,7 @@ const initialSceneProgress: SceneProgress = {
   evidenceCollected: [],
   causalSeedsFired: [],
   artifactsHeld: [],
+  discoveredActions: [],
   npcReactions: [],
 };
 
@@ -196,6 +211,15 @@ export const useStore = create<Store>()(
         turnIndex: snapshot.canonicalState.turnIndex,
         causalSeedsActive: snapshot.causalSeedsActive,
       }),
+    applyServerTurn: (snapshot, outcome, eventSequence) =>
+      set((s) => ({
+        worldSnapshot: { ...snapshot, eventSequence },
+        recentOutcomes: [outcome, ...s.recentOutcomes].slice(0, MAX_RECENT_OUTCOMES),
+        lastEventSequence: eventSequence,
+        globalTension: snapshot.canonicalState.globalTension,
+        turnIndex: snapshot.canonicalState.turnIndex,
+        causalSeedsActive: snapshot.causalSeedsActive,
+      })),
     appendOutcome: (outcome) =>
       set((s) => ({
         recentOutcomes: [outcome, ...s.recentOutcomes].slice(0, MAX_RECENT_OUTCOMES),
@@ -243,6 +267,18 @@ export const useStore = create<Store>()(
           turnsByAction: { ...s.sceneProgress.turnsByAction, [type]: (s.sceneProgress.turnsByAction[type] ?? 0) + 1 },
         },
       })),
+    // W12-E2E-runsync: 动作提交失败后退还预算（玩家不会因为网络抖动被罚积分）
+    refundAction: (type) =>
+      set((s) => {
+        const cur = s.sceneProgress.turnsByAction[type] ?? 0;
+        if (cur <= 0) return s;
+        return {
+          sceneProgress: {
+            ...s.sceneProgress,
+            turnsByAction: { ...s.sceneProgress.turnsByAction, [type]: cur - 1 },
+          },
+        };
+      }),
     addEvidence: (evidenceId) =>
       set((s) => ({
         sceneProgress: {
@@ -270,6 +306,17 @@ export const useStore = create<Store>()(
             : [...s.sceneProgress.artifactsHeld, id],
         },
       })),
+    // UP-20260715-028：玩家点过某个行为（含 selected 但未提交）后从"灰度引导态"切到"全亮已熟悉态"
+    discoverAction: (type) =>
+      set((s) => {
+        if (s.sceneProgress.discoveredActions.includes(type)) return s;
+        return {
+          sceneProgress: {
+            ...s.sceneProgress,
+            discoveredActions: [...s.sceneProgress.discoveredActions, type],
+          },
+        };
+      }),
     pushNpcReaction: (r) =>
       set((s) => ({
         sceneProgress: {
@@ -314,6 +361,7 @@ export const useStore = create<Store>()(
       set({ credits: credits - n });
       return true;
     },
+    refundCredits: (n) => set((s) => ({ credits: s.credits + n })),
     grantProduct: (id, credits = 0, replays = 0) =>
       set((s) => ({
         ownedProducts: s.ownedProducts.includes(id) ? s.ownedProducts : [...s.ownedProducts, id],

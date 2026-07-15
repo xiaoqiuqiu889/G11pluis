@@ -203,6 +203,51 @@
 }
 
 /* ==========================================================================
+   UP-20260715-028 · 12 行为按钮引导灰度
+   --------------------------------------------------------------------------
+   决策 1（每个场景 ≥ 6 种结构化行为）不变 — 所有 12 个按钮都存在
+   产品意图：让玩家从"调查"开始（引导入口 gateway），不被 12 按钮淹没
+   - action-btn--gateway: 永远全亮（"调查" = 引导入口 + 安全岛）
+   - action-btn--dimmed: 灰度 + 略小（未 discovered 行为）
+     鼠标悬停/聚焦/已点过会切到全亮（由 React data-lit 控制）
+   ========================================================================== */
+
+.action-btn--gateway {
+  border-color: var(--color-amber-glow);
+  color: var(--color-amber-glow);
+  background: rgba(212, 161, 85, 0.08);
+  box-shadow: 0 0 0 1px rgba(212, 161, 85, 0.25), 0 0 16px rgba(212, 161, 85, 0.15);
+}
+
+.action-btn--gateway:hover:not([disabled]) {
+  background: rgba(212, 161, 85, 0.16);
+  box-shadow: 0 0 0 1px rgba(212, 161, 85, 0.4), 0 0 20px rgba(212, 161, 85, 0.25);
+}
+
+.action-btn--dimmed {
+  opacity: 0.32;
+  filter: saturate(0.4) blur(0.3px);
+  border-style: dashed;
+}
+
+.action-btn--dimmed:hover:not([disabled]),
+.action-btn--dimmed:focus-visible:not([disabled]) {
+  opacity: 0.85;
+  filter: saturate(0.85) blur(0);
+  border-style: solid;
+  border-color: var(--color-amber-glow);
+  color: var(--color-amber-glow);
+  background: rgba(212, 161, 85, 0.06);
+}
+
+/* 当前选中的按钮（无论 discovered 与否）保持高亮 */
+.action-btn[data-active="true"] {
+  border-color: var(--color-amber-glow);
+  color: var(--color-amber-glow);
+  background: rgba(212, 161, 85, 0.12);
+}
+
+/* ==========================================================================
    降级指示器（4 级）
    ========================================================================== */
 

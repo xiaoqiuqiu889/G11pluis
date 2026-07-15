@@ -38,7 +38,7 @@ export default function Reunion2008() {
 
   const [jumping, setJumping] = useState(false);
 
-  const { sceneMeta, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
     sceneId: "2008_reunion",
     actorId: "natasha_roschina",
     targetId: "ilya_berman",
@@ -150,6 +150,9 @@ export default function Reunion2008() {
               question: { label: "问'5:55 你让莉莎传话吗'", targetId: "ilya_berman" },
               comfort: { label: "承认'我在 4 秒后才接'", targetId: "ilya_berman" },
             }}
+          ready={ready}
+            runError={runError}
+            onRetryRun={retryRun}
           />
         </div>
       </div>

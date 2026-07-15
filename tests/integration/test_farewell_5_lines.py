@@ -54,6 +54,11 @@ FIVE_LINE_ECHOES = {
     "farewell_2011": "admit_1985_behaviors_5_candidate_lines",
     "reunion_2024": "first_words_admit_2008_2011",
 }
+DEEP_REPLAY_LINE_ID = "line_99_across_space_other_self"
+CONDITIONAL_REPLAY_REQUIRED_FIELDS = {
+    "line_id", "text", "speaker", "seed_id", "referenced_seed",
+    "trigger", "constraint",
+}
 
 # Per-scene fallback (line_01) the selection_rule MUST use when no
 # candidate matches the player's triggered seeds.
@@ -77,7 +82,12 @@ OPTIONAL_LINE_FIELDS = {
 }
 
 # selection_rule required sub-fields.
-REQUIRED_SELECTION_RULE_FIELDS = {"algorithm", "red_line"}
+REQUIRED_SELECTION_RULE_FIELDS = {
+    "first_line_rule",
+    "no_match_fallback",
+    "algorithm",
+    "red_line",
+}
 
 # Decision-2 supplementary clause anchor (must appear in requirements-review-v1.md).
 DECISION_2_SUPPLEMENTARY_CLAUSE = (
@@ -242,6 +252,16 @@ def _assert_candidate_lines_unified(
         missing_rule, set(),
         f"{scene_id}.selection_rule: missing required fields {missing_rule}; "
         f"got keys={sorted(rule_keys)}"
+    )
+    test.assertEqual(
+        rule["first_line_rule"], "first_match_in_priority_order",
+        f"{scene_id}.selection_rule.first_line_rule must make the first "
+        "matching priority candidate deterministic"
+    )
+    test.assertEqual(
+        rule["no_match_fallback"], LINE_01_FALLBACK[scene_id],
+        f"{scene_id}.selection_rule.no_match_fallback must select the "
+        "documented line_01 fallback"
     )
 
     # ----- 8. red_line forbids AI 导演 free-form creation -----
@@ -475,6 +495,32 @@ class W11BFiveLineUnificationTest(unittest.TestCase):
             f"missing: {era_2011_seeds - actual_seeds}"
         )
 
+        # UP-20260715-034 is a strict conditional replay attached to the
+        # existing first-words echo. It must not become a sixth mandatory
+        # echo or a sixth candidate line.
+        self.assertNotIn(DEEP_REPLAY_LINE_ID, {ln["line_id"] for ln in lines})
+        mandatory_echo_ids = [echo["id"] for echo in self.reunion["mandatory_echoes"]]
+        self.assertEqual(len(mandatory_echo_ids), 5)
+        self.assertNotIn("deep_replay_across_space_other_self", mandatory_echo_ids)
+        self.assertEqual(mandatory_echo_ids[-1], "i_arrived_text_2024_resonance")
+
+        first_words_echo = next(
+            echo for echo in self.reunion["mandatory_echoes"]
+            if echo["id"] == FIVE_LINE_ECHOES["reunion_2024"]
+        )
+        replay_lines = first_words_echo["conditional_replay_lines"]
+        self.assertEqual(len(replay_lines), 1)
+        deep_line = replay_lines[0]
+        self.assertEqual(set(deep_line), CONDITIONAL_REPLAY_REQUIRED_FIELDS)
+        self.assertEqual(deep_line["line_id"], DEEP_REPLAY_LINE_ID)
+        self.assertEqual(deep_line["speaker"], "leila")
+        self.assertEqual(deep_line["seed_id"], "across_space_other_self")
+        self.assertEqual(deep_line["referenced_seed"], "across_space_other_self")
+        self.assertIn("至少 3 个 mandatory echo", deep_line["trigger"])
+        self.assertIn("不得把它用作", deep_line["constraint"])
+        self.assertIn("禁止自由改写", deep_line["constraint"])
+        self.assertIn('他们是不是"我们"？我不知道。', deep_line["text"])
+
     # ==================================================================
     # Test 4: 3 scene 5 句备选 design pattern unified
     # ==================================================================
@@ -688,7 +734,18 @@ class W11BFiveLineUnificationTest(unittest.TestCase):
             f"selection_rule.required must be {REQUIRED_SELECTION_RULE_FIELDS}"
         )
 
-        # ----- 5. Decision 2 supplementary clause present in requirements-review -----
+        # ----- 5. strict conditional replay schema -----
+        self.assertIn("conditional_replay_lines", echo_props)
+        replay_schema = echo_props["conditional_replay_lines"]
+        self.assertEqual(replay_schema["type"], "array")
+        replay_item_schema = replay_schema["items"]
+        self.assertFalse(replay_item_schema["additionalProperties"])
+        self.assertEqual(
+            set(replay_item_schema["required"]),
+            CONDITIONAL_REPLAY_REQUIRED_FIELDS,
+        )
+
+        # ----- 6. Decision 2 supplementary clause present in requirements-review -----
         self.assertIn(
             DECISION_2_SUPPLEMENTARY_CLAUSE, self.req_review,
             f"requirements-review-v1.md: 决策 2 must include the supplementary "

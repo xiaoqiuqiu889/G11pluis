@@ -337,11 +337,43 @@
             "maxItems": 16,
             "description": "Pre-approved candidate lines for this echo. The selection_rule chooses ONE based on the player's triggered seeds; AI Director must NOT create lines outside this list (UP-20260715-015 red line)."
           },
+          "conditional_replay_lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["line_id", "text", "speaker", "seed_id", "referenced_seed", "trigger", "constraint"],
+              "properties": {
+                "line_id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^line_[0-9]{2}_[A-Za-z0-9_]+$"},
+                "text": {"type": "string", "minLength": 1, "maxLength": 4000},
+                "speaker": {"type": "string", "enum": ["arash", "leila"]},
+                "seed_id": {"type": "string", "minLength": 1, "maxLength": 128},
+                "referenced_seed": {"type": "string", "minLength": 1, "maxLength": 128},
+                "trigger": {"type": "string", "minLength": 1, "maxLength": 1000},
+                "constraint": {"type": "string", "minLength": 1, "maxLength": 2000}
+              }
+            },
+            "minItems": 0,
+            "maxItems": 8,
+            "description": "Strict conditional replay lines attached to an existing mandatory echo. They are excluded from candidate_lines selection, priority ordering, and fallback counts."
+          },
           "selection_rule": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["algorithm", "red_line"],
+            "required": ["first_line_rule", "no_match_fallback", "algorithm", "red_line"],
             "properties": {
+              "first_line_rule": {
+                "type": "string",
+                "enum": ["first_match_in_priority_order"],
+                "description": "Deterministic first-line policy chosen by UP-20260715-021: walk candidate_lines by ascending priority and select the first seed match."
+              },
+              "no_match_fallback": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^line_[0-9]{2}_[A-Za-z0-9_]+$",
+                "description": "Deterministic line_id used when no candidate seed matches (UP-20260715-020)."
+              },
               "algorithm": {
                 "type": "string",
                 "minLength": 1,
@@ -355,7 +387,7 @@
                 "description": "Red line that the AI Director must NOT cross (e.g. 'AI 导演不得在 candidate_lines 之外创造台词')."
               }
             },
-            "description": "Selection algorithm + red line. Drives the NPC Agent's run-time choice of which candidate_line to fire."
+            "description": "Deterministic first-match and fallback policy, selection algorithm, and red line. Drives the NPC Agent's run-time choice of which candidate_line to fire."
           }
         }
       },

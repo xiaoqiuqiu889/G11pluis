@@ -13,9 +13,10 @@ export interface InvestigationPanelProps {
   objects: InvestigatableObject[];
   budget: number;
   onInvestigate: (obj: InvestigatableObject) => void;
+  disabled?: boolean;
 }
 
-export function InvestigationPanel({ objects, budget, onInvestigate }: InvestigationPanelProps) {
+export function InvestigationPanel({ objects, budget, onInvestigate, disabled = false }: InvestigationPanelProps) {
   const investigated = useStore((s) => s.sceneProgress.investigated);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
@@ -42,7 +43,7 @@ export function InvestigationPanel({ objects, budget, onInvestigate }: Investiga
       <ul className="grid grid-cols-2 md:grid-cols-3 gap-2" role="list">
         {objects.map((obj) => {
           const isInvestigated = investigated.includes(obj.id);
-          const isLocked = locked && !isInvestigated;
+          const isLocked = disabled || (locked && !isInvestigated);
           const isHover = hoverId === obj.id;
           return (
             <li key={obj.id}>
@@ -52,13 +53,16 @@ export function InvestigationPanel({ objects, budget, onInvestigate }: Investiga
                 data-investigated={isInvestigated}
                 data-locked={isLocked}
                 disabled={isLocked}
-                onClick={() => onInvestigate(obj)}
+                onClick={() => {
+                  if (!isLocked) onInvestigate(obj);
+                }}
                 onMouseEnter={() => setHoverId(obj.id)}
                 onMouseLeave={() => setHoverId(null)}
                 onFocus={() => setHoverId(obj.id)}
                 onBlur={() => setHoverId(null)}
                 aria-label={`调查 ${obj.name}`}
                 aria-describedby={`desc-${obj.id}`}
+                aria-disabled={isLocked}
               >
                 <div className="flex items-center gap-2">
                   <span className="t-meta text-amber-glow/70">

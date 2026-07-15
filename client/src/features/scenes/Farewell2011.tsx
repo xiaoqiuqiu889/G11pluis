@@ -35,7 +35,7 @@ export default function Farewell2011() {
   const currentNarration = useStore((s) => s.currentNarration);
   const [jumping, setJumping] = useState(false);
 
-  const { sceneMeta, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
     sceneId: "farewell_2011",
     actorId: "leila",
     targetId: "arash",
@@ -115,6 +115,7 @@ export default function Farewell2011() {
           objects={sceneMeta.investigatableObjects}
           budget={sceneMeta.turnBudget.investigate ?? 2}
           onInvestigate={onInvestigate}
+          disabled={!ready}
         />
       </div>
 
@@ -128,6 +129,9 @@ export default function Farewell2011() {
               question: { label: "问阿拉什", targetId: "arash" },
               confront: { label: "直面阿拉什", targetId: "arash" },
             }}
+          ready={ready}
+            runError={runError}
+            onRetryRun={retryRun}
           />
         </div>
       </div>

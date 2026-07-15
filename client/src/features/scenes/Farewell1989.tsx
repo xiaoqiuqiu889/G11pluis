@@ -38,7 +38,7 @@ export default function Farewell1989() {
 
   const [jumping, setJumping] = useState(false);
 
-  const { sceneMeta, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
     sceneId: "1989_farewell",
     actorId: "natasha_roschina",
     targetId: "lisa_hoffmann",
@@ -149,6 +149,9 @@ export default function Farewell1989() {
               silence: { label: "5:55 电话响铃后沉默 4 秒", targetId: "natasha_home_phone" },
               comfort: { label: "问萨沙为什么没去机场", targetId: "sasha_kuzmin" },
             }}
+          ready={ready}
+            runError={runError}
+            onRetryRun={retryRun}
           />
         </div>
       </div>

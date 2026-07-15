@@ -1,0 +1,73 @@
+{
+  "startTime": "2026-07-15T04:05:09.351Z",
+  "endTime": "2026-07-15T04:05:32.470Z",
+  "summary": {
+    "total": 3,
+    "ok": 0,
+    "partial": 3,
+    "fail": 0
+  },
+  "cases": [
+    {
+      "name": "case_01-investigate-photo_pair",
+      "url": "http://localhost:5173/scene/photo_lab_2008",
+      "status": "partial",
+      "apiCallCount": 1,
+      "apiCallFired": true,
+      "actionType": "investigate",
+      "apiCallUrl": "http://localhost:8000/v1/runs/aa4586e0-1746-44a4-8f1f-0d9418a9eee2/actions",
+      "apiCallBody": "{\"runId\":\"aa4586e0-1746-44a4-8f1f-0d9418a9eee2\",\"sceneId\":\"photo_lab_2008\",\"clientActionId\":\"ae6cd0b0-9f68-42e9-89b3-45b70ca8e365\",\"expectedEventSequence\":1,\"playerAction\":{\"runId\":\"aa4586e0-1746-44a4-8f1f-0d9418a9eee2\",\"sceneId\":\"photo_lab_2008\",\"clientActionId\":\"ae6cd0b0-9f68-42e9-89b3-45b70ca8e36",
+      "narrationChanged": false,
+      "narrationBefore": "德黑兰大学·革命街旧书店地下室·地下放映室",
+      "narrationAfter": "德黑兰大学·革命街旧书店地下室·地下放映室",
+      "pageErrors": [],
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "name": "case_01-give-photo_to_arash",
+      "url": "http://localhost:5173/scene/farewell_2011",
+      "status": "partial",
+      "apiCallCount": 1,
+      "apiCallFired": true,
+      "actionType": "investigate",
+      "apiCallUrl": "http://localhost:8000/v1/runs/159f277d-bd95-4f04-9a6e-dcaa8b01c3d1/actions",
+      "apiCallBody": "{\"runId\":\"159f277d-bd95-4f04-9a6e-dcaa8b01c3d1\",\"sceneId\":\"farewell_2011\",\"clientActionId\":\"0237ea4e-d6bd-4f09-8fa1-49fedcbae89b\",\"expectedEventSequence\":1,\"playerAction\":{\"runId\":\"159f277d-bd95-4f04-9a6e-dcaa8b01c3d1\",\"sceneId\":\"farewell_2011\",\"clientActionId\":\"0237ea4e-d6bd-4f09-8fa1-49fedcbae89b\"",
+      "narrationChanged": false,
+      "narrationBefore": "德黑兰伊玛目霍梅尼国际机场·国际出发大厅",
+      "narrationAfter": "德黑兰伊玛目霍梅尼国际机场·国际出发大厅",
+      "pageErrors": [],
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "name": "case_02-reveal-manuscript",
+      "url": "http://localhost:5173/scene/1985_meeting",
+      "status": "partial",
+      "apiCallCount": 1,
+      "apiCallFired": true,
+      "actionType": "investigate",
+      "apiCallUrl": "http://localhost:8000/v1/runs/66d6577d-d23d-4470-b7eb-924309b8c17c/actions",
+      "apiCallBody": "{\"runId\":\"66d6577d-d23d-4470-b7eb-924309b8c17c\",\"sceneId\":\"1985_meeting\",\"clientActionId\":\"00a5bea5-17bd-4fda-a933-bdd6abb57892\",\"expectedEventSequence\":1,\"playerAction\":{\"runId\":\"66d6577d-d23d-4470-b7eb-924309b8c17c\",\"sceneId\":\"1985_meeting\",\"clientActionId\":\"00a5bea5-17bd-4fda-a933-bdd6abb57892\",\"",
+      "narrationChanged": false,
+      "narrationBefore": "莫斯科音乐学院 · 老柴院 305 琴房",
+      "narrationAfter": "莫斯科音乐学院 · 老柴院 305 琴房",
+      "pageErrors": [],
+      "consoleLogs": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    }
+  ],
+  "globalBugs": []
+}

@@ -38,7 +38,7 @@ export default function Meeting1985() {
 
   const [jumping, setJumping] = useState(false);
 
-  const { sceneMeta, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
     sceneId: "1985_meeting",
     actorId: "natasha_roschina",
     targetId: "ilya_berman",
@@ -149,6 +149,9 @@ export default function Meeting1985() {
               question: { label: "问伊利亚", targetId: "ilya_berman" },
               reveal: { label: "撕下 И. Б. 圈注页", targetId: "manuscript_op38" },
             }}
+          ready={ready}
+            runError={runError}
+            onRetryRun={retryRun}
           />
         </div>
       </div>

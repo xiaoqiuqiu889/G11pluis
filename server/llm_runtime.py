@@ -57,8 +57,9 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import json
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Sequence
 
 from model import (
     CostController,
@@ -68,8 +69,7 @@ from model import (
     SchemaValidator,
     build_default_router,
 )
-from model.gateway import build_default_gateway as _w4_build_default_gateway
-from model.models import ModelRequest, ModelResponse, TaskType
+from model.models import Message, ModelRequest, ModelResponse, ProviderResult, TaskType
 
 logger = logging.getLogger("g1n.llm_runtime")
 
@@ -156,6 +156,118 @@ def _import_provider_class(name: str) -> type | None:
 # ---------------------------------------------------------------------------
 
 
+class _TaskAwareGameplayMockProvider(MockProvider):
+    """Return deterministic, schema-valid gameplay proposals by request payload."""
+
+    _RUN_ID = "00000000-0000-0000-0000-000000000000"
+    _NPC_PROPOSAL_ID = "00000000-0000-0000-0000-000000000001"
+    _DIRECTOR_PROPOSAL_ID = "00000000-0000-0000-0000-000000000002"
+    _TIMESTAMP = "2026-07-15T00:00:00Z"
+
+    @staticmethod
+    def _last_json_payload(messages: Sequence[Message]) -> dict[str, Any] | None:
+        if not messages:
+            return None
+        try:
+            payload = json.loads(messages[-1].content)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return payload if isinstance(payload, dict) else None
+
+    @staticmethod
+    def _beat_id(raw: Any) -> str:
+        if isinstance(raw, dict):
+            return str(raw.get("beatId") or "beat_setup_0")
+        return str(raw or "beat_setup_0")
+
+    def _director_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        allowed_beats = payload.get("allowedBeats") or ["beat_setup_0"]
+        forbidden = [
+            str(item) for item in (payload.get("forbiddenReveals") or [])
+            if item
+        ]
+        return {
+            "proposalId": self._DIRECTOR_PROPOSAL_ID,
+            "runId": self._RUN_ID,
+            "sceneId": str(payload["sceneId"]),
+            "proposedBeat": self._beat_id(allowed_beats[0]),
+            "allowedByContract": True,
+            "forbiddenRevealsChecked": forbidden or ["none"],
+            "transitionToNext": False,
+            "suggestedTargetSceneId": None,
+            "reasoning": "Use the first contract-approved beat for deterministic offline play.",
+            "pacingPressure": 0.5,
+            "expectedTensionDelta": 0.05,
+            "involvedCharacterIds": ["leila", "arash"],
+            "firedCausalSeeds": [],
+            "timestamp": self._TIMESTAMP,
+            "schemaVersion": "1.0.0",
+        }
+
+    def _npc_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "proposalId": self._NPC_PROPOSAL_ID,
+            "runId": self._RUN_ID,
+            "characterId": "arash",
+            "triggerPlayerActionId": None,
+            "proposedAction": "comfort",
+            "targetId": payload.get("targetId") or "leila",
+            "speechIntent": "comfort",
+            "referencedMemoryIds": [],
+            "beliefUpdatesRequested": [],
+            "emotionalTransition": {
+                "from": "calm", "to": "tense", "intensity": 0.5,
+            },
+            "reasonCodes": ["witnessed_action"],
+            "confidence": 0.7,
+            "expectedContradictions": [],
+            "timestamp": self._TIMESTAMP,
+            "schemaVersion": "1.0.0",
+        }
+
+    def complete(
+        self,
+        *,
+        model: str,
+        messages: Sequence[Message],
+        temperature: float,
+        max_output_tokens: int,
+        timeout_ms: int,
+    ) -> ProviderResult:
+        payload = self._last_json_payload(messages)
+        response_payload: dict[str, Any] | None = None
+        if payload is not None and "allowedBeats" in payload and "sceneId" in payload:
+            response_payload = self._director_payload(payload)
+        elif payload is not None and "actionType" in payload:
+            response_payload = self._npc_payload(payload)
+        if response_payload is None:
+            return super().complete(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_output_tokens=max_output_tokens,
+                timeout_ms=timeout_ms,
+            )
+        with self._lock:
+            self._call_count += 1
+            self.calls.append({
+                "model": model,
+                "messages": [message.to_dict() for message in messages],
+                "temperature": temperature,
+                "maxOutputTokens": max_output_tokens,
+                "timeoutMs": timeout_ms,
+            })
+        return ProviderResult(
+            content=json.dumps(response_payload, ensure_ascii=False),
+            model=model or "mock-default",
+            provider=self.name,
+            input_tokens=40,
+            output_tokens=180,
+            finish_reason="stop",
+            latency_ms=1,
+            parsed_json=response_payload,
+        )
+
 def _default_mock_provider() -> MockProvider:
     """A MockProvider that scripts one NPC proposal + one Director
     beat per turn, plus an idempotent initial response.
@@ -168,7 +280,7 @@ def _default_mock_provider() -> MockProvider:
 
     from model import ProviderResult
 
-    return MockProvider(
+    return _TaskAwareGameplayMockProvider(
         default_response=ProviderResult(
             content=_default_npc_proposal_json(),
             model="mock-default",
@@ -474,30 +586,21 @@ def build_default_runtime(case_slug: str = "case_01_revolution_street") -> LLMRu
             hard_run_call_budget=int(os.environ.get("G1N_RUN_CALL_BUDGET", "20")),
         )
 
-        # Use the production build_default_gateway so the
-        # router + validator + fallback loader come pre-wired.
-        try:
-            gateway = _w4_build_default_gateway(
-                case_slug=case_slug,
-                with_real_providers=not _is_forced_mock(),
-            )
-        except TypeError:
-            # The production helper's signature may differ
-            # across W3 versions; fall back to manual
-            # construction so the demo is robust.
-            gateway = ModelGateway(
-                providers=provider_instances,
-                router=build_default_router(),
-                cost_controller=cost_controller,
-                validator=SchemaValidator(),
-                fallback_loader=FallbackContentLoader(),
-                case_slug=case_slug,
-            )
+        # Construct manually so the task-aware mock instance is the one used.
+        fallback_loader = FallbackContentLoader()
+        gateway = ModelGateway(
+            providers=provider_instances,
+            router=build_default_router(),
+            cost_controller=cost_controller,
+            validator=SchemaValidator(),
+            fallback_loader=fallback_loader,
+            case_slug=case_slug,
+        )
 
         runtime = LLMRuntime(
             gateway=gateway,
             cost_controller=cost_controller,
-            fallback_loader=FallbackContentLoader(),
+            fallback_loader=fallback_loader,
             provider_names=list(provider_instances.keys()),
         )
         _default_runtime = runtime

@@ -81,6 +81,12 @@ def _initial_artifacts_for_scene(scene_id: str) -> list[ArtifactState]:
     if scene_id == "photo_lab_2008":
         return [
             ArtifactState(
+                artifactId="photo_pair",
+                ownerId="leila",
+                state="in_hand",
+                isRevealed=True,
+            ),
+            ArtifactState(
                 artifactId="photo_A",
                 ownerId="leila",
                 state="in_envelope",

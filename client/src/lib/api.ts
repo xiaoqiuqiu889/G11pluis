@@ -428,11 +428,10 @@ export async function fetchSceneMeta(sceneId: string): Promise<SceneMeta> {
 }
 
 export async function fetchSnapshot(runId: string): Promise<WorldSnapshot> {
-  const r = await fetch(`${API_BASE}/runs/${runId}/snapshot`, {
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-  if (!r.ok) throw new Error(`fetchSnapshot ${runId}: ${r.status}`);
-  return (await r.json()) as WorldSnapshot;
+  const response = await httpJson<{ runId: string; snapshot: WorldSnapshot; source: string }>(
+    "GET", `/v1/runs/${encodeURIComponent(runId)}/snapshot`,
+  );
+  return response.snapshot;
 }
 
 // =============================================================================
@@ -749,10 +748,19 @@ export async function submitAction(
   action: PlayerAction,
   options: { clientVersion?: string } = {},
 ): Promise<TurnResponse> {
-  if (USE_MOCK) {
-    return mockSubmitTurn(action);
+  const store = useStore.getState();
+  if (store.pendingAction) {
+    throw new Error(`action already pending: ${store.pendingAction.clientActionId}`);
   }
-  return submitActionViaServer(action, options);
+  store.setPendingAction({ clientActionId: action.clientActionId, actionType: action.actionType });
+  try {
+    if (USE_MOCK) return await mockSubmitTurn(action);
+    return await submitActionViaServer(action, options);
+  } finally {
+    if (useStore.getState().pendingAction?.clientActionId === action.clientActionId) {
+      useStore.getState().setPendingAction(null);
+    }
+  }
 }
 
 async function submitActionViaServer(
@@ -760,7 +768,6 @@ async function submitActionViaServer(
   options: { clientVersion?: string },
 ): Promise<TurnResponse> {
   const started = performance.now();
-  useStore.getState().setPendingAction({ clientActionId: action.clientActionId, actionType: action.actionType });
   useStore.getState().setNetworkState("connecting");
 
   try {
@@ -776,11 +783,9 @@ async function submitActionViaServer(
     const latency = (resp.latencyMs) || Math.round(performance.now() - started);
     useStore.getState().recordLatency(latency);
     const outcome = resp.outcome as ResolverOutcome;
-    useStore.getState().appendOutcome(outcome);
-    useStore.getState().bumpTurn();
+    useStore.getState().applyServerTurn(resp.snapshot, outcome, resp.eventSequence);
     useStore.getState().setDegradation((resp.degraded as DegradationLevel) || "none");
     useStore.getState().setNetworkState("idle");
-    useStore.getState().setPendingAction(null);
 
     if (resp.degradedToL3 || resp.degraded === "L3") {
       // 决策 5：L3 提示
@@ -801,19 +806,8 @@ async function submitActionViaServer(
     useStore.getState().recordError(err.message);
     useStore.getState().setDegradation("L4");
     useStore.getState().setNetworkState("error");
-    useStore.getState().setPendingAction(null);
-    // L4 fallback: serve a local outcome so the UI keeps
-    // advancing.  Decision 5 L4 = "服务暂不可用"+ 保留存档.
-    const fallback = localFallbackOutcome(action, pickFallback("comfort"));
-    useStore.getState().appendOutcome(fallback);
-    return {
-      outcome: fallback,
-      clientActionId: action.clientActionId,
-      degraded: "L4",
-      fallbackUsed: true,
-      latencyMs: Math.round(performance.now() - started),
-      resolvedText: fallback.acceptedNpcAction.resolvedText,
-    };
+    // Transport/HTTP failure is not a persisted game turn. Never forge success.
+    throw err;
   }
 }
 

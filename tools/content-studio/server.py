@@ -141,7 +141,12 @@ def _build_app() -> Any:
 
     @app.get("/api/cases")
     def list_cases() -> dict[str, Any]:
-        """List all cases (= top-level directories under content/)."""
+        """List playable cases (= content directories with scene contracts).
+
+        Shared content directories such as ``content/_shared`` are support
+        assets, not selectable cases.  Requiring at least one scene contract
+        keeps those directories out without hard-coding a naming convention.
+        """
         cases = []
         if CONTENT_ROOT.is_dir():
             for case_dir in sorted(CONTENT_ROOT.iterdir()):
@@ -151,6 +156,8 @@ def _build_app() -> Any:
                     str(p.relative_to(REPO_ROOT))
                     for p in sorted((case_dir / "scenes").glob("*.yaml"))
                 ]
+                if not scenes:
+                    continue
                 cases.append({
                     "id": case_dir.name,
                     "path": str(case_dir.relative_to(REPO_ROOT)),

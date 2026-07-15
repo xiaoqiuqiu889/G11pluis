@@ -37,7 +37,7 @@ export default function Reunion2024() {
   const currentNarration = useStore((s) => s.currentNarration);
   const [jumping, setJumping] = useState(false);
 
-  const { sceneMeta, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
     sceneId: "reunion_2024",
     actorId: "leila",
     targetId: "arash",
@@ -118,6 +118,7 @@ export default function Reunion2024() {
           objects={sceneMeta.investigatableObjects}
           budget={sceneMeta.turnBudget.investigate ?? 2}
           onInvestigate={onInvestigate}
+          disabled={!ready}
         />
       </div>
 
@@ -131,6 +132,9 @@ export default function Reunion2024() {
               question: { label: "问阿拉什", targetId: "arash" },
               confront: { label: "直面这十三年", targetId: "arash" },
             }}
+          ready={ready}
+            runError={runError}
+            onRetryRun={retryRun}
           />
         </div>
       </div>

@@ -59,6 +59,8 @@ class TestContentStudioApi(unittest.TestCase):
         first = body["cases"][0]
         self.assertIn("scenes", first)
         self.assertGreater(len(first["scenes"]), 0)
+        self.assertNotIn("_shared", {case["id"] for case in body["cases"]})
+        self.assertTrue(all(case["scenes"] for case in body["cases"]))
 
     def test_get_file_real_scene(self):
         r = self.client.get(

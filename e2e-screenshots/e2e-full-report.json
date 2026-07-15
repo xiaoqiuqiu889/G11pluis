@@ -1,0 +1,87 @@
+{
+  "startTime": "2026-07-15T04:28:57.331Z",
+  "backend": {
+    "health": true,
+    "activeRuns": 17
+  },
+  "cases": [
+    {
+      "scene": "photo_lab_2008",
+      "case": "case_01_revolution_street",
+      "status": "pass",
+      "createRunCalled": 1,
+      "actionButtonCount": 12,
+      "firstActionType": "investigate",
+      "actionBtnEnabled": true,
+      "actionApiCalls": 1,
+      "narrationAfter": "德黑兰大学·革命街旧书店地下室·地下放映室",
+      "consoleErrors": []
+    },
+    {
+      "scene": "farewell_2011",
+      "case": "case_01_revolution_street",
+      "status": "pass",
+      "createRunCalled": 1,
+      "actionButtonCount": 12,
+      "firstActionType": "investigate",
+      "actionBtnEnabled": true,
+      "actionApiCalls": 1,
+      "narrationAfter": "德黑兰伊玛目霍梅尼国际机场·国际出发大厅",
+      "consoleErrors": []
+    },
+    {
+      "scene": "reunion_2024",
+      "case": "case_01_revolution_street",
+      "status": "pass",
+      "createRunCalled": 1,
+      "actionButtonCount": 12,
+      "firstActionType": "investigate",
+      "actionBtnEnabled": true,
+      "actionApiCalls": 1,
+      "narrationAfter": "土耳其·伊斯坦布尔·卡拉柯伊·老咖啡馆 + 街口",
+      "consoleErrors": []
+    },
+    {
+      "scene": "1985_meeting",
+      "case": "case_02_moscow_no_fairy_tale",
+      "status": "pass",
+      "createRunCalled": 1,
+      "actionButtonCount": 12,
+      "firstActionType": "investigate",
+      "actionBtnEnabled": true,
+      "actionApiCalls": 1,
+      "narrationAfter": "莫斯科音乐学院 · 老柴院 305 琴房",
+      "consoleErrors": []
+    },
+    {
+      "scene": "1989_farewell",
+      "case": "case_02_moscow_no_fairy_tale",
+      "status": "pass",
+      "createRunCalled": 1,
+      "actionButtonCount": 12,
+      "firstActionType": "investigate",
+      "actionBtnEnabled": true,
+      "actionApiCalls": 1,
+      "narrationAfter": "SVO-2 国际线出境大厅 + 塔甘卡剧院衣帽间（5:55 电话）",
+      "consoleErrors": []
+    },
+    {
+      "scene": "2008_reunion",
+      "case": "case_02_moscow_no_fairy_tale",
+      "status": "pass",
+      "createRunCalled": 1,
+      "actionButtonCount": 12,
+      "firstActionType": "investigate",
+      "actionBtnEnabled": true,
+      "actionApiCalls": 1,
+      "narrationAfter": "柏林 · 十字山区 · 老式咖啡馆 + U1 线地铁站街口",
+      "consoleErrors": []
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "pass": 6,
+    "fail": 0
+  },
+  "endTime": "2026-07-15T04:29:40.103Z"
+}

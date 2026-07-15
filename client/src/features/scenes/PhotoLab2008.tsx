@@ -38,7 +38,7 @@ export default function PhotoLab2008() {
 
   const [jumping, setJumping] = useState(false);
 
-  const { sceneMeta, handleAction, finishScene } = useSceneRunner({
+  const { sceneMeta, ready, runError, retryRun, handleAction, finishScene } = useSceneRunner({
     sceneId: "photo_lab_2008",
     actorId: "leila",
     targetId: "arash",
@@ -118,6 +118,7 @@ export default function PhotoLab2008() {
           objects={sceneMeta.investigatableObjects}
           budget={sceneMeta.turnBudget.investigate ?? 3}
           onInvestigate={onInvestigate}
+          disabled={!ready}
         />
       </div>
 
@@ -126,11 +127,21 @@ export default function PhotoLab2008() {
           <ActionBar
             onAct={(p) => void handleAction(p)}
             contextActions={{
-              give: { label: "把照片交给阿拉什", targetId: "arash" },
+              ...{
+                give: {
+                  label: "一人一张……",
+                  targetId: "arash",
+                  evidenceIds: ["photo_pair"],
+                  defaultUtterance: "一人一张……",
+                },
+              },
               comfort: { label: "安抚阿拉什", targetId: "arash" },
               question: { label: "问阿拉什", targetId: "arash" },
               confront: { label: "直面阿拉什", targetId: "arash" },
             }}
+            ready={ready}
+            runError={runError}
+            onRetryRun={retryRun}
           />
         </div>
       </div>

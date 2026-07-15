@@ -159,6 +159,107 @@ canonical:
     era_lock: "2008-11-15 柏林"
 
 # -----------------------------------------------------------------------------
+# 4 人物对位（UP-20260715-024 处置 · 评审第 6 轮 · ADR 0008 落地）
+# -----------------------------------------------------------------------------
+# ⚠ 重要边界（ADR 0008 已采纳）：
+#   - 案 01（伊朗德黑兰 2008-2024）和案 02（苏联莫斯科 1985-2008）**两案独立主角**
+#   - 评审建议"互为回忆中的对方"已被 ADR 0008 拒绝（理由：重写 5 锚点 + 4 人物 + 3 scene
+#     是重大剧情变更，且会破坏决策 6 的 mandatory echo 机制）
+#   - 本段**只记录"对位（parallel）"关系，不是"互为同一（identical）"**
+#   - 玩家感知上明确：**她们不是同一个人，但承担同一种角色**（记忆修复者）
+#
+# 4 人物对位（4 维）：
+#   1. role_archetype        角色原型（"记忆修复者"/"离散者"/"见证者"/"过渡者"）
+#   2. visual_correspondence 视觉对应（年龄段 / 服装 / 主要物件）
+#   3. behavioral_pattern    行为模式（沉默方式 / 应对离别 / 对过去的处理）
+#   4. player_distinction    玩家感知差异（明确告诉玩家"她们不是同一个人"）
+# -----------------------------------------------------------------------------
+characters:
+  - id: natasha_roschina
+    case_02_role: protagonist
+    case_02_label: 娜塔莎·罗希娜（莫斯科音乐学院大提琴手）
+    role_archetype: "记忆修复者 · 主承担者（与案 01 莱拉对位）"
+    cross_case_equivalent:
+      case_01_character: leila
+      semantic_link: "两人都承担'记忆修复者'角色——案 01 莱拉在 2008 地下放映室面对 13 年前的两张同版毕业照 / 案 02 娜塔莎在 1985 305 琴房面对 21 年前的肖斯塔科维奇 Op.38"
+    visual_correspondence:
+      age_archetype: "20 代女性 / 30 代女性 / 40 代女性 三段式"
+      primary_object: "案 01 莱拉 = 牛皮纸袋 + 两张同版照片 / 案 02 娜塔莎 = 黑色大提琴盒 + 三首未公开曲目"
+      scene_signature: "案 01 莱拉 = 银发 / 案 02 娜塔莎 = 栗色头发 + 红色笔记本（自己买的）"
+    behavioral_pattern:
+      silence_style: "案 01 莱拉 = 抬头不答 / 案 02 娜塔莎 = 把琴弓放下不拉"
+      farewell_response: "案 01 莱拉 2011 撕公交票 / 案 02 娜塔莎 1989 在大提琴盒内侧贴 Aeroflot 标签"
+      past_handling: "两人都用'具体物件'承载过去——但物件的物理性质不同（案 01 照片可撕，案 02 笔记本可写）"
+    player_distinction:
+      honest_disclosure: "**娜塔莎 ≠ 莱拉**。她们在不同城市、不同时代、不同文化、不同母语。"
+      why_player_cares: "玩家从案 01 进入案 02 时，会自然寻找'莱拉在案 02 是不是变了'——但答案是否定的。两个陌生人承担了同一种'记忆修复者'的处境。"
+      narrative_function: "对位让玩家在案 02 看到'莱拉类型的人在另一时空的另一版本'——这是'内容可规模化'的玩家价值（一个模板的不同实例）"
+    era_lock: "1985 苏联晚期 / 1989 解体前 2 年 / 2008 柏林"
+
+  - id: ilya_berman
+    case_02_role: protagonist
+    case_02_label: 伊利亚·贝尔曼（犹太裔钢琴家）
+    role_archetype: "离散者 · 1989 移民维也纳（与案 01 阿拉什对位）"
+    cross_case_equivalent:
+      case_01_character: arash
+      semantic_link: "两人都承担'离散者'角色——案 01 阿拉什 2011 离开德黑兰 / 案 02 伊利亚 1989 离开莫斯科"
+    visual_correspondence:
+      age_archetype: "20 代男性 / 30 代男性 / 40 代男性 三段式"
+      primary_object: "案 01 阿拉什 = 鲁米诗集（书脊开裂 + 油渍）/ 案 02 伊利亚 = 红色笔记本（1985 莫斯科 + 第 7 页胶带痕迹）"
+      scene_signature: "案 01 阿拉什 = 22 岁停在工具盒上 / 案 02 伊利亚 = 23 岁总谱上三个铅笔圈（И. Б.）"
+    behavioral_pattern:
+      silence_style: "案 01 阿拉什 = 沉默 + 工具盒不动 / 案 02 伊利亚 = 沉默 + 红色笔记本不翻"
+      farewell_response: "案 01 阿拉什 2011 在机场不回头 / 案 02 伊利亚 1989 在 SVO-2 把铅笔放在总谱上"
+      past_handling: "两人都用'个人随身物'承载过去——但阿拉什是'接受物的破损'，伊利亚是'主动用胶带修复'（这反映了他们面对离散的不同态度）"
+    player_distinction:
+      honest_disclosure: "**伊利亚 ≠ 阿拉什**。他们面临离散，但一个接受破损，一个主动修复。"
+      why_player_cares: "玩家在案 02 看到'阿拉什类型的离散者'在另一时空的不同应对——不是同一个人，是同一个原型的另一面。"
+      narrative_function: "对位让玩家在案 02 看到'被动离散 vs 主动修复'的对照——这扩展了'离散者'的玩家认知"
+    era_lock: "1985 莫斯科 / 1989 维也纳 / 2008 柏林"
+
+  - id: sasha_kuzmin
+    case_02_role: ally_secondary
+    case_02_label: 萨沙·库兹明（娜塔莎的弟弟 / 中央 C 琴键松香渍来源）
+    role_archetype: "见证者 · 弟弟（与案 01 卡姆兰对位）"
+    cross_case_equivalent:
+      case_01_character: kamran
+      semantic_link: "两人都承担'见证者'角色——案 01 卡姆兰是莱拉离家最近的人 / 案 02 萨沙是娜塔莎 1985-2008 唯一的家人"
+    visual_correspondence:
+      age_archetype: "20 代男性 / 30 代男性 / 40 代男性（比主角小 2-3 岁）"
+      primary_object: "案 01 卡姆兰 = 十字路口 / 案 02 萨沙 = 萨沙的旧大提琴（娜塔莎 21 岁时传给他的）"
+      scene_signature: "案 01 卡姆兰 = 不开口但站在对的位置 / 案 02 萨沙 = 在莫斯科没离开但中央 C 琴键松香渍 21 年"
+    behavioral_pattern:
+      silence_style: "案 01 卡姆兰 = 站在十字路口等 / 案 02 萨沙 = 守着大提琴盒等姐姐回来"
+      farewell_response: "案 01 卡姆兰 2011 把行李箱标签撕了 / 案 02 萨沙 1989 在姐姐走后调音 5 次"
+      past_handling: "两人都是'用位置守候'——卡姆兰守十字路口，萨沙守中央 C 琴键"
+    player_distinction:
+      honest_disclosure: "**萨沙 ≠ 卡姆兰**。他们的家庭结构不同（案 01 卡姆兰是莱拉的第二接近的人 / 案 02 萨沙是娜塔莎的亲弟弟）。"
+      why_player_cares: "玩家在案 02 看到'弟弟类型的人'——这是对位原型的扩展，不是同一个人。"
+      narrative_function: "案 01 卡姆兰不在 case_02；案 02 萨沙不在 case_01。两个独立的'弟弟位'"
+    era_lock: "1985 莫斯科 / 1989 留在莫斯科 / 2008 在音乐学院教琴"
+
+  - id: lisa_hoffmann
+    case_02_role: ally_tertiary
+    case_02_label: 莉莎·霍夫曼（西柏林室内乐节 / SVO-2 电话拨通者）
+    role_archetype: "过渡者 · 桥接两个世界（与案 01 玛丽亚姆对位）"
+    cross_case_equivalent:
+      case_01_character: maryam
+      semantic_link: "两人都承担'过渡者'角色——案 01 玛丽亚姆是摄影师（视觉桥接）/ 案 02 莉莎是电话拨通者（声音桥接）"
+    visual_correspondence:
+      age_archetype: "30 代女性 / 40 代女性"
+      primary_object: "案 01 玛丽亚姆 = 相机 / 案 02 莉莎 = 西柏林室内乐节锡纸（1986 收到）"
+      scene_signature: "案 01 玛丽亚姆 = 夹半根没点的烟 / 案 02 莉莎 = 拨盘电话里说'第三小节是给你的'"
+    behavioral_pattern:
+      silence_style: "案 01 玛丽亚姆 = 拍照时安静 / 案 02 莉莎 = 通话时只说关键句"
+      farewell_response: "案 01 玛丽亚姆 2011 给莱拉一张没冲印的底片 / 案 02 莉莎 1989 5:55 SVO-2 电话只说一句"
+      past_handling: "两人都是'用一个动作完成桥接'——玛丽亚姆用快门，莉莎用拨号"
+    player_distinction:
+      honest_disclosure: "**莉莎 ≠ 玛丽亚姆**。玛丽亚姆在德黑兰，莉莎在西柏林/莫斯科。她们不同时空。"
+      why_player_cares: "玩家在案 02 看到'用声音桥接'的过渡者——案 01 玛丽亚姆是视觉桥接的版本，案 02 莉莎是声音桥接的版本。"
+      narrative_function: "扩展'过渡者'的感知模态——案 01 视觉 / 案 02 声音，让玩家建立更立体的角色原型认知"
+    era_lock: "1986 西柏林 / 1989 莫斯科 SVO-2 / 2008 维也纳"
+
+# -----------------------------------------------------------------------------
 # 12 音频 cross_case_equivalent（sound motif 对应）
 # -----------------------------------------------------------------------------
 audio:
@@ -221,7 +322,8 @@ audio:
 # =============================================================================
 # - 本文件是 `content/case_02_moscow_no_fairy_tale/artifacts/cross_case_equivalents.yaml` 的**唯一权威**
 # - 新案（case_03+）需建独立 `content/case_03_*/artifacts/cross_case_equivalents.yaml`
-# - 评审 UP-20260715-027 落地
+# - 评审 UP-20260715-027 落地（10 物件 + 3 氛围 + 2 canonical + 12 音频）
+# - 评审 UP-20260715-024 处置（4 人物对位，不采纳"互为同一"建议）
 # - 与 `content/_shared/motifs/cross_case_motifs.md` 互为引用
 # - 与 W11-A 报告 `docs/design/w11-a-case02-art-audio-report.md` 互为引用
 # =============================================================================

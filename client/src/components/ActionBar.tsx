@@ -11,7 +11,7 @@ import type { ActionType, Tone } from "@/types/schemas";
 import { useStore } from "@/lib/store";
 
 const ACTIONS: Array<{ type: ActionType; label: string; hint: string; tags?: string[] }> = [
-  { type: "investigate", label: "调查", hint: "走近看一样东西", tags: ["scan"] },
+  { type: "investigate", label: "调查", hint: "走近看一样东西", tags: ["scan", "gateway"] },
   { type: "reveal", label: "揭露", hint: "让一件事浮出水面" },
   { type: "conceal", label: "隐藏", hint: "把一句话/动作收回去" },
   { type: "question", label: "询问", hint: "向对方发问", tags: ["dialogue"] },
@@ -25,6 +25,9 @@ const ACTIONS: Array<{ type: ActionType; label: string; hint: string; tags?: str
   { type: "silence", label: "沉默", hint: "把已经成型的句子咽回去", tags: ["dialogue"] },
 ];
 
+/** UP-20260715-028 · 引导入口：永远全亮，灰度引导的"安全岛" */
+const GATEWAY_ACTIONS: ReadonlySet<ActionType> = new Set<ActionType>(["investigate"]);
+
 const TONE_OPTIONS: Array<{ id: Tone; label: string }> = [
   { id: "neutral", label: "中" },
   { id: "hesitant", label: "犹豫" },
@@ -35,6 +38,13 @@ const TONE_OPTIONS: Array<{ id: Tone; label: string }> = [
   { id: "playful", label: "玩笑" },
 ];
 
+export interface ContextAction {
+  label: string;
+  targetId: string;
+  evidenceIds?: string[];
+  defaultUtterance?: string;
+}
+
 export interface ActionBarProps {
   onAct: (params: {
     actionType: ActionType;
@@ -44,24 +54,55 @@ export interface ActionBarProps {
     evidenceIds?: string[];
   }) => void;
   disabled?: boolean;
-  contextActions?: Partial<Record<ActionType, { label: string; targetId: string }>>;
+  contextActions?: Partial<Record<ActionType, ContextAction>>;
+  /** W12-E2E-runsync: runId 未就绪时禁用 + 显示加载状态 */
+  ready?: boolean;
+  /** W12-E2E-runsync: run 创建失败时的错误信息 + 重试回调 */
+  runError?: string | null;
+  onRetryRun?: () => void;
 }
 
-export function ActionBar({ onAct, disabled, contextActions }: ActionBarProps) {
+export function ActionBar({ onAct, disabled, contextActions, ready = true, runError, onRetryRun }: ActionBarProps) {
   const [picked, setPicked] = useState<ActionType | null>(null);
+  const [hoveredAction, setHoveredAction] = useState<ActionType | null>(null);
   const [utterance, setUtterance] = useState("");
   const [tone, setTone] = useState<Tone>("neutral");
   const pending = useStore((s) => s.pendingAction);
+  const discoveredActions = useStore((s) => s.sceneProgress.discoveredActions);
+  const discoverAction = useStore((s) => s.discoverAction);
   const isPending = !!pending;
+  const effectivelyDisabled = disabled || isPending || !ready;
+
+  /**
+   * UP-20260715-028：按钮"全亮 vs 灰度"判定
+   *  - gateway（"调查"）：永远全亮，作为引导入口
+   *  - 已 discovered：全亮（玩家已点过）
+   *  - 鼠标悬停时（hoveredAction）：临时全亮，让玩家预知"点下去会发生什么"
+   *  - 选中状态（picked === a.type）：全亮
+   *  - 其余：灰度引导
+   */
+  const isActionLit = (a: ActionType): boolean => {
+    if (GATEWAY_ACTIONS.has(a)) return true;
+    if (picked === a) return true;
+    if (hoveredAction === a) return true;
+    if (discoveredActions.includes(a)) return true;
+    return false;
+  };
+
+  const onPickAction = (t: ActionType) => {
+    discoverAction(t); // UP-028：第一次点就从灰度切到全亮
+    setPicked(t);
+  };
 
   const submit = () => {
     if (!picked) return;
     const ctx = contextActions?.[picked];
     onAct({
       actionType: picked,
-      utterance: utterance.trim().slice(0, 500),
+      utterance: (utterance.trim() || ctx?.defaultUtterance || ctx?.label || "").slice(0, 500),
       tone,
       targetId: ctx?.targetId,
+      evidenceIds: ctx?.evidenceIds,
     });
     setUtterance("");
     setPicked(null);
@@ -72,33 +113,73 @@ export function ActionBar({ onAct, disabled, contextActions }: ActionBarProps) {
       className="glass rounded-md p-4"
       role="region"
       aria-label="行为栏"
-      aria-disabled={disabled || isPending}
+      aria-disabled={effectivelyDisabled}
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="t-overline">行为 · ACT</h3>
         <span className="t-meta text-paper-100/50">
-          {isPending ? "正在回应……" : "选择一种动作"}
+          {runError
+            ? "run 未就绪"
+            : !ready
+            ? "正在创建 run……"
+            : isPending
+            ? "正在回应……"
+            : "选择一种动作"}
         </span>
       </div>
 
-      {/* 12 种行为按钮 */}
+      {/* W12-E2E-runsync: run 创建失败提示 */}
+      {runError && (
+        <div className="mb-3 p-3 border border-red-500/40 bg-red-500/10 rounded text-sm">
+          <p className="text-red-300 mb-2">{runError}</p>
+          {onRetryRun && (
+            <button
+              type="button"
+              className="action-btn border-amber-glow text-amber-glow"
+              onClick={onRetryRun}
+            >
+              重试创建 run
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 12 种行为按钮（UP-028 引导灰度） */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2" role="group" aria-label="12 种结构化行为">
-        {ACTIONS.map((a) => (
-          <button
-            key={a.type}
-            type="button"
-            className="action-btn"
-            data-type={a.type}
-            data-active={picked === a.type}
-            disabled={disabled || isPending}
-            onClick={() => setPicked(a.type)}
-            title={a.hint}
-            aria-pressed={picked === a.type}
-          >
-            <div className="text-base">{a.label}</div>
-            <div className="text-[10px] text-paper-100/50 mt-0.5 leading-tight">{a.hint}</div>
-          </button>
-        ))}
+        {ACTIONS.map((a) => {
+          const lit = isActionLit(a.type);
+          const isGateway = GATEWAY_ACTIONS.has(a.type);
+          return (
+            <button
+              key={a.type}
+              type="button"
+              className={`action-btn ${lit ? "" : "action-btn--dimmed"} ${
+                isGateway ? "action-btn--gateway" : ""
+              }`}
+              data-type={a.type}
+              data-active={picked === a.type}
+              data-lit={lit ? "true" : "false"}
+              data-gateway={isGateway ? "true" : undefined}
+              disabled={effectivelyDisabled}
+              onClick={() => onPickAction(a.type)}
+              onMouseEnter={() => setHoveredAction(a.type)}
+              onMouseLeave={() => setHoveredAction((h) => (h === a.type ? null : h))}
+              onFocus={() => setHoveredAction(a.type)}
+              onBlur={() => setHoveredAction((h) => (h === a.type ? null : h))}
+              title={
+                isGateway
+                  ? `${a.hint} · 引导入口（先从这一项开始）`
+                  : lit
+                  ? a.hint
+                  : `${a.hint} · 悬停查看，点过一次会变亮`
+              }
+              aria-pressed={picked === a.type}
+            >
+              <div className="text-base">{a.label}</div>
+              <div className="text-[10px] text-paper-100/50 mt-0.5 leading-tight">{a.hint}</div>
+            </button>
+          );
+        })}
       </div>
 
       {/* 选中行为后：自然语言 + tone */}
@@ -116,7 +197,7 @@ export function ActionBar({ onAct, disabled, contextActions }: ActionBarProps) {
               placeholder="说点什么，或者留空——NPC 仍会按合同回应。"
               value={utterance}
               onChange={(e) => setUtterance(e.target.value)}
-              disabled={isPending}
+              disabled={effectivelyDisabled}
             />
             <div className="flex items-center justify-between mt-1">
               <span className="t-meta text-paper-100/40">{utterance.length} / 500</span>
@@ -138,7 +219,7 @@ export function ActionBar({ onAct, disabled, contextActions }: ActionBarProps) {
                   onClick={() => setTone(t.id)}
                   role="radio"
                   aria-checked={tone === t.id}
-                  disabled={isPending}
+                  disabled={effectivelyDisabled}
                 >
                   {t.label}
                 </button>
@@ -151,7 +232,7 @@ export function ActionBar({ onAct, disabled, contextActions }: ActionBarProps) {
               type="button"
               className="action-btn border-amber-glow text-amber-glow hover:bg-amber-glow/10"
               onClick={submit}
-              disabled={isPending}
+              disabled={effectivelyDisabled}
             >
               提交 · {ACTIONS.find((a) => a.type === picked)?.label}
             </button>
@@ -162,7 +243,7 @@ export function ActionBar({ onAct, disabled, contextActions }: ActionBarProps) {
                 setPicked(null);
                 setUtterance("");
               }}
-              disabled={isPending}
+              disabled={effectivelyDisabled}
             >
               取消
             </button>

@@ -22,6 +22,7 @@ from engine import (  # noqa: E402
     ArtifactState,
     Era,
     REDUCERS,
+    RelationshipState,
     ReducerOutcome,
     SceneBudget,
     ScenePhase,
@@ -722,3 +723,36 @@ class CaseEraValidationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+def test_world_snapshot_relationship_state_round_trips_from_json_alias() -> None:
+    snapshot = _fresh_snapshot().with_relationship_state([
+        RelationshipState(
+            from_="leila",
+            to="arash",
+            trust=0.1,
+            intimacy=0.08,
+            unresolvedConflict=0.0,
+            respect=0.05,
+            fear=0.0,
+            lastUpdatedAt=1,
+        ),
+        RelationshipState(
+            from_="arash",
+            to="leila",
+            trust=0.06,
+            intimacy=0.05,
+            unresolvedConflict=0.0,
+            lastUpdatedAt=1,
+        ),
+    ])
+
+    payload = snapshot.to_dict()
+    assert payload["relationshipState"][0]["from"] == "leila"
+    assert "from_" not in payload["relationshipState"][0]
+
+    reopened = WorldSnapshot.from_dict(payload)
+    assert reopened.to_dict() == payload
+    assert [(rel.from_, rel.to) for rel in reopened.relationshipState] == [
+        ("leila", "arash"),
+        ("arash", "leila"),
+    ]

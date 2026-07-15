@@ -265,4 +265,10 @@ const SCENES_WITH_AUDIO = ['photo_lab_2008', 'farewell_2011', 'reunion_2024', '1
   console.log(`\n报告: ${REPORT_PATH}`);
 
   await browser.close();
+
+  // A fatal route means the suite did not establish a usable UI.  Keep bug
+  // findings in the report, but make fatal failures visible to CI/callers.
+  if (report.summary.fatal > 0) {
+    process.exitCode = 1;
+  }
 })();

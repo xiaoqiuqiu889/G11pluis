@@ -2,14 +2,20 @@
 // 革命街没有尽头 · 共享场景 Hook
 // -----------------------------------------------------------------------------
 // - 加载 SceneMeta
+// - 真后端模式 (VITE_USE_MOCK=false)：先 POST /v1/runs 拿到 server runId
+//   再让玩家交互；mock 模式用本地 UUID（mock 不校验 runId）
 // - 提交动作（mock 模式 / 真服务端）
 // - 处理转场、付费墙触发、降级
+//
+// 历史 bug 修复：W12-E2E-runsync
+//   旧版 setRun(crypto.randomUUID()) 是假创建 — 后端 registry 从未见过该 UUID
+//   导致 /v1/runs/{id}/actions 永远 404 "run not found"
 // ============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SCENE_MOCKS } from "@/mocks/scenes";
-import { submitAction, USE_MOCK, uuid as makeUuid } from "@/lib/api";
+import { createRun, enterScene, fetchSnapshot, submitAction, USE_MOCK, uuid as makeUuid } from "@/lib/api";
 import type { ActionType, SceneId, SceneMeta, Tone } from "@/types/schemas";
 import { audioEngine } from "@/audio/AudioEngine";
 
@@ -23,7 +29,12 @@ export interface UseSceneRunnerOptions {
 
 export interface UseSceneRunnerResult {
   sceneMeta: SceneMeta | null;
-  loading: boolean;
+  /** 场景 meta + runId 都已就绪，可安全提交动作 */
+  ready: boolean;
+  /** 后端 run 创建阶段失败（仅 VITE_USE_MOCK=false 时发生） */
+  runError: string | null;
+  /** 触发 run 创建重试（清空 runId 并重新 createRun） */
+  retryRun: () => void;
   error: string | null;
   handleAction: (params: {
     actionType: ActionType;
@@ -39,25 +50,31 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
   const { sceneId, actorId = "leila", targetId, audioChapter } = opts;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
   const sceneMeta = useStore((s) => s.sceneMeta);
   const loadScene = useStore((s) => s.loadScene);
   const markInvestigated = useStore((s) => s.markInvestigated);
   const spendAction = useStore((s) => s.spendAction);
-  const fireSeed = useStore((s) => s.fireSeed);
-  const holdArtifact = useStore((s) => s.holdArtifact);
+  const refundAction = useStore((s) => s.refundAction);
   const pushNpcReaction = useStore((s) => s.pushNpcReaction);
   const setNarration = useStore((s) => s.setNarration);
   const setRun = useStore((s) => s.setRun);
   const setState = useStore((s) => s.setState);
   const spendCredits = useStore((s) => s.spendCredits);
+  const refundCredits = useStore((s) => s.refundCredits);
+
   const openPaywall = useStore((s) => s.openPaywall);
   const audioEnabled = useStore((s) => s.audioEnabled);
   const runId = useStore((s) => s.runId);
-  const lastEventSequence = useStore((s) => s.lastEventSequence);
-  const credits = useStore((s) => s.credits);
 
-  // 加载场景 meta
+  // 防止 React 18 strict mode 双调
+  const initStarted = useRef(false);
+
+  // 加载场景 meta + （真后端模式）注册 run
   useEffect(() => {
+    if (initStarted.current) return;
+    initStarted.current = true;
+
     const meta = SCENE_MOCKS[sceneId];
     if (!meta) {
       setError(`未找到场景 ${sceneId}`);
@@ -65,22 +82,84 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
       return;
     }
     loadScene(meta);
-    if (!runId) {
-      setRun(crypto.randomUUID(), sceneId as SceneId);
-    }
     if (audioEnabled && audioChapter) {
       void audioEngine.start(audioChapter);
     }
-    setLoading(false);
     // 初始旁白
     setNarration(initialNarration(sceneId), true);
+
+    // 真后端模式：必须先 POST /v1/runs 拿到 runId
+    if (USE_MOCK) {
+      const localId = `mock-${crypto.randomUUID()}`;
+      setRun(localId, sceneId as SceneId);
+      setLoading(false);
+    } else {
+      void ensureServerRun(sceneId, meta.caseSlug);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId]);
 
+  // 调用后端 createRun
+  async function ensureServerRun(
+    sid: keyof typeof SCENE_MOCKS,
+    caseSlug: string | undefined,
+  ): Promise<void> {
+    setRunError(null);
+    useStore.getState().setNetworkState("connecting");
+    try {
+      const resp = await createRun({
+        caseSlug: caseSlug ?? "case_01_revolution_street",
+        startSceneId: sid,
+        startEra: SCENE_MOCKS[sid].era,
+      });
+      const serverRunId = resp.run?.runId;
+      if (!serverRunId) {
+        throw new Error("服务端 createRun 未返回 runId");
+      }
+      // 进入场景（让后端 snapshot 初始化为该场景）
+      const entered = await enterScene(serverRunId, sid, { startEra: SCENE_MOCKS[sid].era });
+      const snapshot = await fetchSnapshot(serverRunId);
+      setRun(serverRunId, sid as SceneId);
+        // enterScene 失败不应阻塞 runId — 玩家至少可以试
+        // eslint-disable-next-line no-console
+      useStore.getState().setSnapshot(snapshot);
+      loadScene(entered.scene);
+      useStore.getState().setNetworkState("idle");
+      setLoading(false);
+    } catch (e) {
+      const err = e as Error;
+      useStore.getState().recordError(err.message);
+      useStore.getState().setDegradation("L4");
+      useStore.getState().setNetworkState("error");
+      setRunError(`无法创建 run: ${err.message}。请检查后端是否启动，或切回 mock 模式。`);
+      setLoading(false);
+    }
+  }
+
+  const retryRun = () => {
+    const meta = SCENE_MOCKS[sceneId];
+    if (!meta) return;
+    initStarted.current = false;
+    setLoading(true);
+    setRunError(null);
+    void ensureServerRun(sceneId, meta.caseSlug);
+  };
+
   // 动作：检查积分、检查预算、提交
   const handleAction: UseSceneRunnerResult["handleAction"] = async (params) => {
+    const stateAtSubmit = useStore.getState();
+    const activeRunId = stateAtSubmit.runId;
+
+    if (loading || runError || !activeRunId || stateAtSubmit.sceneId !== sceneId) {
+      // runId 还没就绪，告知用户
+      setNarration("（场景还没准备好……请稍等或刷新页面。）", true);
+      return;
+    }
+    if (stateAtSubmit.pendingAction) {
+      return;
+    }
     // 积分检查（决策 4：免费样章 30 积分，1 主调用 = 1 积分）
-    if (credits <= 0) {
+    if (stateAtSubmit.credits <= 0) {
       openPaywall(sceneId as SceneId);
       return;
     }
@@ -91,51 +170,42 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
       setNarration(`（这一场里，你能做这件事的次数用完了。镜头会停一下。）`, true);
       return;
     }
-    // 调查：标记为已调查
-    if (params.actionType === "investigate" && params.evidenceIds?.[0]) {
-      markInvestigated(params.evidenceIds[0]);
-    }
-    // 给出/销毁：持有/失去物件
-    if (params.actionType === "give" && params.evidenceIds?.[0]) {
-      holdArtifact(params.evidenceIds[0]);
-    }
-
     spendAction(params.actionType);
     spendCredits(1);
 
     // 提交（VITE_USE_MOCK=true → 内置 mock；false → 真服务端）
-    const action = {
-      runId: useStore.getState().runId!,
-      sceneId,
-      actionType: params.actionType,
-      actorId,
-      targetId: params.targetId ?? targetId ?? null,
-      evidenceIds: params.evidenceIds ?? [],
-      utterance: params.utterance,
-      tone: params.tone,
-      disclosureLevel: 0.5,
-      isDeceptive: false,
-    };
-
-    // 决策 5：先用 mock 联调；真服务端模式可切换
-    const result = await submitAction({
-      runId: action.runId,
-      sceneId: action.sceneId,
-      clientActionId: makeUuid(),
-      expectedEventSequence: lastEventSequence + 1,
-      actionType: action.actionType,
-      actorId: action.actorId,
-      targetId: action.targetId,
-      evidenceIds: action.evidenceIds,
-      utterance: action.utterance,
-      tone: action.tone,
-      disclosureLevel: action.disclosureLevel,
-      isDeceptive: action.isDeceptive,
-      clientTimestamp: new Date().toISOString(),
-      schemaVersion: "1.0.0",
-    }, { clientVersion: "1.0.0" });
+    let result;
+    try {
+      result = await submitAction({
+        runId: activeRunId,
+        sceneId,
+        clientActionId: makeUuid(),
+        expectedEventSequence: stateAtSubmit.lastEventSequence + 1,
+        actionType: params.actionType,
+        actorId,
+        targetId: params.targetId ?? targetId ?? null,
+        evidenceIds: params.evidenceIds ?? [],
+        utterance: params.utterance,
+        tone: params.tone,
+        disclosureLevel: 0.5,
+        isDeceptive: false,
+        clientTimestamp: new Date().toISOString(),
+        schemaVersion: "1.0.0",
+      }, { clientVersion: "1.0.0" });
+    } catch (e) {
+      const err = e as Error;
+      // 不抛 — 把错误以旁白形式呈现，退还预算
+      setNarration(`（这一拍没能送出去：${err.message}。可以再试一次。）`, true);
+      refundAction(params.actionType);
+      refundCredits(1);
+      return;
+    }
 
     // 把 NPC 反应送入 store
+    if (params.actionType === "investigate" && params.evidenceIds?.[0]) {
+      markInvestigated(params.evidenceIds[0]);
+    }
+
     pushNpcReaction({
       characterId: result.outcome.acceptedNpcAction.characterId,
       text: result.outcome.acceptedNpcAction.resolvedText,
@@ -147,16 +217,14 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
       true,
     );
 
-    // 触发种子（mock 简化为：give 行为触发 photo_in_pocket/book）
-    if (params.actionType === "give") {
-      if (params.evidenceIds?.includes("photo_pair")) {
-        fireSeed("photo_in_pocket");
-      }
-    }
-
     // 决策 5 触发 L3/L4 提示
     if (result.degraded === "L3" || result.degraded === "L4") {
       setNarration("（灯光闪了一下。这段是脚本接管——但你的选择仍然被记住。）", true);
+    }
+
+    const legalEndingId = result.outcome.nextBeat.legalEndingId;
+    if (result.outcome.nextBeat.transition === "end_scene" && legalEndingId) {
+      finishScene(legalEndingId);
     }
   };
 
@@ -167,7 +235,9 @@ export function useSceneRunner(opts: UseSceneRunnerOptions): UseSceneRunnerResul
 
   return {
     sceneMeta,
-    loading,
+    ready: !!runId && !!sceneMeta && !loading && !runError,
+    runError,
+    retryRun,
     error,
     handleAction,
     finishScene,
@@ -195,7 +265,3 @@ function initialNarration(sceneId: keyof typeof SCENE_MOCKS): string {
   }
   return "";
 }
-
-// -----------------------------------------------------------------------------
-// 抑制未使用警告
-// -----------------------------------------------------------------------------

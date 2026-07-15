@@ -526,14 +526,8 @@ class WorldSnapshot:
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "WorldSnapshot":
         canonical = CanonicalState(**data["canonicalState"])
-        relationships = [
-            RelationshipState(
-                **{**r, "from_": r["from"]} if "from" in r else r
-            )
-            for r in data.get("relationshipState", [])
-        ]
-        # The above rebuild is awkward because RelationshipState uses from_
-        # while the JSON uses ``from``.  Re-do it explicitly for clarity.
+        # RelationshipState uses ``from_`` because ``from`` is a Python keyword;
+        # map the JSON alias explicitly instead of forwarding both names.
         relationships = []
         for r in data.get("relationshipState", []):
             rel = RelationshipState(

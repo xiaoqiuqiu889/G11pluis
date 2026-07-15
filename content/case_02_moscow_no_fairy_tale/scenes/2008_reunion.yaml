@@ -685,6 +685,38 @@ mandatory_echoes:
     references_1985: [seed_natasha_first_not_absent]
     references_1989: [seed_natasha_4_second_silence]
 
+  # ----- UP-20260715-034 [critical]：评审意图"两个时空对话"显式化 -----
+  # 案 02 版本：娜塔莎 19 年后（2008）在咖啡馆看到 1995 维也纳明信片时，意识到
+  # "另一个时空的我们"——但用留白避免"互为同一"硬解读。
+  # trigger=玩家在 reunion_2008 触发至少 2 个 mandatory echo
+  # priority=99 最低；重玩深度玩家才看到。
+  - id: across_space_other_self_2008
+    description: 20:30 娜塔莎在桌边打开 1995 维也纳明信片时，意识到"另一个时空的我们"
+    trigger: 玩家在 reunion_2008 触发至少 2 个 mandatory echo AND 玩家对 reunion_scene 执行 reveal
+    target_scenes: [scene_2008_reunion]
+    ai_director_must_invoke: true
+    references_1985: [seed_red_notebook_first_entry_1985, seed_ilya_pencil_page_in_notebook]
+    references_1989: [seed_lisa_relays_third_bar, seed_walkman_tape_in_1989_luggage]
+    ai_director_constraint: |
+      台词必须包含"我不知道"留白——禁止说"他们就是我们"（互为同一）
+      也不说"他们不是我们"（推翻对位方案的 honest_disclosure）。
+      留白让玩家自己在两可之间思考。
+    candidate_lines:
+      - line_id: line_99_across_space_other_self
+        text: |
+          我看着这张明信片，恍惚间我突然想到——
+          也许在莫斯科或者德黑兰或者别的什么地方，
+          有另一对男人和女人正做着我们同样的事。
+          他们是不是"我们"？我不知道。
+          但今晚，我们和他们，都在重逢。
+        speaker: natasha
+        seed_id: across_space_other_self
+        referenced_seed: across_space_other_self
+        priority: 99
+        trigger_condition: |
+          玩家在 reunion_2008 触发至少 2 个 mandatory echo
+          （包括 first_words_admit_1985_1989 必选 + 至少 1 条其他 echo）
+
 # -----------------------------------------------------------------------------
 # 合法结局（策划扩展）
 # -----------------------------------------------------------------------------
