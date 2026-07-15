@@ -588,30 +588,35 @@ mandatory_echoes:
       - line_id: line_01_photo_in_pocket
         text: "你把那张照片带在身上带了多少年？"
         speaker: arash
+        seed_id: photo_in_pocket
         referenced_seed: photo_in_pocket
         referenced_2008_seed: photo_lab_2008.seed.photo_in_pocket
         priority: 1
       - line_id: line_02_photo_in_book
         text: "我在诗集里一直留着那张照片……"
         speaker: arash
+        seed_id: photo_in_book
         referenced_seed: photo_in_book
         referenced_2008_seed: photo_lab_2008.seed.photo_in_book
         priority: 2
       - line_id: line_03_grip_then_release
         text: "你握住又松开……和那时候一模一样。"
         speaker: arash
+        seed_id: grip_then_release
         referenced_seed: grip_then_release
         referenced_2008_seed: photo_lab_2008.seed.grip_then_release
         priority: 3
       - line_id: line_04_bus_ticket_pair
         text: "你那两张 304 公交票……阿拉什你一直留着吗？"
         speaker: leila
+        seed_id: bus_ticket_pair_unused
         referenced_seed: bus_ticket_pair_unused
         referenced_2011_seed: farewell_2011.seed.bus_ticket_pair_unused
         priority: 4
       - line_id: line_05_i_arrived_text
         text: "2011 年那条'我到了'的短信……我一直存着。"
         speaker: leila
+        seed_id: i_arrived_text
         referenced_seed: i_arrived_text
         referenced_2011_seed: farewell_2011.seed.i_arrived_text
         priority: 5

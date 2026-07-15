@@ -386,7 +386,11 @@ causal_seeds:
 # 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
 # -----------------------------------------------------------------------------
 # 选种依据：3 跳链最完整——物质证据从 2008 出发，在 2011 仍在手中，
-# 在 2024 仍可被取出。这是整个叙事弧的物质骨架。
+# 在 2024 仍可被取出。这是整个叙事弧的物质骨架；
+# admit_2008_behaviors_5_candidate_lines 是 UP-20260715-015 的 3 scene 统一——
+# 5 句备选台词对应 5 个 2008 行为种子，按 priority 升序取最触动；
+# 与 farewell_2011 的 admit_1985_behaviors_5_candidate_lines、
+# reunion_2024 的 first_words_admit_2008_2011 配对（设计模式统一）。
 mandatory_echoes:
   - id: photo_in_pocket
     description: 莱拉把毕业照放进斜挎包内袋 → 2011 摸到 → 2024 取出
@@ -399,6 +403,68 @@ mandatory_echoes:
     trigger: 玩家对 book_jalal 或 photo_pair 执行 give
     target_scenes: [farewell_2011, reunion_2024]
     ai_director_must_invoke: true
+
+  # ----- UP-20260715-015：3 scene 5 句备选统一 — photo_lab_2008 段 -----
+  # 5 句备选对应 5 个 2008 行为种子，按 priority 升序取最触动；
+  # 无任何 candidate 匹配 → line_01_photo_in_pocket 兜底（禁自由发挥）。
+  - id: admit_2008_behaviors_5_candidate_lines
+    description: 莱拉或阿拉什在放映室分照片时开口承认 2008 行为（5 句备选；UP-20260715-015）
+    trigger: 玩家对 arash 或 leila 执行 reveal 或 question；或对 photo_pair / book_jalal 执行 give
+    target_scenes: [farewell_2011, reunion_2024]
+    ai_director_must_invoke: true
+    references_2008:
+      - photo_in_pocket
+      - photo_in_book
+      - grip_then_release
+      - poem_in_toolbox
+      - date_written_on_back
+    ai_director_constraint: "必须引用 player 2008 的具体行为之一；不允许泛化叙述；与 farewell_2011 的 admit_1985_behaviors_5_candidate_lines + reunion_2024 的 first_words_admit_2008_2011 配对——5 句备选结构跨场景统一"
+    candidate_lines:
+      - line_id: line_01_photo_in_pocket
+        text: "我把这一张放进包里……你不会怪我吧？"
+        speaker: leila
+        seed_id: photo_in_pocket
+        referenced_seed: photo_in_pocket
+        referenced_2008_seed: photo_lab_2008.seed.photo_in_pocket
+        priority: 1
+      - line_id: line_02_photo_in_book
+        text: "这一张我夹进诗集……你替我留着诗吗？"
+        speaker: arash
+        seed_id: photo_in_book
+        referenced_seed: photo_in_book
+        referenced_2008_seed: photo_lab_2008.seed.photo_in_book
+        priority: 2
+      - line_id: line_03_grip_then_release
+        text: "我们刚才握了一下手……又松开了"
+        speaker: leila
+        seed_id: grip_then_release
+        referenced_seed: grip_then_release
+        referenced_2008_seed: photo_lab_2008.seed.grip_then_release
+        priority: 3
+      - line_id: line_04_poem_in_toolbox
+        text: "你那张折诗我收进工具盒了……别告诉任何人"
+        speaker: arash
+        seed_id: poem_in_toolbox
+        referenced_seed: poem_in_toolbox
+        referenced_2008_seed: photo_lab_2008.seed.poem_in_toolbox
+        priority: 4
+      - line_id: line_05_date_written_on_back
+        text: "我在照片背面写了 2008.6.21……你看不看得到"
+        speaker: leila
+        seed_id: date_written_on_back
+        referenced_seed: date_written_on_back
+        referenced_2008_seed: photo_lab_2008.seed.date_written_on_back
+        priority: 5
+    selection_rule:
+      algorithm: |
+        1. NPC Agent 拉取玩家本局触发的所有 causal_seed 列表
+           （from player_action.evidenceIds + npc_raised_echoes + belief_matrix.memoryRefs）
+        2. 对 candidate_lines 按 priority 升序遍历，找到第一个
+           seed_id / referenced_seed 在玩家触发列表里的 line
+        3. 若多触发：取 priority 最小（即"最触动"）的那条
+        4. 若无任何 candidate 匹配：AI 导演必须使用 line_01_photo_in_pocket 兜底
+           —— 禁止自由发挥台词
+      red_line: "AI 导演不得在 candidate_lines 之外创造台词"
 
 # -----------------------------------------------------------------------------
 # 合法结局：本场景可能的结束状态

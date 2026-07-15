@@ -216,6 +216,153 @@
       "maxItems": 32,
       "description": "Causal seed IDs that this scene is allowed to plant. Resolver drops any newCausalSeeds not in this list."
     },
+    "mandatory_echoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "ai_director_must_invoke"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Unique mandatory echo identifier, e.g. 'first_words_admit_2008_2011' or 'admit_1985_behaviors_5_candidate_lines'."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "trigger": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Trigger condition description (free-form, resolved by Director / Resolver)."
+          },
+          "target_scenes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+            "maxItems": 16,
+            "description": "Scenes where this echo may fire."
+          },
+          "ai_director_must_invoke": {
+            "type": "boolean",
+            "description": "If true, the Director must invoke this echo (no AI freedom; 决策 3)."
+          },
+          "references_1985": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "maxItems": 32,
+            "description": "Seed IDs from the 1985/1986/1989 era that this echo references (UP-20260715-015)."
+          },
+          "references_2008": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "maxItems": 32,
+            "description": "Seed IDs from photo_lab_2008 that this echo references."
+          },
+          "references_2011": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "maxItems": 32,
+            "description": "Seed IDs from farewell_2011 that this echo references."
+          },
+          "ai_director_constraint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Hard constraint on the Director (no AI freedom for the echo content)."
+          },
+          "candidate_lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["line_id", "text", "speaker", "seed_id", "priority"],
+              "properties": {
+                "line_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "description": "Unique line identifier, e.g. 'line_01_photo_in_pocket'."
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500,
+                  "description": "The line text — what the NPC says."
+                },
+                "speaker": {
+                  "type": "string",
+                  "enum": ["arash", "leila"],
+                  "description": "Who says this line."
+                },
+                "seed_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "description": "Primary seed id this line references (UP-20260715-015 unified schema)."
+                },
+                "referenced_seed": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "description": "Alias of seed_id; kept for compatibility with W4 reunion_2024 schema."
+                },
+                "referenced_1985_seed": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "referenced_2008_seed": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "referenced_2011_seed": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "priority": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 16,
+                  "description": "Selection priority — 1 = highest (most touching). selection_rule picks the lowest priority line that matches the player's triggered seeds."
+                }
+              }
+            },
+            "minItems": 0,
+            "maxItems": 16,
+            "description": "Pre-approved candidate lines for this echo. The selection_rule chooses ONE based on the player's triggered seeds; AI Director must NOT create lines outside this list (UP-20260715-015 red line)."
+          },
+          "selection_rule": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["algorithm", "red_line"],
+            "properties": {
+              "algorithm": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000,
+                "description": "Multi-line text describing the selection algorithm (priority asc, take first match)."
+              },
+              "red_line": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500,
+                "description": "Red line that the AI Director must NOT cross (e.g. 'AI 导演不得在 candidate_lines 之外创造台词')."
+              }
+            },
+            "description": "Selection algorithm + red line. Drives the NPC Agent's run-time choice of which candidate_line to fire."
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 32,
+      "description": "Mandatory echoes that the scene MUST fire (决策 3: 显式登记机制). At least one echo is required to carry `candidate_lines` + `selection_rule` when the scene has a 'first words admit' moment (UP-20260715-015 3-scene 5 句备选统一). The candidate_lines shape is { line_id, text, speaker, seed_id, priority } (plus era-anchored aliases)."
+    },
     "narratorVoice": {
       "type": "string",
       "enum": [

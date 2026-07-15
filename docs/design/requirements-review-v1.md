@@ -61,14 +61,29 @@
 - 旁白用"你看到了 X"而不是"你做了 X"——保持距离感
 - 解锁视角后，**不是换 UI，是换叙事**（记忆账本、情绪演出、NPC 内心独白全变）
 - 免费样章里**暗示**其他视角存在（"莱拉的角度是另一个故事"），但**不给**
+- **# 补充条款（UP-20260715-015 / W11-B）**：
+  视角付费解锁后**第一句台词必须引用 player 1985/2008 行为**——
+  - 1985/2008 指的是 player 在更早年代的关键行为种子
+  - 5 句备选台词对应 5 个跨年代行为种子，按 priority 升序取最触动
+  - 落地于 3 个场景的 mandatory echo 统一设计模式：
+    - `photo_lab_2008.admit_2008_behaviors_5_candidate_lines`
+    - `farewell_2011.admit_1985_behaviors_5_candidate_lines`
+    - `reunion_2024.first_words_admit_2008_2011`
+  - 候选结构（narrative_contract.schema.json 已加 `candidate_lines`）：
+    `{ line_id, text, speaker, seed_id, priority }`（+ era-anchored aliases）
+  - selection_rule：NPC Agent 用 `referencedMemoryIds` 自动匹配 causal_seed，
+    按 priority 取最触动；无任何 candidate 匹配 → line_01 兜底（**禁自由发挥**）
 
 **反向代价**：
 - 默认多视角 → 代入混乱、情感稀释、复购率掉
 - 视角只换 UI → 玩家骂"骗钱"，伤害长期口碑
+- 第一句台词自由发挥 → 玩家感受不到"跨年代回响"的重量，付费动机被稀释
 
 **验收标准**：
 - 免费样章完成时，调研回访中能听到"我想看莱拉视角"的声音（埋下付费钩子）
 - 视角切换后，**记忆账本内容、情绪演出文案、NPC 内心独白 3 项至少有 2 项发生实质变化**
+- 视角付费解锁后第一句台词**100%** 命中 candidate_lines 之一（零自由发挥）
+- 3 个场景的 5 句备选设计模式统一（结构、字段、selection_rule 一致）
 
 ---
 
@@ -260,6 +275,7 @@
 | 日期 | 决策 | 动作 | 操作人 |
 |---|---|---|---|
 | 2026-07-14 | 全部 6 项 | 起草、定稿 | Mavis / Mavis 用户 |
+| 2026-07-15 | 决策 2 补充条款（UP-20260715-015）| 追加 1 条 bullets：**视角付费解锁后第一句台词必须引用 player 1985/2008 行为**；3 scene 5 句备选设计模式统一；selection_rule 兜底；不影响其他 5 个决策 | Mavis / W11-B session |
 | 待定 | — | 推送综合开发任务执行 | Mavis 用户 |
 
 **变更原则**：

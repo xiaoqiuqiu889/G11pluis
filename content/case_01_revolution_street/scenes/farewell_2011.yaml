@@ -328,6 +328,44 @@ characters_present:
 # 因果种子：本场景行为会触发哪些远期回响
 # -----------------------------------------------------------------------------
 causal_seeds:
+  # ----- UP-20260715-015：1985/1986/1989 行为种子（决策 2 补充条款引用目标） -----
+  # 这 5 个种子在更早的 1985/1986/1989 时代已经被触发，
+  # 通过 carried_seeds 一路保留到 2011 机场；5 句备选台词按 selection_rule 匹配。
+  - id: walkman_in_pocket_1985
+    description: 1985 年阿拉什把 walkman 留在莱拉那边
+    trigger: 历史（被 carried_seeds 带入 2011）
+    effects:
+      - 锚点 1 2011 机场，阿拉什提起 walkman 仍在他手中
+      - 锚点 2 2024 重逢，阿拉什胸口口袋里仍是那台 walkman
+
+  - id: postcard_moscow_vienna
+    description: 1986 年莱拉从莫斯科寄维也纳的明信片
+    trigger: 历史（被 carried_seeds 带入 2011）
+    effects:
+      - 锚点 1 2011 机场，阿拉什从外套内袋摸出那张明信片
+      - 锚点 2 2024 重逢，桌面上明信片正面朝下
+
+  - id: grip_then_release_1985
+    description: 1985 年莱拉与阿拉什在听琴那晚握—松
+    trigger: 历史（被 carried_seeds 带入 2011）
+    effects:
+      - 锚点 1 2011 机场，莱拉握完手后的手指还停在阿拉什袖口
+      - 锚点 2 2024 重逢，阿拉什端茶时拇指会先压住杯沿再松开
+
+  - id: chocolate_wrapper_1986
+    description: 1986 年阿拉什留下两颗松子糖的锡纸
+    trigger: 历史（被 carried_seeds 带入 2011）
+    effects:
+      - 锚点 1 2011 机场，莱拉斜挎包内袋里锡纸的折角压到了照片
+      - 锚点 2 2024 重逢，莱拉把照片翻到背面时锡纸仍贴着照片
+
+  - id: arrival_postcard_1989
+    description: 1989 年阿拉什寄到琴行的"我到了"明信片
+    trigger: 历史（被 carried_seeds 带入 2011）
+    effects:
+      - 锚点 1 2011 机场，阿拉什胸口口袋仍夹着那张明信片
+      - 锚点 2 2024 重逢，咖啡桌桌面那张明信片背面的邮戳是 1989
+
   - id: name_of_kamran_spoken
     description: 莱拉在机场把卡姆兰的名字、婚姻、机票三件事一次说完
     trigger: 玩家对 envelope_kamran 执行 reveal + give（让名字从信封里出来）
@@ -412,7 +450,9 @@ causal_seeds:
 # 必触发回响（决策 3 显式登记；AI 导演不能自由发挥）
 # -----------------------------------------------------------------------------
 # 选种依据：两个都是 2008 物质证据的身体级回响——
-# 握—松 是 2008 地下室停电那晚的身体记忆，304 公交票是 2008 阿拉什的物件证据。
+# 握—松 是 2008 地下室停电那晚的身体记忆，304 公交票是 2008 阿拉什的物件证据；
+# admit_1985_behaviors_5_candidate_lines 是 UP-20260715-015 决策 2 补充条款的落地——
+# 视角付费解锁后第一句台词必须引用 player 1985/1986/1989 的具体行为之一。
 mandatory_echoes:
   - id: grip_then_release_2011
     description: 莱拉与阿拉什最后握—松（2008 地下室停电那晚握—松的 13 年后身体回响）
@@ -427,6 +467,69 @@ mandatory_echoes:
     target_scenes: [reunion_2024]
     ai_director_must_invoke: true
     references_2008: [photo_lab_2008.seed.bus_ticket_in_book]
+
+  # ----- UP-20260715-015 + 决策 2 补充条款：5 句备选台词 -----
+  # 视角付费解锁后第一句台词必须引用 player 1985/2008 行为。
+  # 5 句备选对应 5 个 1985/1986/1989 行为种子，按 priority 升序取最触动的一条；
+  # 无任何 candidate 匹配 → line_01_walkman_in_pocket_1985 兜底（禁自由发挥）。
+  - id: admit_1985_behaviors_5_candidate_lines
+    description: 阿拉什或莱拉在国际机场开口承认 1985/1986/1989 行为（5 句备选；UP-20260715-015）
+    trigger: 玩家对 arash 或 leila 执行 reveal 或 question；或 narratorVoice ∈ {observer_leila, observer_arash}
+    target_scenes: [reunion_2024]
+    ai_director_must_invoke: true
+    references_1985:
+      - walkman_in_pocket_1985
+      - grip_then_release_1985
+      - chocolate_wrapper_1986
+      - postcard_moscow_vienna
+      - arrival_postcard_1989
+    ai_director_constraint: "必须引用 player 1985/1986/1989 的具体行为之一；不允许泛化叙述；与 reunion_2024 的 first_words_admit_2008_2011 配对——5 句备选结构跨场景统一"
+    candidate_lines:
+      - line_id: line_01_walkman_in_pocket_1985
+        text: "那个 walkman 我一直留着……"
+        speaker: arash
+        seed_id: walkman_in_pocket_1985
+        referenced_seed: walkman_in_pocket_1985
+        referenced_1985_seed: walkman_in_pocket_1985
+        priority: 1
+      - line_id: line_02_postcard_moscow_vienna
+        text: "你 1986 年那张明信片……我从维也纳带过来了"
+        speaker: arash
+        seed_id: postcard_moscow_vienna
+        referenced_seed: postcard_moscow_vienna
+        referenced_1985_seed: postcard_moscow_vienna
+        priority: 2
+      - line_id: line_03_grip_then_release_1985
+        text: "你握住又松开……和我们第一次听你弹琴那晚一模一样"
+        speaker: leila
+        seed_id: grip_then_release_1985
+        referenced_seed: grip_then_release_1985
+        referenced_1985_seed: grip_then_release_1985
+        priority: 3
+      - line_id: line_04_chocolate_wrapper_1986
+        text: "你那两颗松子糖锡纸……我口袋里一直留到现在"
+        speaker: leila
+        seed_id: chocolate_wrapper_1986
+        referenced_seed: chocolate_wrapper_1986
+        referenced_1985_seed: chocolate_wrapper_1986
+        priority: 4
+      - line_id: line_05_arrival_postcard_1989
+        text: "1989 年那条'我到了'的明信片……我一直贴在琴盖上"
+        speaker: arash
+        seed_id: arrival_postcard_1989
+        referenced_seed: arrival_postcard_1989
+        referenced_1985_seed: arrival_postcard_1989
+        priority: 5
+    selection_rule:
+      algorithm: |
+        1. NPC Agent 拉取玩家本局触发的所有 causal_seed 列表
+           （from player_action.evidenceIds + npc_raised_echoes + belief_matrix.memoryRefs）
+        2. 对 candidate_lines 按 priority 升序遍历，找到第一个
+           seed_id / referenced_seed 在玩家触发列表里的 line
+        3. 若多触发：取 priority 最小（即"最触动"）的那条
+        4. 若无任何 candidate 匹配：AI 导演必须使用 line_01_walkman_in_pocket_1985 兜底
+           —— 禁止自由发挥台词
+      red_line: "AI 导演不得在 candidate_lines 之外创造台词"
 
 # -----------------------------------------------------------------------------
 # 合法结局：本场景可能的结束状态
