@@ -313,7 +313,11 @@ export type Era =
   | "2000_2012_globalization"
   | "2012_present_ai_age"
   | "present"
-  | "epilogue";
+  | "epilogue"
+  // W12: case_02 三个时代（V5 命题：每案自定 era enum）
+  | "1985_soviet_late"
+  | "1989_soviet_dissolution_2yr_before"
+  | "2008_berlin_reunion";
 
 export type Phase = "setup" | "rising" | "climax" | "falling" | "resolution" | "ended";
 
@@ -367,7 +371,8 @@ export interface NarrativeContract {
   // UP-20260715-004: enum mirrors server/config/schemas/narrative_contract.schema.json
   // (default_third_person_observer | observer_leila | observer_arash).
   // observer_leila / observer_arash are paid unlocks (决策 4 ¥3/段).
-  narratorVoice?: "default_third_person_observer" | "observer_leila" | "observer_arash";
+  // W12: case_02 自由字符串（"第三人称限制视角跟随娜塔莎..."等任意 narrator voice 描述）
+  narratorVoice?: string;
   schemaVersion: "1.0.0";
 }
 
@@ -498,8 +503,15 @@ export interface Product {
   iconKey: string;
 }
 
-/** 场景 ID 集合 */
-export type SceneId = "photo_lab_2008" | "farewell_2011" | "reunion_2024";
+/** 场景 ID 集合（W12: 跨案，case_02 三场） */
+export type SceneId =
+  | "photo_lab_2008"
+  | "farewell_2011"
+  | "reunion_2024"
+  | "1985_meeting"
+  | "1989_farewell"
+  | "2008_reunion"
+  | string;
 
 /** 运行状态：付费点必须从这些状态触发 */
 export type RunState =
@@ -525,6 +537,8 @@ export interface InvestigatableObject {
 /** 场景 YAML 客户端镜像（用于 mock 模式） */
 export interface SceneMeta {
   sceneId: SceneId;
+  // W12: case selector — undefined means case_01 (default)
+  caseSlug?: string;
   title: string;
   era: Era;
   location: string;
@@ -541,9 +555,13 @@ export interface SceneMeta {
   turnBudget: Partial<Record<ActionType, number>>;
   causalSeeds: Array<{
     id: string;
-    description: string;
-    trigger: string;
-    effects: string[];
+    description?: string;
+    trigger?: string;
+    effects?: string[];
+    // W12: case_02 / W3 服务端 LoadedScene 字段
+    source_scene?: string;
+    target_scenes?: string[];
+    echo_intensity?: number;
   }>;
   legalEndings: Array<{
     id: string;
@@ -551,4 +569,11 @@ export interface SceneMeta {
     description: string;
     causalSeedRequired: string[];
   }>;
+  // W12: 跨案母题钩子（资源 + 声音 + 设计意图）
+  artFocus?: string;
+  canonicalArt?: string;
+  atmosphereArt?: string;
+  audioChapter?: string;
+  motifKey?: string;
+  crossCaseParallels?: string[];
 }

@@ -2,7 +2,7 @@
   "status": "ok",
   "service": "g1n-server",
   "version": "1.0.0",
-  "uptimeSeconds": 80,
+  "uptimeSeconds": 4377,
   "database": {
     "db": "ok",
     "url": "sqlite:///D:/G1-ai-native/data/g1n.db"
@@ -19,5 +19,5 @@
       "softCostTargetCny": 0.8
     }
   },
-  "activeRuns": 3
+  "activeRuns": 2
 }

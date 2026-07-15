@@ -251,7 +251,9 @@ class RunRegistry:
             raise LookupError(f"run not found: {run_id}")
 
         scene_id = run_row.current_scene_id or default_scene_id
-        scene = self._scene_loader.load(scene_id)
+        # W12: case-aware — use the case the run was created with
+        case_slug = getattr(run_row, "case_slug", None) or "case_01_revolution_street"
+        scene = self._scene_loader.load_scene(case_slug, scene_id)
         contract = scene.contract
 
         # ---- hydrate snapshot ----
@@ -357,7 +359,14 @@ class RunRegistry:
         """
 
         active = self.open(run_id)
-        scene = self._scene_loader.load(new_scene_id)
+        # W12: case-aware transition — re-read case from DB to be authoritative
+        run_row = self._repo.get_run(run_id)
+        case_slug = (
+            (run_row.case_slug if run_row else None)
+            or getattr(active, "case_slug", None)
+            or "case_01_revolution_street"
+        )
+        scene = self._scene_loader.load_scene(case_slug, new_scene_id)
         new_contract = scene.contract
         era = new_era or scene.era
         # Carry dormant seeds

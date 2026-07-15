@@ -1,0 +1,227 @@
+# =============================================================================
+# 第二案 · 《莫斯科没有童话》· 15 张图 + 12 音频 cross_case_equivalent 元数据
+# -----------------------------------------------------------------------------
+# UP-20260715-027 落地：每个第二案物件命名加 `cross_case_equivalent` 字段
+# 字段值是 case_01 对应物件（语义连续性）
+# 决策 2 补充条款：跨案母题对应在收束场景被 NPC 主动引用
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 10 物件特写（artifacts/）
+# -----------------------------------------------------------------------------
+artifacts:
+  - id: 01-chocolate-foil-1986
+    case_02_filename: assets/images/case_02/artifacts/01-chocolate-foil-1986.png
+    case_02_label: 1986 西柏林室内乐节锡纸
+    case_02_anchor: 1989_farewell / 1995_two_cities
+    cross_case_equivalent:
+      case_01_object: arrival_postcard_1989
+      semantic_link: "都是'离别时收到的小物'——案 01 莱拉 1989 寄的明信片 / 案 02 莉莎 1986 西柏林室内乐节收到的锡纸"
+    motif: chocolate_tin_paper_lisa_keeps  # 莉莎保留 19 年
+    era_lock: "1986 西柏林 / 不能出现'克格勃'全名"
+
+  - id: 02-sony-walkman-wm-fx1
+    case_02_filename: assets/images/case_02/artifacts/02-sony-walkman-wm-fx1.png
+    case_02_label: Sony WM-FX1 walkman（1984 年产）
+    case_02_anchor: 1989_farewell
+    cross_case_equivalent:
+      case_01_object: poem_in_toolbox
+      semantic_link: "都是'对方留下的个人物品'——案 01 阿拉什工具盒里的折诗 / 案 02 walkman 里的磁带"
+    motif: walkman_tape_in_1989_luggage  # 莉莎听过 6 次
+    era_lock: "1984 Sony / 1987-1988 莫斯科合奏"
+
+  - id: 03-maxell-cassette-xl2
+    case_02_filename: assets/images/case_02/artifacts/03-maxell-cassette-xl2.png
+    case_02_label: Maxell XL II 磁带（B 面 23:14 大提琴长音）
+    case_02_anchor: 1989_farewell / 2008_reunion
+    cross_case_equivalent:
+      case_01_object: i_arrived_text_2011
+      semantic_link: "都是'离别时未直说的信号'——案 01 莱拉 2011 短信'我到了' / 案 02 娜塔莎 1987-1988 B 面 23:14 大提琴长音"
+    motif: third_bar_oral_message  # 5:55 电话"第三小节是给你的"
+    era_lock: "1987-1988 / 不能出现'解体'"
+
+  - id: 04-postcard-wien-1995
+    case_02_filename: assets/images/case_02/artifacts/04-postcard-wien-1995.png
+    case_02_label: 1995 维也纳未寄出的明信片
+    case_02_anchor: 2008_reunion
+    cross_case_equivalent:
+      case_01_object: leila_kept_photo
+      semantic_link: "都是'斜挎包内袋里 13-19 年的物质证据'——案 01 莱拉 2008 照片 / 案 02 娜塔莎 1995 明信片"
+    motif: postcard_wien_1995_unveiled  # 2008 桌面被打开
+    era_lock: "1995-11-17 维也纳"
+
+  - id: 05-manuscript-op38-handwritten
+    case_02_filename: assets/images/case_02/artifacts/05-manuscript-op38-handwritten.png
+    case_02_label: 肖斯塔科维奇 Op.38 手抄谱（1985 总谱副本）
+    case_02_anchor: 1985_meeting / 2008_reunion
+    cross_case_equivalent:
+      case_01_object: photo_pair_two_canonical
+      semantic_link: "都是'同版两份的母题物件'——案 01 两张同版毕业照 / 案 02 两份同版手抄谱"
+    motif: natasha_keeps_manuscript  # 1985 抄一份给你
+    era_lock: "1985 苏联晚期 / 不能引入 1985 之后才出现的词"
+
+  - id: 06-aeroflot-tag-su355
+    case_02_filename: assets/images/case_02/artifacts/06-aeroflot-tag-su355.png
+    case_02_label: Aeroflot SU-355 托运标签
+    case_02_anchor: 1989_farewell / 2008_reunion
+    cross_case_equivalent:
+      case_01_object: luggage_tag_back
+      semantic_link: "都是'离别时物理可触的最后一物'——案 01 莱拉 2011 单程行李牌 / 案 02 伊利亚 1989 SU-355 标签"
+    motif: aeroflot_tag_in_page_7  # 1992 伊利亚夹在红色笔记本第 7 页
+    era_lock: "1989-04-08 SVO-PRG-VIE"
+
+  - id: 07-program-1987-moscow-conservatory
+    case_02_filename: assets/images/case_02/artifacts/07-program-1987-moscow-conservatory.png
+    case_02_label: 1987 莫斯科音乐学院节目单（《这里没有童话》首演）
+    case_02_anchor: 2008_reunion
+    cross_case_equivalent:
+      case_01_object: name_of_kamran_concealed
+      semantic_link: "都是'过去某事件的物质证据'——案 01 莱拉藏着卡姆兰的名字 / 案 02 伊利亚藏着 1987 处分事件"
+    motif: two_programs_takeout_compare  # 2008 桌面对齐
+    era_lock: "1987 塔甘卡剧院 / 处分观察期"
+
+  - id: 08-program-2008-berlin-philharmonie
+    case_02_filename: assets/images/case_02/artifacts/08-program-2008-berlin-philharmonie.png
+    case_02_label: 2008 柏林爱乐独奏会节目单（Op.40）
+    case_02_anchor: 2008_reunion
+    cross_case_equivalent:
+      case_01_object: program_op38_op40_paired
+      semantic_link: "都是'2008 / 2024 桌面对齐的另一份节目单'——案 01 莱拉的 2024 节目单 / 案 02 娜塔莎的 2008 Op.40 节目单"
+    motif: two_programs_takeout_compare
+    era_lock: "2008-11-15 柏林 / 雨后"
+
+  - id: 09-two-piano-lids-moscow-vienna
+    case_02_filename: assets/images/case_02/artifacts/09-two-piano-lids-moscow-vienna.png
+    case_02_label: 莫斯科 + 维也纳两架钢琴琴盖蒙太奇
+    case_02_anchor: 1995_two_cities / 2008_reunion
+    cross_case_equivalent:
+      case_01_object: two_photos_aligned
+      semantic_link: "都是'两座城市 / 两段时间的母题对齐'——案 01 两张同版照片对齐 / 案 02 两架钢琴对齐"
+    motif: two_piano_lids_montage  # 1985 莫斯科 / 1995 维也纳
+    era_lock: "1985 莫斯科 + 1995 维也纳"
+
+  - id: 10-ashtray-1985-unsmoked
+    case_02_filename: assets/images/case_02/artifacts/10-ashtray-1985-unsmoked.png
+    case_02_label: 1985 305 琴房未点的烟灰缸
+    case_02_anchor: 1985_meeting / 2008_reunion
+    cross_case_equivalent:
+      case_01_object: ash_trey_at_dagang
+      semantic_link: "都是'配角未动的物'——案 01 大刚未点的烟 / 案 02 305 琴房未点的烟灰缸"
+    motif: petroff_schellack_stain_in_2008_cafe  # 2008 伊利亚提到"中央 C 键还在"
+    era_lock: "1985 305 琴房 / 中央 C 键松香渍"
+
+# -----------------------------------------------------------------------------
+# 3 氛围图（atmosphere/）
+# -----------------------------------------------------------------------------
+atmosphere:
+  - id: 01-1985-meeting-moscow-conservatory-hallway
+    case_02_filename: assets/images/case_02/atmosphere/01-1985-meeting-moscow-conservatory-hallway.png
+    case_02_label: 1985 莫斯科音乐学院老柴院走廊
+    cross_case_equivalent:
+      case_01_object: photo_lab_basement_2008
+      semantic_link: "都是'案件开场的物理空间'——案 01 2008 地下放映室 / 案 02 1985 老柴院走廊"
+    era_lock: "1985 苏联晚期 / 不能出现'解体'"
+
+  - id: 02-1989-farewell-svo2-airport
+    case_02_filename: assets/images/case_02/atmosphere/02-1989-farewell-svo2-airport.png
+    case_02_label: 1989-04-08 清晨 SVO-2 国际线出境大厅
+    cross_case_equivalent:
+      case_01_object: teh_airport_2011_departure
+      semantic_link: "都是'离别场景的物理空间'——案 01 2011 德黑兰机场 / 案 02 1989 SVO-2"
+    era_lock: "1989 苏联解体前 2 年 / 不能出现'解体'已发生"
+
+  - id: 03-2008-reunion-kreuzberg-u1-station
+    case_02_filename: assets/images/case_02/atmosphere/03-2008-reunion-kreuzberg-u1-station.png
+    case_02_label: 2008-11-15 傍晚 U1 线 Kreuzberg 站街口雨后
+    cross_case_equivalent:
+      case_01_object: istanbul_crossroads_2024
+      semantic_link: "都是'重逢与街口分开的物理空间'——案 01 2024 伊斯坦布尔街口 / 案 02 2008 U1 街口"
+    era_lock: "2008-11-15 / 可以使用'克格勃'作为历史词"
+
+# -----------------------------------------------------------------------------
+# 2 canonical 图（canonical/）
+# -----------------------------------------------------------------------------
+canonical:
+  - id: 01-1985-moscow-conservatory-graduation
+    case_02_filename: assets/images/case_02/canonical/01-1985-moscow-conservatory-graduation.png
+    case_02_label: 1985 娜塔莎 21 岁 / 伊利亚 23 岁 305 琴房合排毕业季
+    cross_case_equivalent:
+      case_01_object: 2008_graduation_photo_pair
+      semantic_link: "都是'案开场主角年轻版的 canonical'——案 01 2008 毕业照 / 案 02 1985 305 琴房合排"
+    era_lock: "1985 苏联晚期"
+
+  - id: 02-2008-berlin-kreuzberg-reunion
+    case_02_filename: assets/images/case_02/canonical/02-2008-berlin-kreuzberg-reunion.png
+    case_02_label: 2008 娜塔莎 44 岁 / 伊利亚 46 岁 十字山区咖啡馆桌边
+    cross_case_equivalent:
+      case_01_object: 2024_istanbul_cafe_table
+      semantic_link: "都是'案收束主角中年版的 canonical'——案 01 2024 伊斯坦布尔咖啡馆 / 案 02 2008 柏林咖啡馆"
+    era_lock: "2008-11-15 柏林"
+
+# -----------------------------------------------------------------------------
+# 12 音频 cross_case_equivalent（sound motif 对应）
+# -----------------------------------------------------------------------------
+audio:
+  ambient:
+    - file: chapter-1985-conservatory-ambient.mp3
+      case_02_anchor: 1985_meeting
+      cross_case_equivalent: chapter-2008-basement-ambient.mp3  # 案 01 2008 地下放映室
+      semantic_link: "都是'案开场章节环境声'——案 01 灯泡 + 胶片气味 / 案 02 延音踏板 + 木地板"
+    - file: chapter-1989-svo2-ambient.mp3
+      case_02_anchor: 1989_farewell
+      cross_case_equivalent: chapter-2011-airport-ambient.mp3  # 案 01 2011 机场
+      semantic_link: "都是'离别场景环境声'——案 01 玻璃 + 不锈钢 / 案 02 传送带 + 荧光灯嗡鸣"
+    - file: chapter-2008-kreuzberg-ambient.mp3
+      case_02_anchor: 2008_reunion
+      cross_case_equivalent: chapter-2024-istanbul-cafe-ambient.mp3  # 案 01 2024 咖啡馆
+      semantic_link: "都是'收束场景环境声'——案 01 雨后老咖啡馆 / 案 02 雨后玻璃水珠 + U-Bahn"
+
+  motifs:
+    - file: motif-piano-sustain-pedal.mp3
+      case_02_motif_key: piano_sustain_pedal
+      cross_case_equivalent: motif-poetry-page-turn.mp3  # 案 01 诗集翻页
+      semantic_link: "案 02 钢琴延音踏板 = 案 01 诗集翻页——都是'核心节奏型声音'"
+    - file: motif-aeroflot-chime.mp3
+      case_02_motif_key: aeroflot_chime
+      cross_case_equivalent: motif-airport-clock-tick.mp3  # 案 01 机场钟秒针
+      semantic_link: "案 02 Aeroflot 钟声 = 案 01 机场钟秒针——都是'离别的时钟符号'"
+    - file: motif-pencil-circles.mp3
+      case_02_motif_key: pencil_circles_1985
+      cross_case_equivalent: motif-email-delete.mp3  # 案 01 邮件删除
+      semantic_link: "案 02 铅笔圈注 = 案 01 邮件删除——都是'主动抹去/主动保留'的对立动作"
+    - file: motif-cassette-rewind.mp3
+      case_02_motif_key: walkman_tape_rewind
+      cross_case_equivalent: motif-rain-drip.mp3  # 案 01 雨棚水滴
+      semantic_link: "案 02 磁带倒带 = 案 01 雨滴——都是'间歇的、循环的'声音节奏"
+    - file: motif-notebook-page-turn.mp3
+      case_02_motif_key: notebook_page_turn
+      cross_case_equivalent: motif-photo-page-turn.mp3  # 案 01 翻照片
+      semantic_link: "案 02 翻红色笔记本 = 案 01 翻照片——都是'翻动某物'的物质动作"
+    - file: motif-postcard-unveil.mp3
+      case_02_motif_key: postcard_unveil
+      cross_case_equivalent: motif-bus-ticket-tear.mp3  # 案 01 公交票撕
+      semantic_link: "案 02 打开明信片 = 案 01 撕公交票——都是'打开某物'的'声音揭示'"
+
+  music:
+    - file: chapter-1985-music.mp3
+      case_02_anchor: 1985_meeting
+      cross_case_equivalent: chapter-2008-music.mp3  # 案 01 2008 章节音乐
+      semantic_link: "案 02 1985 莫斯科音乐学院章节音乐 = 案 01 2008 章节音乐——同结构（开篇+立式钢琴）"
+    - file: chapter-1989-music.mp3
+      case_02_anchor: 1989_farewell
+      cross_case_equivalent: chapter-2011-music.mp3  # 案 01 2011 机场
+      semantic_link: "案 02 1989 SVO-2 离别音乐 = 案 01 2011 机场离别音乐——同结构（机械节奏 + 单音推进）"
+    - file: chapter-2008-music.mp3
+      case_02_anchor: 2008_reunion
+      cross_case_equivalent: chapter-2024-music.mp3  # 案 01 2024 咖啡馆
+      semantic_link: "案 02 2008 柏林重逢音乐 = 案 01 2024 伊斯坦布尔重逢音乐——同结构（瓷器轻碰 + 温暖）"
+
+# =============================================================================
+# 维护说明
+# =============================================================================
+# - 本文件是 `content/case_02_moscow_no_fairy_tale/artifacts/cross_case_equivalents.yaml` 的**唯一权威**
+# - 新案（case_03+）需建独立 `content/case_03_*/artifacts/cross_case_equivalents.yaml`
+# - 评审 UP-20260715-027 落地
+# - 与 `content/_shared/motifs/cross_case_motifs.md` 互为引用
+# - 与 W11-A 报告 `docs/design/w11-a-case02-art-audio-report.md` 互为引用
+# =============================================================================

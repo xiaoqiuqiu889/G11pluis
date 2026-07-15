@@ -37,7 +37,7 @@ export function CausalSeeds() {
                 </div>
                 <p className="t-narration text-paper-100 text-sm">{s.description}</p>
                 <ul className="mt-2 space-y-1">
-                  {s.effects.map((e, i) => (
+                  {(s.effects ?? []).map((e, i) => (
                     <li key={i} className="t-meta text-paper-200/60">
                       → {e}
                     </li>

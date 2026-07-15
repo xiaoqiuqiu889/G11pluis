@@ -84,7 +84,17 @@ export interface SceneSlice {
 // -----------------------------------------------------------------------------
 // 旁观者 / 视角（决策 2：默认 = 第三人称旁观者）
 // -----------------------------------------------------------------------------
-export type POVMode = "observer" | "leila" | "arash" | "kamran" | "maryam";
+export type POVMode =
+  | "observer"
+  | "leila"
+  | "arash"
+  | "kamran"
+  | "maryam"
+  // W12: case_02 人物
+  | "natasha_roschina"
+  | "ilya_berman"
+  | "sasha_kuzmin"
+  | "lisa_hoffmann";
 
 export interface ObserverSlice {
   povMode: POVMode;

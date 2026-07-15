@@ -29,7 +29,7 @@ const FOCUSES: CameraFocus[] = [
   { id: "door", label: "木门", x: 50, y: 22, zoom: 1.5 },
 ];
 
-const ART_URL = "art-v5/istanbul-cafe-photo-close.png";
+const ART_URL = "/assets/images/atmosphere/A3-reunion-2024-istanbul-cafe.png"; // W12-E2E-fix: 走 /assets/ 静态资源根
 
 export default function Reunion2024() {
   const nav = useNavigate();

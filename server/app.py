@@ -99,8 +99,12 @@ from repository import RunRepository, get_default_repository  # noqa: E402
 from run_registry import RunRegistry, get_default_registry  # noqa: E402
 from scene_loader import (  # noqa: E402
     SCENES_IN_ORDER,
+    CASE_SLUG_DEFAULT,
+    CASE_REGISTRY,
     SceneContractLoader,
     get_default_loader,
+    get_case_meta,
+    list_cases,
 )
 
 logger = logging.getLogger("g1n.app")
@@ -780,7 +784,9 @@ async def enter_scene(
     if run is None:
         raise HTTPException(status_code=404, detail=f"run not found: {run_id}")
     loader = get_default_loader()
-    scene = loader.load(scene_id)
+    # W12: case-aware — use the case the run was created with.
+    case_slug = getattr(run, "case_slug", CASE_SLUG_DEFAULT) or CASE_SLUG_DEFAULT
+    scene = loader.load_scene(case_slug, scene_id)
     registry = get_default_registry()
     active = registry.open(run_id, default_scene_id=scene_id)
     if active.snapshot.canonicalState.currentSceneId != scene_id:
@@ -799,7 +805,7 @@ async def enter_scene(
         "ok": True,
         "runId": run_id,
         "sceneId": scene_id,
-        "scene": loader.scene_meta(scene_id),
+        "scene": loader.scene_meta_for(case_slug, scene_id),
         "active": {
             "sceneId": active.snapshot.canonicalState.currentSceneId,
             "era": active.snapshot.canonicalState.era,
@@ -810,9 +816,94 @@ async def enter_scene(
 
 
 @app.get("/v1/scenes/{scene_id}")
-async def get_scene(scene_id: str = Path(..., min_length=1, max_length=64)) -> dict[str, Any]:
+async def get_scene(
+    scene_id: str = Path(..., min_length=1, max_length=64),
+    case: str | None = Query(default=None, description="W12: case slug (default: case_01)"),
+) -> dict[str, Any]:
     loader = get_default_loader()
-    return loader.scene_meta(scene_id)
+    case_slug = case or CASE_SLUG_DEFAULT
+    try:
+        return loader.scene_meta_for(case_slug, scene_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# W12: case selector + case-aware scene metadata
+# ---------------------------------------------------------------------------
+
+
+@app.get("/v1/cases")
+async def list_registered_cases() -> dict[str, Any]:
+    """List all registered cases (W12: case selector UI)."""
+
+    return {
+        "ok": True,
+        "cases": list_cases(),
+    }
+
+
+@app.get("/v1/cases/{case_slug}")
+async def get_case_metadata(
+    case_slug: str = Path(..., min_length=1, max_length=64),
+) -> dict[str, Any]:
+    """Return case metadata + scene list (W12)."""
+
+    meta = get_case_meta(case_slug)
+    if meta is None:
+        raise HTTPException(status_code=404, detail=f"unknown case: {case_slug}")
+    loader = get_default_loader()
+    return {
+        "ok": True,
+        "case": meta,
+        "scenes": [
+            {
+                "sceneId": s.scene_id,
+                "title": s.title,
+                "era": s.era,
+            }
+            for s in loader.all_scenes_for(case_slug)
+        ],
+    }
+
+
+@app.get("/v1/cases/{case_slug}/scenes")
+async def list_case_scenes(
+    case_slug: str = Path(..., min_length=1, max_length=64),
+) -> dict[str, Any]:
+    """List all scenes for ``case_slug`` (W12)."""
+
+    if case_slug not in CASE_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"unknown case: {case_slug}")
+    loader = get_default_loader()
+    return {
+        "ok": True,
+        "caseSlug": case_slug,
+        "scenes": [
+            {
+                "sceneId": s.scene_id,
+                "title": s.title,
+                "era": s.era,
+            }
+            for s in loader.all_scenes_for(case_slug)
+        ],
+    }
+
+
+@app.get("/v1/cases/{case_slug}/scenes/{scene_id}")
+async def get_case_scene(
+    case_slug: str = Path(..., min_length=1, max_length=64),
+    scene_id: str = Path(..., min_length=1, max_length=64),
+) -> dict[str, Any]:
+    """Scene metadata for ``(case_slug, scene_id)`` (W12)."""
+
+    if case_slug not in CASE_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"unknown case: {case_slug}")
+    loader = get_default_loader()
+    try:
+        return loader.scene_meta_for(case_slug, scene_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,360 @@
+{
+  "startTime": "2026-07-15T02:49:28.004Z",
+  "endTime": "2026-07-15T02:49:54.458Z",
+  "summary": {
+    "total": 10,
+    "ok": 8,
+    "bugs": 0,
+    "fatal": 2,
+    "issueStats": {
+      "BG_IMAGE_NOT_FOUND": 2,
+      "CINEMATIC_FRAME_NOT_FOUND": 2
+    }
+  },
+  "routes": [
+    {
+      "name": "start-page",
+      "url": "http://localhost:5173/",
+      "case": "case_01",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n启动\n卷宗\n商店\n设置\n\nAI 原生重构版 · 外部可分享\n\n革命街没有尽头\n\nRev. Street · No End\n\n01\n\n旁观者\n\n默认第三人称视角，用「你看到了 X」保持距离感。视角切换是付费解锁——免费样章里只暗示存在。\n\n02\n\n三场景\n\n2008 地下放映室 → 2011 机场 → 2024 伊斯坦布尔。13 年因果，靠你早年的行为触发远期回响。\n\n03\n\n付费门\n\n所有付费点从「已结束 / 已解锁」状态触发，不在主线中段。¥25 案件通行证 / ¥48 收藏版。\n\n免费样章\n\n序章 + 三场景缩略（每场 5 分钟）+ 1 次 mandatory echo。\n已给你 30 积分 / 1 次重演 / 30 主调用\n\n开始第一场 · 2008 夏\n案件选择器（两案）\n案件通行证 ¥25\n✶ 启动声音（用户手势）\n\n旁观者 UX · 电影感 UI · 付费点 UX · v1.0",
+        "rootHtmlLen": 3872,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 900
+        },
+        "cinematicAspectSize": {
+          "w": 1440,
+          "h": 900
+        },
+        "bgImage": "url(\"/assets/images/artifacts/01-graduation-photo-leila-worn.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 4,
+        "hasInvestigationPanel": false,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 1,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case-selector",
+      "url": "http://localhost:5173/cases",
+      "case": "both",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n启动\n卷宗\n商店\n设置\n\nAI 原生 · 多案件\n\n选一个案件进入\n\n每个案件 3 个场景 / 跨年代回响 / 12 行为词汇表\n\n案 01\n\n3 场景\n革命街没有尽头\n\n德黑兰 · 伊斯坦布尔 · 13 年\n\n· photo_lab_2008\n· farewell_2011\n· reunion_2024\n← 返回\n决策 2 补充条款：进入第一场前玩家早期行为必须被引用\n\n案 02\n\n3 场景\n莫斯科没有童话\n\n莫斯科 · 维也纳 · 柏林 · 19 年\n\n· 1985_meeting\n· 1989_farewell\n· 2008_reunion\n← 返回\n决策 2 补充条款：进入第一场前玩家早期行为必须被引用\n\nW12 · V5 命题\"内容可规模化\"工程层实证 · 100% 复用 schema / 12 行为词汇表 / mandatory echo",
+        "rootHtmlLen": 4490,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 900
+        },
+        "cinematicAspectSize": {
+          "w": 1440,
+          "h": 900
+        },
+        "bgImage": "NONE",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 2,
+        "hasInvestigationPanel": false,
+        "hasNarration": false,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 1,
+        "h1Count": 1,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case_01-photo_lab_2008",
+      "url": "http://localhost:5173/scene/photo_lab_2008",
+      "case": "case_01",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n·\n旁观者视角\n启动\n卷宗\n商店\n设置\n\n2008 · 夏\n\n德黑兰大学·革命街旧书店地下室·地下放映室\n\n投影\n\n16mm 放映机\n\n灯泡刚被点亮\n\n桌面\n\n鲁米诗集 + 工具盒\n\n书脊开裂 · 油渍\n\n在场的\n\n莱拉 · 21 岁\n\n手里抱着牛皮纸袋\n\n关键\n\n两张同版照片\n\n仍在贴合\n\n在场的\n\n阿拉什 · 22 岁\n\n手停在工具盒上\n\n在场的\n\n大刚 · 摄影师\n\n夹着半根没点的烟\n\n全景\n照片\n阿拉什\n放映机\n镜头 · 中景\n旁观者\n莱拉·₪\n阿拉什·₪\n卡姆兰·₪\n玛丽亚姆·₪\n有一点暖\n— 灯泡烘得空气发甜\n你看到了地下放映室的灯，灯泡把胶片气味烘得更重。阿拉什的手停在工具盒上，没有抬起来。\n\n（这一场暂时还没有人开口。）\n\n调查 · INVESTIGATE\n剩余 3 / 3\n\n（你看到——这些是这场里可以走近看的几样东西。）\n\n01\n两张同版照片\n\n同一底片、同一裁切的两张冲印件\n\n照片\n两张\n同版\n02\n牛皮纸袋\n\n装着两张冲印件\n\n纸袋\n冲印\n03\n16mm 放映机\n\n阿拉什白天修的放映机，灯泡刚点亮\n\n放映机\n",
+        "rootHtmlLen": 16790,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 956
+        },
+        "cinematicAspectSize": null,
+        "bgImage": "url(\"/assets/images/atmosphere/A1-photo-lab-2008-basement.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 12,
+        "hasInvestigationPanel": true,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 0,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case_01-farewell_2011",
+      "url": "http://localhost:5173/scene/farewell_2011",
+      "case": "case_01",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n·\n旁观者视角\n启动\n卷宗\n商店\n设置\n\n2011 · 秋\n\n德黑兰伊玛目霍梅尼国际机场·国际出发大厅\n\n上方\n\n航班板\n\n抽象 · 时间在走\n\n中央\n\n值机柜台\n\n时钟秒针\n\n远处\n\n登机口\n\n广播将响\n\n在场的\n\n莱拉 · 行李箱\n\n登机牌攥在右手\n\n在场的\n\n阿拉什 · 门卡\n\n外套口袋有折诗\n\n提示\n\n不直说\n\n三件事分开说\n\n全景\n莱拉\n阿拉什\n航班板\n镜头 · 中景\n旁观者\n莱拉·₪\n阿拉什·₪\n卡姆兰·₪\n玛丽亚姆·₪\n有点撑\n— 广播混响 + 行李箱滚轮\n\n提示：本场景必触发 photo_lab_2008 至少一项具体行为。\n\n你看到了出发大厅的不锈钢反光。登机牌攥在她手里——攥到边角都卷起来了。\n\n（这一场暂时还没有人开口。）\n\n调查 · INVESTIGATE\n剩余 2 / 2\n\n（你看到——这些是这场里可以走近看的几样东西。）\n\n01\n莱拉的行李箱\n\n登机牌攥在右手；行李牌背面有字符\n\n行李箱\n登机牌\n02\n阿拉什实验门卡\n\n物理实验室门卡\n\n门卡\n物理\n03\n航班板\n\n值机柜台上方\n\n航班板\n04\n莱拉斜挎包",
+        "rootHtmlLen": 15755,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 956
+        },
+        "cinematicAspectSize": null,
+        "bgImage": "url(\"/assets/images/atmosphere/A2-farewell-2011-airport.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 12,
+        "hasInvestigationPanel": true,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 0,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case_01-reunion_2024",
+      "url": "http://localhost:5173/scene/reunion_2024",
+      "case": "case_01",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n·\n旁观者视角\n启动\n卷宗\n商店\n设置\n\n2024 · 秋\n\n土耳其·伊斯坦布尔·卡拉柯伊·老咖啡馆 + 街口\n\n门口\n\n木门\n\n桌\n\n糖罐 · 铜勺\n\n在场的\n\n阿拉什 · 35\n\n诗集抱在臂弯\n\n在场的\n\n莱拉 · 35\n\n手机贴着桌面\n\n在桌上\n\n两张同版照片 + 一本鲁米诗集\n\n（如果对齐了——）\n\n街口\n\n绿灯\n\n机场方向牌 · 雨后\n\n全景\n阿拉什\n莱拉\n桌面\n木门\n镜头 · 中景\n旁观者\n莱拉·₪\n阿拉什·₪\n卡姆兰·₪\n玛丽亚姆·₪\n近\n— 雨后木门 + 铜勺碰糖罐\n\n提示：远期回响收束；NPC 主动提起 2008 / 2011 具体行为。\n\n你看到了雨后老咖啡馆的木门，被人从外面推开。银发与手背细纹，十三年的距离被压成两步。\n\n（这一场暂时还没有人开口。）\n\n调查 · INVESTIGATE\n剩余 2 / 2\n\n（你看到——这些是这场里可以走近看的几样东西。）\n\n01\n莱拉手机\n\n屏幕里 2011 短信\n\n手机\n短信\n02\n阿拉什的诗集\n\n抱在臂弯里\n\n诗集\n鲁米\n03\n桌上糖罐\n\n老铜勺碰糖罐的声响\n\n糖罐\n铜勺",
+        "rootHtmlLen": 15976,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 956
+        },
+        "cinematicAspectSize": null,
+        "bgImage": "url(\"/assets/images/atmosphere/A3-reunion-2024-istanbul-cafe.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 12,
+        "hasInvestigationPanel": true,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 0,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case_02-1985_meeting",
+      "url": "http://localhost:5173/scene/1985_meeting",
+      "case": "case_02",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n·\n旁观者视角\n启动\n卷宗\n商店\n设置\n\n1985 · 秋\n\n莫斯科音乐学院 · 老柴院 305 琴房\n\n排练\n\n肖斯塔科维奇 Op.38\n\n第二乐章中段\n\n总谱\n\n铅笔圈三小节\n\n伊利亚签 И. Б.\n\n大提琴\n\nPetrof 1962\n\n松香渍在中央 C 键\n\n笔记本\n\n红色笔记本\n\n1985 第 1 页\n\n305 琴房\nYamaha U3\n伊利亚\n总谱\n镜头 · 中景\n有一点暖\n— 305 琴房傍晚，榉木偏红\n你看到了 305 琴房的 Yamaha U3 立式钢琴，1978 年产的榉木在傍晚光线下偏红。伊利亚的红色笔记本夹在夹克内袋，铅笔在总谱上画了三个圈—— И. Б.\n\n（这一场暂时还没有人开口。）\n\n调查 · INVESTIGATE\n剩余 3 / 3\n\n（你看到——这些是这场里可以走近看的几样东西。）\n\n01\n肖斯塔科维奇 Op.38 总谱\n\n图书馆借出 1985-09；伊利亚铅笔圈三小节并签 И. Б.\n\n总谱\nOp38\n圈注\n02\nPetrof 1962 大提琴\n\n娜塔莎继承自祖母；松香渍在 Yamaha U3 中央",
+        "rootHtmlLen": 13660,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 956
+        },
+        "cinematicAspectSize": null,
+        "bgImage": "url(\"/assets/images/case_02/atmosphere/01-1985-meeting-moscow-conservatory-hallway.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 12,
+        "hasInvestigationPanel": true,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 0,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case_02-1989_farewell",
+      "url": "http://localhost:5173/scene/1989_farewell",
+      "case": "case_02",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n·\n旁观者视角\n启动\n卷宗\n商店\n设置\n\n1989 · 4 月 8 日 · 清晨\n\nSVO-2 国际线出境大厅 + 塔甘卡剧院衣帽间（5:55 电话）\n\n航班板\n\nSU-355 / PRG / VIE\n\n6:15 起飞\n\n行李\n\nAeroflot 标签\n\nSU-355 / 1989-04-08\n\n电话亭\n\n5:55 莉莎拨盘\n\n第三小节是给你的\n\n塔甘卡\n\n衣帽间 5:30\n\n萨沙把手放在娜塔莎肩上\n\nSVO-2 出境大厅\nAeroflot 标签\n伊利亚\n付费电话亭\n镜头 · 中景\n冷\n— SVO-2 荧光灯嗡鸣 / 传送带机械\n你看到了塔甘卡剧院衣帽间 5:30 的挂钟，秒针清晰。5:55 莉莎会从 SVO-2 拨盘电话里说'第三小节是给你的'——娜塔莎会在 4 秒后接起。\n\n（这一场暂时还没有人开口。）\n\n调查 · INVESTIGATE\n剩余 3 / 3\n\n（你看到——这些是这场里可以走近看的几样东西。）\n\n01\nAeroflot 托运标签\n\nSU-355 / 1989-04-08 / SVO-PRG-VIE\n\nAeroflo",
+        "rootHtmlLen": 13798,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 956
+        },
+        "cinematicAspectSize": null,
+        "bgImage": "url(\"/assets/images/case_02/atmosphere/02-1989-farewell-svo2-airport.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 12,
+        "hasInvestigationPanel": true,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 0,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "case_02-2008_reunion",
+      "url": "http://localhost:5173/scene/2008_reunion",
+      "case": "case_02",
+      "httpStatus": 200,
+      "status": "ok",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n·\n旁观者视角\n启动\n卷宗\n商店\n设置\n\n2008 · 11 月 15 日 · 傍晚\n\n柏林 · 十字山区 · 老式咖啡馆 + U1 线地铁站街口\n\n两份节目单\n\nOp.38 / Op.40\n\n19:30 在桌面对齐\n\n红色笔记本\n\n第 7 页胶带痕迹\n\nAeroflot 标签边缘\n\n1995 明信片\n\n维也纳未寄\n\n13 年后被打开\n\nU1 站口\n\n21:05 红灯变绿\n\n两人走向不同方向\n\n十字山区咖啡馆\n桌面\n伊利亚\nU1 站口\n镜头 · 中景\n有一点暖\n— 雨后玻璃水珠 / 瓷器轻碰\n你看到了十字山区咖啡馆的老木门，雨后玻璃上有水珠。19:15 伊利亚会抱红色笔记本推门——第 7 页胶带痕迹里有 1989 Aeroflot 标签的边缘。\n\n（这一场暂时还没有人开口。）\n\n调查 · INVESTIGATE\n剩余 3 / 3\n\n（你看到——这些是这场里可以走近看的几样东西。）\n\n01\n2008 Op.38 节目单\n\n伊利亚演出 Op.38 后留下的节目单\n\n节目单\nOp.38\n02\n2008 Op.40 节目单（折角）\n\n娜塔莎",
+        "rootHtmlLen": 15276,
+        "cinematicFrameSize": {
+          "w": 1440,
+          "h": 956
+        },
+        "cinematicAspectSize": null,
+        "bgImage": "url(\"/assets/images/case_02/atmosphere/03-2008-reunion-kreuzberg-u1-station.png\")",
+        "grainOverlayOpacity": "0.08",
+        "actionBtnCount": 12,
+        "hasInvestigationPanel": true,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 0,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": []
+      }
+    },
+    {
+      "name": "archive",
+      "url": "http://localhost:5173/archive",
+      "case": "both",
+      "httpStatus": 200,
+      "status": "fatal",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n启动\n卷宗\n商店\n设置\n\n记忆档案馆\n\n本局卷宗\n\n（你看到的这一份，是从已经发生的事里留下来的——不是剧透，是证据。每一个选择都连着一个还没关上的门。）\n\n时间线\n证据\n物件\n记忆\n因果种子\n重演\n\n（这一栏还没有被填上——你还没有走过一个时间点。开始一局试试。）",
+        "rootHtmlLen": 2502,
+        "cinematicFrameSize": null,
+        "cinematicAspectSize": null,
+        "bgImage": "NONE",
+        "grainOverlayOpacity": "N/A",
+        "actionBtnCount": 0,
+        "hasInvestigationPanel": false,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 1,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": [
+          "BG_IMAGE_NOT_FOUND",
+          "CINEMATIC_FRAME_NOT_FOUND"
+        ]
+      }
+    },
+    {
+      "name": "settings",
+      "url": "http://localhost:5173/settings",
+      "case": "both",
+      "httpStatus": 200,
+      "status": "fatal",
+      "consoleLogs": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "pageInfo": {
+        "rootText": "革命街\n·\nREV. STREET · NO END\n启动\n卷宗\n商店\n设置\n\n设置\n\n偏好\n声音\n\n默认静音。需要用户手势启动。\n\n启用声音\n包含 Dastgah-e Shur 风格的环境声 / 主题 / 母题。\n音量\n字幕\n\nNPC 反应的打字机速度（决策红线：不显示精确数值）。\n\n打字速度\n慢\n中\n快\n可访问性\n\n遵循系统偏好。\n\n减动态\n系统层 prefers-reduced-motion。开启后颗粒 / 闪烁 / 缓动会减弱。\n跟随系统\n语言\n\n中文为主，英文作为元数据。\n\n界面语言\n中文\nEnglish\n关于\n\n本作 v1.0.0 外部可分享版。\n\n《革命街没有尽头》AI 原生重构版。基于 v6 设计资产 + 8 个 JSON Schema 协议。\n客户端不持有模型密钥，不保存权威状态。所有 AI 输出走叙事合同 + 提案制。",
+        "rootHtmlLen": 4373,
+        "cinematicFrameSize": null,
+        "cinematicAspectSize": null,
+        "bgImage": "NONE",
+        "grainOverlayOpacity": "N/A",
+        "actionBtnCount": 5,
+        "hasInvestigationPanel": false,
+        "hasNarration": true,
+        "hasObserverHint": false,
+        "hasStatusBar": false,
+        "caseCardCount": 0,
+        "h1Count": 1,
+        "bodyBg": "rgb(8, 8, 10)",
+        "htmlBg": "rgb(8, 8, 10)",
+        "rootBg": "rgb(8, 8, 10)",
+        "issues": [
+          "BG_IMAGE_NOT_FOUND",
+          "CINEMATIC_FRAME_NOT_FOUND"
+        ]
+      }
+    }
+  ],
+  "globalBugs": [
+    {
+      "route": "archive",
+      "issue": "BG_IMAGE_NOT_FOUND"
+    },
+    {
+      "route": "archive",
+      "issue": "CINEMATIC_FRAME_NOT_FOUND"
+    },
+    {
+      "route": "settings",
+      "issue": "BG_IMAGE_NOT_FOUND"
+    },
+    {
+      "route": "settings",
+      "issue": "CINEMATIC_FRAME_NOT_FOUND"
+    }
+  ]
+}

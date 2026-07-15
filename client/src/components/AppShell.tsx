@@ -26,7 +26,7 @@ export default function AppShell() {
       <DegradationBadge />
 
       <main
-        className="relative min-h-screen pt-9"
+        className="relative min-h-screen pt-9 flex flex-col"
         aria-busy={networkState === "connecting" || networkState === "streaming"}
         aria-live="polite"
       >

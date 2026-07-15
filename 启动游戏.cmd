@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 setlocal EnableExtensions EnableDelayedExpansion
 title G1N Client (mock mode)
@@ -98,7 +98,14 @@ echo Starting G1N (mock mode)...
 echo.
 echo Server output will appear in a new window. Don't close it.
 echo.
-start "G1N-Client" cmd /k "cd /d "%CLIENT_DIR%" && "!PM_CMD!" run dev"
+REM 通过临时 helper 脚本绕开 cmd /k 引号嵌套问题
+set "VITE_LAUNCHER=%TEMP%\g1n_vite_launcher_%RANDOM%.cmd"
+> "%VITE_LAUNCHER%" echo @echo off
+>> "%VITE_LAUNCHER%" echo set VITE_USE_MOCK=true
+>> "%VITE_LAUNCHER%" echo cd /d "%CLIENT_DIR%"
+>> "%VITE_LAUNCHER%" echo call "!PM_CMD!" run dev
+start "G1N-Client" cmd /k "\"%VITE_LAUNCHER%\""
+set "VITE_LAUNCHER="
 
 REM ---- 7. Wait for server up ----
 set "SERVER_READY="

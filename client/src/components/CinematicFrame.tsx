@@ -62,7 +62,7 @@ export function CinematicFrame({
       )}
 
       {/* 内容 */}
-      <div className="relative z-10 h-full flex flex-col">{children}</div>
+      <div className="relative z-10 min-h-screen h-full flex flex-col">{children}</div>
     </div>
   );
 }

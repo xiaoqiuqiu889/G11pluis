@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 setlocal EnableExtensions EnableDelayedExpansion
 title G1N Full Stack Launcher
@@ -131,7 +131,14 @@ REM ---- 10. Start Vite dev server (VITE_USE_MOCK=false) ----
 echo.
 echo Starting Vite dev server (VITE_USE_MOCK=false)...
 echo.
-start "G1N-Frontend" /D "%~dp0client" cmd /c "set VITE_USE_MOCK=false && "!PM_CMD!" run dev"
+REM 通过临时 helper 脚本传环境变量，绕开 cmd /c 引号嵌套问题
+set "VITE_LAUNCHER=%TEMP%\g1n_vite_launcher_%RANDOM%.cmd"
+> "%VITE_LAUNCHER%" echo @echo off
+>> "%VITE_LAUNCHER%" echo set VITE_USE_MOCK=false
+>> "%VITE_LAUNCHER%" echo cd /d "%~dp0client"
+>> "%VITE_LAUNCHER%" echo call "!PM_CMD!" run dev
+start "G1N-Frontend" cmd /c "\"%VITE_LAUNCHER%\""
+set "VITE_LAUNCHER="
 
 REM ---- 11. Wait for frontend up ----
 set "FRONTEND_READY="

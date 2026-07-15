@@ -27,7 +27,7 @@ const FOCUSES: CameraFocus[] = [
   { id: "board", label: "航班板", x: 80, y: 22, zoom: 1.7 },
 ];
 
-const ART_URL = "art-v5/tehran-airport-departure.png"; // 兼容旧美术
+const ART_URL = "/assets/images/atmosphere/A2-farewell-2011-airport.png"; // W12-E2E-fix: 走 /assets/ 静态资源根
 
 export default function Farewell2011() {
   const nav = useNavigate();

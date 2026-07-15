@@ -55,28 +55,89 @@ interface ThemePreset {
 // -----------------------------------------------------------------------------
 const ASSET_BASE = "/assets/audio";
 
-const CHAPTER_AMBIENT_PATH: Partial<Record<string, string>> = {
-  photo_lab_2008: `${ASSET_BASE}/ambient/chapter-2008-basement-ambient.mp3`,
-  farewell_2011: `${ASSET_BASE}/ambient/chapter-2011-airport-ambient.mp3`,
-  reunion_2024: `${ASSET_BASE}/ambient/chapter-2024-istanbul-cafe-ambient.mp3`,
+// W12: case-aware 路径表 — 每案独立 ambient / music / motifs
+// case_01 沿用旧根目录结构（向后兼容）；case_02 用 /assets/audio/case_02/
+interface CaseAudioPaths {
+  ambient: Partial<Record<string, string>>;
+  music: Partial<Record<string, string>>;
+  motifs: Partial<Record<AssetMotif, string>>;
+}
+
+const CASE_AUDIO_PATHS: Record<string, CaseAudioPaths> = {
+  // 默认：case_01（根目录 ambient / music / motifs）
+  case_01_revolution_street: {
+    ambient: {
+      photo_lab_2008: `${ASSET_BASE}/ambient/chapter-2008-basement-ambient.mp3`,
+      farewell_2011: `${ASSET_BASE}/ambient/chapter-2011-airport-ambient.mp3`,
+      reunion_2024: `${ASSET_BASE}/ambient/chapter-2024-istanbul-cafe-ambient.mp3`,
+    },
+    music: {
+      photo_lab_2008: `${ASSET_BASE}/music/chapter-2008-music.mp3`,
+      farewell_2011: `${ASSET_BASE}/music/chapter-2011-music.mp3`,
+      reunion_2024: `${ASSET_BASE}/music/chapter-2024-music.mp3`,
+    },
+    motifs: {
+      photo_turn: `${ASSET_BASE}/motifs/motif-photo-page-turn.mp3`,
+      email_delete: `${ASSET_BASE}/motifs/motif-email-delete.mp3`,
+      clock_tick: `${ASSET_BASE}/motifs/motif-airport-clock-tick.mp3`,
+      rain_drip: `${ASSET_BASE}/motifs/motif-rain-drip.mp3`,
+      poetry_turn: `${ASSET_BASE}/motifs/motif-poetry-page-turn.mp3`,
+      ticket_tear: `${ASSET_BASE}/motifs/motif-bus-ticket-tear.mp3`,
+    },
+  },
+  // case_02：/assets/audio/case_02/{ambient,music,motifs}/
+  case_02_moscow_no_fairy_tale: {
+    ambient: {
+      "1985_meeting": `${ASSET_BASE}/case_02/ambient/chapter-1985-conservatory-ambient.mp3`,
+      "1989_farewell": `${ASSET_BASE}/case_02/ambient/chapter-1989-svo2-ambient.mp3`,
+      "2008_reunion": `${ASSET_BASE}/case_02/ambient/chapter-2008-kreuzberg-ambient.mp3`,
+    },
+    music: {
+      "1985_meeting": `${ASSET_BASE}/case_02/music/chapter-1985-music.mp3`,
+      "1989_farewell": `${ASSET_BASE}/case_02/music/chapter-1989-music.mp3`,
+      "2008_reunion": `${ASSET_BASE}/case_02/music/chapter-2008-music.mp3`,
+    },
+    motifs: {
+      // case_02 复用 case_01 母题（雨滴 / 秒针 / 翻页等通用声音）
+      photo_turn: `${ASSET_BASE}/case_02/motifs/motif-notebook-page-turn.mp3`,
+      email_delete: `${ASSET_BASE}/case_02/motifs/motif-pencil-circles.mp3`,
+      clock_tick: `${ASSET_BASE}/case_02/motifs/motif-aeroflot-chime.mp3`,
+      rain_drip: `${ASSET_BASE}/case_02/motifs/motif-cassette-rewind.mp3`,
+      poetry_turn: `${ASSET_BASE}/case_02/motifs/motif-postcard-unveil.mp3`,
+      // 替代 first_turn — case_02 用 piano-sustain-pedal 作为核心母题
+      ticket_tear: `${ASSET_BASE}/case_02/motifs/motif-piano-sustain-pedal.mp3`,
+    },
+  },
 };
 
-const CHAPTER_MUSIC_PATH: Partial<Record<string, string>> = {
-  photo_lab_2008: `${ASSET_BASE}/music/chapter-2008-music.mp3`,
-  farewell_2011: `${ASSET_BASE}/music/chapter-2011-music.mp3`,
-  reunion_2024: `${ASSET_BASE}/music/chapter-2024-music.mp3`,
-};
+// 当前激活的 case（影响后续 asset 路径查找）
+let _currentCaseSlug: string = "case_01_revolution_street";
 
-const MOTIF_PATH: Record<AssetMotif, string> = {
-  photo_turn: `${ASSET_BASE}/motifs/motif-photo-page-turn.mp3`,
-  email_delete: `${ASSET_BASE}/motifs/motif-email-delete.mp3`,
-  clock_tick: `${ASSET_BASE}/motifs/motif-airport-clock-tick.mp3`,
-  rain_drip: `${ASSET_BASE}/motifs/motif-rain-drip.mp3`,
-  poetry_turn: `${ASSET_BASE}/motifs/motif-poetry-page-turn.mp3`,
-  ticket_tear: `${ASSET_BASE}/motifs/motif-bus-ticket-tear.mp3`,
-};
+export function setCase(caseSlug: string): void {
+  if (CASE_AUDIO_PATHS[caseSlug]) {
+    _currentCaseSlug = caseSlug;
+  }
+}
 
-const ASSET_MOTIF_SET: ReadonlySet<string> = new Set(Object.keys(MOTIF_PATH));
+function _paths(): CaseAudioPaths {
+  return CASE_AUDIO_PATHS[_currentCaseSlug] ?? CASE_AUDIO_PATHS.case_01_revolution_street;
+}
+
+// 兼容旧 const 引用（重写为按 case 动态取值）
+function CHAPTER_AMBIENT_PATH(): Partial<Record<string, string>> {
+  return _paths().ambient;
+}
+function CHAPTER_MUSIC_PATH(): Partial<Record<string, string>> {
+  return _paths().music;
+}
+function MOTIF_PATH(): Record<AssetMotif, string> {
+  // 合并 case 的 motifs（如果某个母题 case 没声明，回落到 case_01）
+  const base = CASE_AUDIO_PATHS.case_01_revolution_street.motifs;
+  const overlay = _paths().motifs;
+  return { ...base, ...overlay } as Record<AssetMotif, string>;
+}
+
+const ASSET_MOTIF_SET: ReadonlySet<string> = new Set(Object.keys(MOTIF_PATH()));
 
 // -----------------------------------------------------------------------------
 // procedural 配置（来自 v6，保留）
@@ -636,7 +697,7 @@ export class AudioEngine {
     if (!this.context) return;
     const ctx = this.context;
     this.motifLoadInFlight = (async () => {
-      const entries = Object.entries(MOTIF_PATH) as Array<[AssetMotif, string]>;
+      const entries = Object.entries(MOTIF_PATH()) as Array<[AssetMotif, string]>;
       await Promise.all(
         entries.map(async ([k, path]) => {
           if (this.motifBuffers.has(k)) return;
@@ -655,12 +716,12 @@ export class AudioEngine {
   /** 单独补一个母题的预热（首次 play 时 fallback 之后） */
   private async ensureMotif(type: AssetMotif): Promise<void> {
     if (this.motifBuffers.has(type)) return;
-    const buffer = await this.loadAndDecode(MOTIF_PATH[type]);
+    const buffer = await this.loadAndDecode(MOTIF_PATH()[type]);
     if (buffer) this.motifBuffers.set(type, buffer);
   }
 
   private async ensureAmbient(chapter: ChapterId): Promise<AudioBuffer | null> {
-    const path = CHAPTER_AMBIENT_PATH[chapter];
+    const path = CHAPTER_AMBIENT_PATH()[chapter];
     if (!path) return null;
     const cached = this.ambientBuffers.get(chapter);
     if (cached) return cached;
@@ -670,7 +731,7 @@ export class AudioEngine {
   }
 
   private async ensureMusic(chapter: ChapterId): Promise<AudioBuffer | null> {
-    const path = CHAPTER_MUSIC_PATH[chapter];
+    const path = CHAPTER_MUSIC_PATH()[chapter];
     if (!path) return null;
     const cached = this.musicBuffers.get(chapter);
     if (cached) return cached;
@@ -861,7 +922,7 @@ export class AudioEngine {
 export const audioEngine = new AudioEngine();
 
 // 暴露母题白名单供 UI 层做能力检查
-export const ASSET_MOTIFS: ReadonlyArray<AssetMotif> = Object.keys(MOTIF_PATH) as AssetMotif[];
+export const ASSET_MOTIFS: ReadonlyArray<AssetMotif> = Object.keys(MOTIF_PATH()) as AssetMotif[];
 
 // 与 store 同步
 import { useStore } from "@/lib/store";

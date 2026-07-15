@@ -204,6 +204,12 @@ CASE_ERAS: Final[dict[str, dict[str, str]]] = {
         "2024_reunion": "2024",
         "epilogue": "EPILOGUE",
     },
+    # W12: 第二案 A《莫斯科没有童话》· 3 scene era 短映射
+    "case_02_moscow_no_fairy_tale": {
+        "1985_meeting": "1985",
+        "1989_farewell": "1989",
+        "2008_reunion": "2008",
+    },
 }
 
 

@@ -93,7 +93,7 @@ function pickPrefix(text: string): string {
 // 描述性状态反馈（不显示精确数值，决策红线）
 // =============================================================================
 
-export type EmotionalTone = "calm" | "tense" | "warm" | "strained" | "distant" | "intimate";
+export type EmotionalTone = "calm" | "tense" | "warm" | "strained" | "distant" | "intimate" | "cold" | "bitter";
 
 export function StateFlux({ tone, note }: { tone: EmotionalTone; note?: string }) {
   const label = describeTone(tone);
@@ -119,7 +119,12 @@ function describeTone(t: EmotionalTone): string {
       return "远";
     case "intimate":
       return "近";
+    case "cold":
+      return "冷";
+    case "bitter":
+      return "苦涩";
   }
+  return "";
 }
 
 // =============================================================================

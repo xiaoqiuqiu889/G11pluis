@@ -27,7 +27,7 @@ export default function StartPage() {
       <div className="vignette" />
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url(/art-v5/canonical-graduation-photo.png)" }}
+        style={{ backgroundImage: "url(/assets/images/artifacts/01-graduation-photo-leila-worn.png)" }}
         aria-hidden
       />
       <div className="absolute inset-0 bg-gradient-to-b from-ink-900/70 via-ink-900/40 to-ink-900/95" />
@@ -73,6 +73,9 @@ export default function StartPage() {
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Link to="/scene/photo_lab_2008" className="action-btn border-amber-glow text-amber-glow text-center">
                 开始第一场 · 2008 夏
+              </Link>
+              <Link to="/cases" className="action-btn text-center" data-testid="open-case-selector">
+                案件选择器（两案）
               </Link>
               <Link to="/paywall" className="action-btn text-center">
                 案件通行证 ¥25

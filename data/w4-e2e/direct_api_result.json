@@ -2,7 +2,7 @@
   "create": {
     "ok": true,
     "run": {
-      "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+      "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
       "userId": "demo-user",
       "caseSlug": "case_01_revolution_street",
       "currentSceneId": "photo_lab_2008",
@@ -10,8 +10,8 @@
       "eventSequence": 0,
       "phase": "setup",
       "endingId": null,
-      "startedAt": "2026-07-14T18:23:45.587525",
-      "lastActiveAt": "2026-07-14T18:23:45.587525",
+      "startedAt": "2026-07-15T02:49:35.870524",
+      "lastActiveAt": "2026-07-15T02:49:35.870524",
       "endedAt": null,
       "isArchived": false,
       "isMock": true,
@@ -20,12 +20,12 @@
   },
   "submit": {
     "outcome": {
-      "outcomeId": "ada2fa63-cf8d-4d41-a7a1-fff1726e8806",
-      "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+      "outcomeId": "dd3a8e83-6e93-47b8-9a19-1afb2b41df6e",
+      "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
       "eventSequence": 1,
-      "idempotencyKey": "ffbe608a211af406416a11f7b07731f086430152e0572c5bd0a159d247bd134f",
+      "idempotencyKey": "8ad7829737e728af66af85b8a482bdb6a7cb8d15417337852747f9f72bef946e",
       "acceptedNpcAction": {
-        "proposalId": "bcea7e17-da9a-443a-9bd5-d86ab239044e",
+        "proposalId": "4d2cffc6-0e8b-4769-9ac6-bbfb37334b13",
         "characterId": "arash",
         "proposedAction": "comfort",
         "speechIntent": "comfort",
@@ -37,9 +37,9 @@
         "transition": "continue",
         "legalEndingId": null
       },
-      "timestamp": "2026-07-14T18:23:45Z",
-      "triggerPlayerActionId": "10142d02-6acd-4ac1-b9d0-124f1945a9a2",
-      "triggerDirectorProposalId": "38192e28-3bc2-48ae-876b-6fddb26a9fe3",
+      "timestamp": "2026-07-15T02:49:35Z",
+      "triggerPlayerActionId": "c4c063f0-75da-4cdd-ba98-4b15cb551338",
+      "triggerDirectorProposalId": "2ff54299-e67e-478d-b49a-98c2f1d45a90",
       "rejectedNpcActions": [],
       "relationshipDelta": [
         {
@@ -92,9 +92,9 @@
           }
         ],
         "deterministicDecisions": [
-          "idempotency_key=ffbe608a211af406…",
+          "idempotency_key=8ad7829737e728af…",
           "director beat accepted: '试探'",
-          "npc proposal accepted: bcea7e17…",
+          "npc proposal accepted: 4d2cffc6…",
           "give: transferring artifact ownership",
           "transferred 1 artifact(s) from 'leila' to 'leila'",
           "resolver_agent[v1.0.0]: case_slug=case_01_revolution_street era=2008 legal=True",
@@ -106,45 +106,45 @@
       "schemaVersion": "1.0.0"
     },
     "npcProposals": [],
-    "clientActionId": "10142d02-6acd-4ac1-b9d0-124f1945a9a2",
+    "clientActionId": "c4c063f0-75da-4cdd-ba98-4b15cb551338",
     "degraded": "L1",
     "fallbackUsed": true,
-    "latencyMs": 16,
+    "latencyMs": 31,
     "resolvedText": "（他/她没有立刻回答。放映机的低频转动在背景里持续。）"
   },
   "timeline": {
-    "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+    "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
     "count": 1,
     "events": [
       {
-        "id": 5,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 13,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "eventSequence": 1,
         "sceneId": "photo_lab_2008",
         "actorId": "leila",
         "actionType": "give",
         "actionPayload": {
-          "clientActionId": "10142d02-6acd-4ac1-b9d0-124f1945a9a2",
-          "outcomeId": "ada2fa63-cf8d-4d41-a7a1-fff1726e8806"
+          "clientActionId": "c4c063f0-75da-4cdd-ba98-4b15cb551338",
+          "outcomeId": "dd3a8e83-6e93-47b8-9a19-1afb2b41df6e"
         },
         "validatedDelta": {
-          "checksum": "4a2355e4335695796f1c4311f86f51014b2165208bed9129fab3ec5232b28491",
+          "checksum": "8f0c8980676f301bed544461497110d3b515e975ba96b1399206a2f012612e69",
           "firedCausalSeeds": []
         },
         "causalSeed": null,
         "randomSeed": 0,
-        "idempotencyKey": "ffbe608a211af406416a11f7b07731f086430152e0572c5bd0a159d247bd134f",
-        "outcomeId": "ada2fa63-cf8d-4d41-a7a1-fff1726e8806",
-        "createdAt": "2026-07-14T18:23:45.616178"
+        "idempotencyKey": "8ad7829737e728af66af85b8a482bdb6a7cb8d15417337852747f9f72bef946e",
+        "outcomeId": "dd3a8e83-6e93-47b8-9a19-1afb2b41df6e",
+        "createdAt": "2026-07-15T02:49:35.906417"
       }
     ]
   },
   "archive": {
-    "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+    "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
     "artifacts": [
       {
-        "id": 12,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 8,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "artifactId": "book_jalal",
         "sceneId": "photo_lab_2008",
         "ownerId": "arash",
@@ -153,11 +153,11 @@
         "location": null,
         "tags": [],
         "lastEventSequence": 1,
-        "updatedAt": "2026-07-14T18:23:45.618187"
+        "updatedAt": "2026-07-15T02:49:35.909935"
       },
       {
-        "id": 11,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 7,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "artifactId": "envelope",
         "sceneId": "photo_lab_2008",
         "ownerId": "leila",
@@ -166,11 +166,11 @@
         "location": null,
         "tags": [],
         "lastEventSequence": 1,
-        "updatedAt": "2026-07-14T18:23:45.618187"
+        "updatedAt": "2026-07-15T02:49:35.909935"
       },
       {
-        "id": 9,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 5,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "artifactId": "photo_A",
         "sceneId": "photo_lab_2008",
         "ownerId": "leila",
@@ -179,11 +179,11 @@
         "location": null,
         "tags": [],
         "lastEventSequence": 1,
-        "updatedAt": "2026-07-14T18:23:45.618187"
+        "updatedAt": "2026-07-15T02:49:35.909935"
       },
       {
-        "id": 10,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 6,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "artifactId": "photo_B",
         "sceneId": "photo_lab_2008",
         "ownerId": "leila",
@@ -192,13 +192,13 @@
         "location": null,
         "tags": [],
         "lastEventSequence": 1,
-        "updatedAt": "2026-07-14T18:23:45.618187"
+        "updatedAt": "2026-07-15T02:49:35.909935"
       }
     ],
     "beliefs": [
       {
-        "id": 5,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 3,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "characterId": "arash",
         "subject": "photo_in_pocket",
         "beliefState": "reinforced",
@@ -207,14 +207,14 @@
         "previousState": null,
         "eventSequence": 1,
         "reasonCode": "npc_proposal",
-        "createdAt": "2026-07-14T18:23:45.619185"
+        "createdAt": "2026-07-15T02:49:35.910937"
       }
     ],
     "memories": [],
     "causalSeeds": [
       {
-        "id": 5,
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 3,
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "seedId": "photo_in_pocket",
         "sourceScene": "photo_lab_2008",
         "sourceEventId": null,
@@ -241,15 +241,15 @@
           "mandatory_echo",
           "w4_demo"
         ],
-        "createdAt": "2026-07-14T18:23:45.619185"
+        "createdAt": "2026-07-15T02:49:35.910937"
       }
     ],
     "branches": [],
     "modelCalls": [
       {
-        "id": 5,
-        "requestId": "bb186587-5391-4ab7-8f1b-417511c40f44",
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 3,
+        "requestId": "a8a0f667-9c87-4870-a254-5f29d89aa181",
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "sceneId": "photo_lab_2008",
         "taskType": "npc_proposer",
         "agent": "npc_agent",
@@ -264,12 +264,12 @@
         "usedFallback": true,
         "attempts": 2,
         "metadata": {},
-        "createdAt": "2026-07-14T18:23:45.622186"
+        "createdAt": "2026-07-15T02:49:35.911936"
       },
       {
-        "id": 6,
-        "requestId": "f9f5396a-9d89-422f-a971-137371519854",
-        "runId": "2474ba49-73e8-4ad0-b0fd-615e1711fb4a",
+        "id": 4,
+        "requestId": "753362c3-755a-4850-8531-dba76136262a",
+        "runId": "f7d6f3bb-b899-4d5d-94d7-0828dad84b80",
         "sceneId": "photo_lab_2008",
         "taskType": "director_proposer",
         "agent": "director_agent",
@@ -284,7 +284,7 @@
         "usedFallback": true,
         "attempts": 2,
         "metadata": {},
-        "createdAt": "2026-07-14T18:23:45.624185"
+        "createdAt": "2026-07-15T02:49:35.913938"
       }
     ]
   }

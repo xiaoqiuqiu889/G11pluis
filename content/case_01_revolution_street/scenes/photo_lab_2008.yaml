@@ -456,6 +456,8 @@ mandatory_echoes:
         referenced_2008_seed: photo_lab_2008.seed.date_written_on_back
         priority: 5
     selection_rule:
+      first_line_rule: first_match_in_priority_order  # UP-20260715-021 显式规则
+      no_match_fallback: line_01_photo_in_pocket       # UP-20260715-020 显式兜底
       algorithm: |
         1. NPC Agent 拉取玩家本局触发的所有 causal_seed 列表
            （from player_action.evidenceIds + npc_raised_echoes + belief_matrix.memoryRefs）
@@ -463,6 +465,7 @@ mandatory_echoes:
            seed_id / referenced_seed 在玩家触发列表里的 line
         3. 若多触发：取 priority 最小（即"最触动"）的那条
         4. 若无任何 candidate 匹配：AI 导演必须使用 line_01_photo_in_pocket 兜底
+        5. 决策 2 补充条款：第一句台词必须引用 player 在 1985/2008 的具体行为（不允许泛化叙述）
            —— 禁止自由发挥台词
       red_line: "AI 导演不得在 candidate_lines 之外创造台词"
 

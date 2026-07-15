@@ -29,7 +29,7 @@ const FOCUSES: CameraFocus[] = [
   { id: "projector", label: "放映机", x: 50, y: 30, zoom: 1.5 },
 ];
 
-const ART_URL = "art-v5/graduation-photo-day.png"; // canonical asset
+const ART_URL = "/assets/images/atmosphere/A1-photo-lab-2008-basement.png"; // W12-E2E-fix: 走 /assets/ 静态资源根
 
 export default function PhotoLab2008() {
   const nav = useNavigate();

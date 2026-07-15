@@ -185,6 +185,13 @@ function initialNarration(sceneId: keyof typeof SCENE_MOCKS): string {
       return "你看到了出发大厅的不锈钢反光。登机牌攥在她手里——攥到边角都卷起来了。";
     case "reunion_2024":
       return "你看到了雨后老咖啡馆的木门，被人从外面推开。银发与手背细纹，十三年的距离被压成两步。";
+    // W12: case_02《莫斯科没有童话》初始旁白
+    case "1985_meeting":
+      return "你看到了 305 琴房的 Yamaha U3 立式钢琴，1978 年产的榉木在傍晚光线下偏红。伊利亚的红色笔记本夹在夹克内袋，铅笔在总谱上画了三个圈—— И. Б.";
+    case "1989_farewell":
+      return "你看到了塔甘卡剧院衣帽间 5:30 的挂钟，秒针清晰。5:55 莉莎会从 SVO-2 拨盘电话里说'第三小节是给你的'——娜塔莎会在 4 秒后接起。";
+    case "2008_reunion":
+      return "你看到了十字山区咖啡馆的老木门，雨后玻璃上有水珠。19:15 伊利亚会抱红色笔记本推门——第 7 页胶带痕迹里有 1989 Aeroflot 标签的边缘。";
   }
   return "";
 }
